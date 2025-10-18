@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: health_petal_db
+    restart: always
+    environment:
+      POSTGRES_DB: health_petal
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: h3alth_p3tal_db_p@ssw0rd
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: health_petal_backend
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgres://postgres:h3alth_p3tal_db_p@ssw0rd@db:5432/health_petal
+      - JWT_SECRET=your-jwt-secret-here
+      - S3_ACCESS_KEY_ID=d94e2444086b740afa411a95a6d1abffe08dc69c
+      - S3_SECRET_ACCESS_KEY=VA5pi0NrnST7OG+zCqJIhSrhdRHwanFA+saJO5QoebQ=
+      - S3_BUCKET_NAME=health-petal
+      - S3_REGION=ap-hyderabad-1
+      - S3_URL=https://axwzpqa4dwjl.compat.objectstorage.ap-hyderabad-1.oraclecloud.com/
+      - EXPO_ACCESS_TOKEN=your-expo-access-token
+      - PHONE_PE_BASE_URL=https://api-preprod.phonepe.com/
+      - PHONE_PE_CLIENT_ID=TEST-M23F2IGP34ZAR_25090
+      - PHONE_PE_CLIENT_VERSION=1
+      - PHONE_PE_CLIENT_SECRET=MTU1MmIzOTgtM2Q0Mi00N2M5LTkyMWUtNzBiMjdmYzVmZWUy
+      - PHONE_PE_MERCHANT_ID=M23F2IGP34ZAR
+    depends_on:
+      - db
+    volumes:
+      - ./logs:/app/logs
+
+volumes:
+  postgres_data:

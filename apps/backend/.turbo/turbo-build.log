@@ -1,0 +1,4 @@
+
+> backend@1.0.0 build
+> node ../../node_modules/rimraf/bin.js ./dist && node ../../node_modules/typescript/bin/tsc --project tsconfig.json
+

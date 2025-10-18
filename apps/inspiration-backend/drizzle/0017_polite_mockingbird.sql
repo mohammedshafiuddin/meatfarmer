@@ -1,0 +1,1 @@
+ALTER TABLE "hospital" RENAME COLUMN "hospital_image" TO "hospital_images";

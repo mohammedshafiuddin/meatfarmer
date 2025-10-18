@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "244698910281",
+    "project_id": "health-petal",
+    "storage_bucket": "health-petal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:244698910281:android:ebe1ef7afb2bcec45d7998",
+        "android_client_info": {
+          "package_name": "com.mohammedshafiudin54.health_petal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHfbPPGA-uubcTZbs7x8xfoT7myYCounI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

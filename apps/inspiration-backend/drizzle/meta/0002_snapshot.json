@@ -1,0 +1,978 @@
+{
+  "id": "428a4bc9-6946-4026-ac4d-c6ec7703621d",
+  "prevId": "aabc409d-d23f-46d3-bbb1-5ead2e7e7dfc",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.doctor_availability": {
+      "name": "doctor_availability",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "doctor_availability_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_token_count": {
+          "name": "total_token_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "filled_token_count": {
+          "name": "filled_token_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_stopped": {
+          "name": "is_stopped",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "doctor_availability_doctor_id_doctor_info_id_fk": {
+          "name": "doctor_availability_doctor_id_doctor_info_id_fk",
+          "tableFrom": "doctor_availability",
+          "tableTo": "doctor_info",
+          "columnsFrom": [
+            "doctor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unique_doctor_date": {
+          "name": "unique_doctor_date",
+          "nullsNotDistinct": false,
+          "columns": [
+            "doctor_id",
+            "date"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.doctor_info": {
+      "name": "doctor_info",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "doctor_info_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "qualifications": {
+          "name": "qualifications",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "daily_token_count": {
+          "name": "daily_token_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "doctor_info_user_id_users_id_fk": {
+          "name": "doctor_info_user_id_users_id_fk",
+          "tableFrom": "doctor_info",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "doctor_info_user_id_unique": {
+          "name": "doctor_info_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.doctor_secretaries": {
+      "name": "doctor_secretaries",
+      "schema": "",
+      "columns": {
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "secretary_id": {
+          "name": "secretary_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "doctor_secretaries_doctor_id_users_id_fk": {
+          "name": "doctor_secretaries_doctor_id_users_id_fk",
+          "tableFrom": "doctor_secretaries",
+          "tableTo": "users",
+          "columnsFrom": [
+            "doctor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "doctor_secretaries_secretary_id_users_id_fk": {
+          "name": "doctor_secretaries_secretary_id_users_id_fk",
+          "tableFrom": "doctor_secretaries",
+          "tableTo": "users",
+          "columnsFrom": [
+            "secretary_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "doctor_secretary_pk": {
+          "name": "doctor_secretary_pk",
+          "nullsNotDistinct": false,
+          "columns": [
+            "doctor_id",
+            "secretary_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.doctor_specializations": {
+      "name": "doctor_specializations",
+      "schema": "",
+      "columns": {
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specialization_id": {
+          "name": "specialization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "doctor_specializations_doctor_id_doctor_info_id_fk": {
+          "name": "doctor_specializations_doctor_id_doctor_info_id_fk",
+          "tableFrom": "doctor_specializations",
+          "tableTo": "doctor_info",
+          "columnsFrom": [
+            "doctor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "doctor_specializations_specialization_id_specializations_id_fk": {
+          "name": "doctor_specializations_specialization_id_specializations_id_fk",
+          "tableFrom": "doctor_specializations",
+          "tableTo": "specializations",
+          "columnsFrom": [
+            "specialization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "doctor_specialization_pk": {
+          "name": "doctor_specialization_pk",
+          "nullsNotDistinct": false,
+          "columns": [
+            "doctor_id",
+            "specialization_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hospital_employees": {
+      "name": "hospital_employees",
+      "schema": "",
+      "columns": {
+        "hospital_id": {
+          "name": "hospital_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "designation": {
+          "name": "designation",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "hospital_employees_hospital_id_hospital_id_fk": {
+          "name": "hospital_employees_hospital_id_hospital_id_fk",
+          "tableFrom": "hospital_employees",
+          "tableTo": "hospital",
+          "columnsFrom": [
+            "hospital_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "hospital_employees_user_id_users_id_fk": {
+          "name": "hospital_employees_user_id_users_id_fk",
+          "tableFrom": "hospital_employees",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "hospital_employee_pk": {
+          "name": "hospital_employee_pk",
+          "nullsNotDistinct": false,
+          "columns": [
+            "hospital_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hospital_specializations": {
+      "name": "hospital_specializations",
+      "schema": "",
+      "columns": {
+        "hospital_id": {
+          "name": "hospital_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specialization_id": {
+          "name": "specialization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "hospital_specializations_hospital_id_hospital_id_fk": {
+          "name": "hospital_specializations_hospital_id_hospital_id_fk",
+          "tableFrom": "hospital_specializations",
+          "tableTo": "hospital",
+          "columnsFrom": [
+            "hospital_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "hospital_specializations_specialization_id_specializations_id_fk": {
+          "name": "hospital_specializations_specialization_id_specializations_id_fk",
+          "tableFrom": "hospital_specializations",
+          "tableTo": "specializations",
+          "columnsFrom": [
+            "specialization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "hospital_specialization_pk": {
+          "name": "hospital_specialization_pk",
+          "nullsNotDistinct": false,
+          "columns": [
+            "hospital_id",
+            "specialization_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hospital": {
+      "name": "hospital",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "hospital_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.role_info": {
+      "name": "role_info",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "role_info_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "displayName": {
+          "name": "displayName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.running_counter": {
+      "name": "running_counter",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "running_counter_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_updated": {
+          "name": "last_updated",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'now()'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "running_counter_doctor_id_doctor_info_id_fk": {
+          "name": "running_counter_doctor_id_doctor_info_id_fk",
+          "tableFrom": "running_counter",
+          "tableTo": "doctor_info",
+          "columnsFrom": [
+            "doctor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unique_date_doctor": {
+          "name": "unique_date_doctor",
+          "nullsNotDistinct": false,
+          "columns": [
+            "date",
+            "doctor_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.specializations": {
+      "name": "specializations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "specializations_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "specializations_name_unique": {
+          "name": "specializations_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.token_info": {
+      "name": "token_info",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "token_info_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_date": {
+          "name": "token_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "queue_num": {
+          "name": "queue_num",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'now()'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "token_info_doctor_id_doctor_info_id_fk": {
+          "name": "token_info_doctor_id_doctor_info_id_fk",
+          "tableFrom": "token_info",
+          "tableTo": "doctor_info",
+          "columnsFrom": [
+            "doctor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "token_info_user_id_users_id_fk": {
+          "name": "token_info_user_id_users_id_fk",
+          "tableFrom": "token_info",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unique_doctor_date_queue": {
+          "name": "unique_doctor_date_queue",
+          "nullsNotDistinct": false,
+          "columns": [
+            "doctor_id",
+            "token_date",
+            "queue_num"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_info": {
+      "name": "user_info",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "password": {
+          "name": "password",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_suspended": {
+          "name": "is_suspended",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "active_token_version": {
+          "name": "active_token_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_info_user_id_users_id_fk": {
+          "name": "user_info_user_id_users_id_fk",
+          "tableFrom": "user_info",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_roles": {
+      "name": "user_roles",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_id": {
+          "name": "role_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "add_date": {
+          "name": "add_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'now()'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_roles_user_id_users_id_fk": {
+          "name": "user_roles_user_id_users_id_fk",
+          "tableFrom": "user_roles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_roles_role_id_role_info_id_fk": {
+          "name": "user_roles_role_id_role_info_id_fk",
+          "tableFrom": "user_roles",
+          "tableTo": "role_info",
+          "columnsFrom": [
+            "role_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_role_pk": {
+          "name": "user_role_pk",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "role_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "users_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mobile": {
+          "name": "mobile",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "join_date": {
+          "name": "join_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'now()'"
+        },
+        "address": {
+          "name": "address",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profile_pic_url": {
+          "name": "profile_pic_url",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_mobile_unique": {
+          "name": "users_mobile_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "mobile"
+          ]
+        },
+        "unique_mobile": {
+          "name": "unique_mobile",
+          "nullsNotDistinct": false,
+          "columns": [
+            "mobile"
+          ]
+        },
+        "unique_email": {
+          "name": "unique_email",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        },
+        "unique_username": {
+          "name": "unique_username",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

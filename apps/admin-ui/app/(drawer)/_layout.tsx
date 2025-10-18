@@ -1,0 +1,49 @@
+import { Drawer } from "expo-router/drawer";
+import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
+import { useRouter } from "expo-router";
+
+function CustomDrawerContent() {
+  const router = useRouter();
+
+  return (
+    <DrawerContentScrollView>
+      <DrawerItem
+        label="Dashboard"
+        onPress={() => router.push("/(drawer)/dashboard" as any)}
+      />
+      <DrawerItem
+        label="Add Product"
+        onPress={() => router.push("/(drawer)/add-product" as any)}
+      />
+      <DrawerItem
+        label="Manage Slots"
+        onPress={() => router.push("/(drawer)/manage-slots" as any)}
+      />
+      <DrawerItem
+        label="Add/Remove Slots"
+        onPress={() => router.push("/(drawer)/add-remove-slots" as any)}
+      />
+      <DrawerItem
+        label="Today's Orders"
+        onPress={() => router.push("/(drawer)/todays-orders" as any)}
+      />
+      <DrawerItem
+        label="Edit Product"
+        onPress={() => router.push("/(drawer)/edit-product" as any)}
+      />
+    </DrawerContentScrollView>
+  );
+}
+
+export default function Layout() {
+  return (
+    <Drawer drawerContent={CustomDrawerContent} screenOptions={{ headerShown: true }}>
+      <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
+      <Drawer.Screen name="add-product" options={{ title: "Add Product" }} />
+      <Drawer.Screen name="manage-slots" options={{ title: "Manage Slots" }} />
+      <Drawer.Screen name="add-remove-slots" options={{ title: "Add/Remove Slots" }} />
+      <Drawer.Screen name="todays-orders" options={{ title: "Today's Orders" }} />
+      <Drawer.Screen name="edit-product" options={{ title: "Edit Product" }} />
+    </Drawer>
+  );
+}

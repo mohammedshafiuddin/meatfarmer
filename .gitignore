@@ -1,0 +1,95 @@
+# ===============================
+# Node.js & React Native Monorepo .gitignore
+# ===============================
+
+# Node modules (ignore all depths)
+**/node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+jspm_packages/
+bower_components/
+
+# Build outputs
+dist/
+build/
+out/
+.temp/
+.tmp/
+.cache/
+coverage/
+.expo/
+.expo-shared/
+.next/
+android/app/build/
+ios/build/
+ios/Pods/
+
+# React Native specific
+*.xcuserstate
+*.xcuserdatad
+*.xcworkspace
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+*.pbxuser
+*.mode1v3
+*.mode2v3
+ios/DerivedData/
+*.ipa
+*.app
+*.dSYM.zip
+*.dSYM
+*.keystore
+*.jks
+
+# Metro & Watchman
+.metro/
+.watchmanconfig
+
+# Env files
+.env
+.env.*.local
+
+# Lockfiles (optional, uncomment if you manage per-package installs manually)
+# yarn.lock
+# package-lock.json
+# pnpm-lock.yaml
+
+# System files
+.DS_Store
+Thumbs.db
+*.swp
+
+# Editor settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+jest-cache/
+jest-html-reporters-*
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Misc
+*.tgz
+*.orig
+*.rej
+*.patch
+
+# Turborepo / Nx / Monorepo tools
+.turbo/
+nx-cache/
+

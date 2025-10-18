@@ -1,0 +1,23 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const user_router_1 = __importDefault(require("./user/user.router"));
+const hospital_router_1 = __importDefault(require("./hospital/hospital.router"));
+const doctor_router_js_1 = __importDefault(require("./doctor/doctor.router.js"));
+const specialization_router_js_1 = __importDefault(require("./specialization/specialization.router.js"));
+const dashboard_router_1 = __importDefault(require("./dashboard/dashboard.router"));
+const token_router_1 = __importDefault(require("./token/token.router"));
+const payments_router_1 = __importDefault(require("./payments/payments.router"));
+const router = (0, express_1.Router)();
+router.use('/users', user_router_1.default);
+router.use('/hospitals', hospital_router_1.default);
+router.use('/doctors', doctor_router_js_1.default);
+router.use('/specializations', specialization_router_js_1.default);
+router.use('/dashboard', dashboard_router_1.default);
+router.use('/tokens', token_router_1.default);
+router.use('/payments', payments_router_1.default);
+const v1Router = router;
+exports.default = v1Router;

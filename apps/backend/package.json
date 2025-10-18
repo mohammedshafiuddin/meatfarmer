@@ -1,0 +1,51 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "drizzle-kit generate:pg",
+    "build": "node ../../node_modules/rimraf/bin.js ./dist && node ../../node_modules/typescript/bin/tsc --project tsconfig.json",
+    "build2": "rimraf ./dist && tsc",
+    "db:push": "drizzle-kit push:pg",
+    "db:seed": "tsx src/db/seed.ts",
+    "dev2": "npx tsx watch index.ts",
+    "dev": "node ../../node_modules/tsx/dist/cli.mjs watch index.ts",
+    "docker:build": "cd .. && docker buildx build --platform linux/amd64 -t mohdshafiuddin54/health_petal:latest --progress=plain -f backend/Dockerfile .",
+    "docker:push": "docker push mohdshafiuddin54/health_petal:latest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.888.0",
+    "@aws-sdk/s3-request-presigner": "^3.888.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "axios": "^1.11.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.18",
+    "dotenv": "^17.2.1",
+    "drizzle-orm": "^0.44.5",
+    "expo-server-sdk": "^4.0.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "pg": "^8.16.3",
+    "pg-sdk-node": "https://phonepe.mycloudrepo.io/public/repositories/phonepe-pg-sdk-node/releases/v2/phonepe-pg-sdk-node.tgz"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.5.2",
+    "@types/pg": "^8.15.5",
+    "drizzle-kit": "^0.31.4",
+    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
