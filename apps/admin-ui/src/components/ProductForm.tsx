@@ -1,13 +1,9 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity, Image } from 'react-native';
-import { Formik, FieldArray } from 'formik';
-import { MyTextInput, CustomDropdown, MyText as Text, ImageUploader, useTheme } from 'common-ui';
-import usePickImage from 'common-ui/src/components/use-pick-image';
-
-interface Deal {
-  quantity: string;
-  price: string;
-}
+ import React, { useState } from 'react';
+ import { View, TouchableOpacity, Image } from 'react-native';
+ import { Formik, FieldArray } from 'formik';
+ import * as Yup from 'yup';
+ import { MyTextInput, CustomDropdown, MyText as Text, ImageUploader, useTheme, DatePicker } from 'common-ui';
+ import usePickImage from 'common-ui/src/components/use-pick-image';
 
 interface ProductFormData {
   name: string;
@@ -16,6 +12,12 @@ interface ProductFormData {
   unitId: number;
   price: string;
   deals: Deal[];
+}
+
+interface Deal {
+  quantity: string;
+  price: string;
+  validTill: Date | null;
 }
 
 interface ProductFormProps {
@@ -135,53 +137,64 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 <View style={{ marginBottom: 16 }}>
                   <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>Special Package Deals (Optional)</Text>
                   {(form.values.deals || []).map((deal: any, index: number) => (
-                    <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                      <View style={{ flex: 1, marginRight: 8 }}>
-                        <MyTextInput
-                          topLabel="Quantity"
-                          placeholder="Enter quantity"
-                          keyboardType="numeric"
-                          value={deal.quantity || ''}
-                          onChangeText={form.handleChange(`deals.${index}.quantity`)}
-                          fullWidth={false}
-                        />
-                      </View>
-                      <View style={{ flex: 1, marginRight: 8 }}>
-                        <MyTextInput
-                          topLabel="Price"
-                          placeholder="Enter price"
-                          keyboardType="numeric"
-                          value={deal.price || ''}
-                          onChangeText={form.handleChange(`deals.${index}.price`)}
-                          fullWidth={false}
-                        />
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => remove(index)}
-                        style={{
-                          backgroundColor: '#dc3545',
-                          padding: 8,
-                          borderRadius: 4,
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Text style={{ color: 'white', fontSize: 12 }}>Remove</Text>
-                      </TouchableOpacity>
-                    </View>
+                     <View key={index} style={{ marginBottom: 16 }}>
+                       <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8 }}>
+                         <View style={{ flex: 1, marginRight: 8 }}>
+                           <MyTextInput
+                             topLabel="Quantity"
+                             placeholder="Enter quantity"
+                             keyboardType="numeric"
+                             value={deal.quantity || ''}
+                             onChangeText={form.handleChange(`deals.${index}.quantity`)}
+                             fullWidth={false}
+                           />
+                         </View>
+                         <View style={{ flex: 1, marginRight: 8 }}>
+                           <MyTextInput
+                             topLabel="Price"
+                             placeholder="Enter price"
+                             keyboardType="numeric"
+                             value={deal.price || ''}
+                             onChangeText={form.handleChange(`deals.${index}.price`)}
+                             fullWidth={false}
+                           />
+                         </View>
+                         <View style={{ flex: 1, marginRight: 8 }}>
+                           <DatePicker
+                             value={deal.validTill}
+                             setValue={(date) => form.setFieldValue(`deals.${index}.validTill`, date)}
+                             showLabel={true}
+                             placeholder="Valid Till"
+                           />
+                         </View>
+                         <TouchableOpacity
+                           onPress={() => remove(index)}
+                           style={{
+                             backgroundColor: '#dc3545',
+                             padding: 8,
+                             borderRadius: 4,
+                             justifyContent: 'center',
+                             alignItems: 'center',
+                             height: 40,
+                           }}
+                         >
+                           <Text style={{ color: 'white', fontSize: 12 }}>Remove</Text>
+                         </TouchableOpacity>
+                       </View>
+                     </View>
                   ))}
-                  <TouchableOpacity
-                    onPress={() => push({ quantity: '', price: '' })}
-                    style={{
-                      backgroundColor: '#28a745',
-                      padding: 10,
-                      borderRadius: 4,
-                      alignItems: 'center',
-                      marginTop: 8,
-                    }}
-                  >
-                    <Text style={{ color: 'white', fontSize: 14 }}>Add Deal</Text>
-                  </TouchableOpacity>
+                   <TouchableOpacity
+                     onPress={() => push({ quantity: '', price: '', validTill: null })}
+                     style={{
+                       backgroundColor: '#28a745',
+                       padding: 10,
+                       borderRadius: 4,
+                       alignItems: 'center',
+                       marginTop: 8,
+                     }}
+                   >
+                     <Text style={{ color: 'white', fontSize: 14 }}>Add Deal</Text>
+                   </TouchableOpacity>
                 </View>
               )}
             </FieldArray>

@@ -1,18 +1,17 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { AppContainer } from 'common-ui';
-import dayjs from 'dayjs';
-import { useGetSlots } from '../../../src/api-hooks/slot.api';
-import { useGetAllProductsSummary, useGetSlotsProductIds } from 'common-ui/src/common-api-hooks/product.api';
-import { useUpdateSlotProducts } from '../../../src/api-hooks/product.api';
-import MultiSelectDropdown, { DropdownOption } from 'common-ui/src/components/multi-select';
+ import React, { useState, useMemo, useEffect } from 'react';
+ import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+ import { AppContainer, useFocusCallback, useManualRefresh } from 'common-ui';
+ import dayjs from 'dayjs';
+ import { useGetSlots } from '../../../src/api-hooks/slot.api';
+ import { useGetAllProductsSummary, useGetSlotsProductIds } from 'common-ui/src/common-api-hooks/product.api';
+ import { useUpdateSlotProducts } from '../../../src/api-hooks/product.api';
+ import MultiSelectDropdown, { DropdownOption } from 'common-ui/src/components/multi-select';
 
 export default function ManageSlots() {
 
   // Fetch data
-  const { data: slotsData, isLoading: slotsLoading } = useGetSlots();
+  const { data: slotsData, isFetching: slotsLoading, refetch: refetchSlots } = useGetSlots();
   const { data: productsData, isLoading: productsLoading } = useGetAllProductsSummary();
-  console.log({productsData})
   
 
   const slots = slotsData?.slots || [];
@@ -23,8 +22,15 @@ export default function ManageSlots() {
   );
   const slotIds = useMemo(() => sortedSlots.map(slot => slot.id), [sortedSlots]);
 
-  const { data: associationsData, isLoading: associationsLoading } = useGetSlotsProductIds(slotIds);
+  const { data: associationsData, isFetching: associationsLoading, refetch: refetchSlotProducts } = useGetSlotsProductIds(slotIds);
+  useFocusCallback(refetchSlotProducts)
 
+  useManualRefresh(() => {
+    refetchSlots();
+    refetchSlotProducts();
+  });
+
+  
   // State for selected products per slot
   const [selectedProducts, setSelectedProducts] = useState<Record<number, string[]>>({});
 
@@ -37,7 +43,7 @@ export default function ManageSlots() {
       });
       setSelectedProducts(initialSelected);
     }
-  }, [associationsData, selectedProducts]);
+  }, [associationsData]);
 
   // Prepare dropdown options
   const productOptions: DropdownOption[] = useMemo(() => {

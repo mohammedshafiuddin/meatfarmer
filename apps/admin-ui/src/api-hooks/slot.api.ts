@@ -38,23 +38,23 @@ export interface UpdateSlotResponse extends CreateSlotResponse {}
 
 // API functions
 const createSlotApi = async (payload: CreateSlotPayload): Promise<CreateSlotResponse> => {
-  const response = await axios.post('/slots', payload);
+  const response = await axios.post('/av/slots', payload);
   return response.data;
 };
 
 const getSlotsApi = async (): Promise<GetSlotsResponse> => {
-  const response = await axios.get('/slots');
+  const response = await axios.get('/av/slots');
   return response.data;
 };
 
 const updateSlotApi = async (payload: UpdateSlotPayload): Promise<UpdateSlotResponse> => {
   const { id, ...updateData } = payload;
-  const response = await axios.put(`/slots/${id}`, updateData);
+  const response = await axios.put(`/av/slots/${id}`, updateData);
   return response.data;
 };
 
 const deleteSlotApi = async (id: number): Promise<{ message: string }> => {
-  const response = await axios.delete(`/slots/${id}`);
+  const response = await axios.delete(`/av/slots/${id}`);
   return response.data;
 };
 

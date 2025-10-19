@@ -5,10 +5,10 @@ import {
   getProductById,
   updateProduct,
   deleteProduct,
-  getAllProductsSummary,
-  getSlotProductIds,
+
   updateSlotProducts,
   getSlotsProductIds,
+  getSlotProductIds,
 } from "./product.controller";
 import uploadHandler from '../lib/upload-handler';
 
@@ -17,7 +17,6 @@ const router = Router();
 // Product routes
 router.post("/", uploadHandler.array('images'), createProduct);
 router.get("/", getProducts);
-router.get("/summary", getAllProductsSummary);
 router.get("/:id", getProductById);
 router.put("/:id", uploadHandler.array('images'), updateProduct);
 router.delete("/:id", deleteProduct);

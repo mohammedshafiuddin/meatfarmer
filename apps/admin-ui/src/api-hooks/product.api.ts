@@ -17,6 +17,19 @@ export interface CreateProductPayload {
   }[];
 }
 
+export interface UpdateProductPayload {
+  name: string;
+  shortDescription?: string;
+  longDescription?: string;
+  unitId: number;
+  price: number;
+  deals?: {
+    quantity: number;
+    price: number;
+    validTill: string;
+  }[];
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -31,6 +44,12 @@ export interface Product {
     shortNotation: string;
     fullName: string;
   };
+  deals?: {
+    id: number;
+    quantity: string;
+    price: string;
+    validTill: string;
+  }[];
 }
 
 export interface CreateProductResponse {
@@ -66,7 +85,7 @@ export interface UpdateSlotProductsResponse {
 
 // API functions
 const createProductApi = async (formData: FormData): Promise<CreateProductResponse> => {
-  const response = await axios.post('/products', formData, {
+  const response = await axios.post('/av/products', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -75,17 +94,17 @@ const createProductApi = async (formData: FormData): Promise<CreateProductRespon
 };
 
 const getProductsApi = async (): Promise<GetProductsResponse> => {
-  const response = await axios.get('/products');
+  const response = await axios.get('/av/products');
   return response.data;
 };
 
 const getProductApi = async (id: number): Promise<GetProductResponse> => {
-  const response = await axios.get(`/products/${id}`);
+  const response = await axios.get(`/av/products/${id}`);
   return response.data;
 };
 
 const updateProductApi = async ({ id, formData }: { id: number; formData: FormData }): Promise<CreateProductResponse> => {
-  const response = await axios.put(`/products/${id}`, formData, {
+  const response = await axios.put(`/av/products/${id}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -94,14 +113,14 @@ const updateProductApi = async ({ id, formData }: { id: number; formData: FormDa
 };
 
 const deleteProductApi = async (id: number): Promise<{ message: string }> => {
-  const response = await axios.delete(`/products/${id}`);
+  const response = await axios.delete(`/av/products/${id}`);
   return response.data;
 };
 
 
 
 const getSlotProductIdsApi = async (slotId: number): Promise<GetSlotProductIdsResponse> => {
-  const response = await axios.get(`/products/slots/${slotId}/product-ids`);
+  const response = await axios.get(`/av/products/slots/${slotId}/product-ids`);
   return response.data;
 };
 
@@ -109,7 +128,7 @@ const updateSlotProductsApi = async (
   slotId: number,
   productIds: number[]
 ): Promise<UpdateSlotProductsResponse> => {
-  const response = await axios.put(`/products/slots/${slotId}/products`, { productIds });
+  const response = await axios.put(`/av/products/slots/${slotId}/products`, { productIds });
   return response.data;
 };
 
@@ -132,8 +151,6 @@ export const useGetProducts = () => {
 };
 
 export const useGetProduct = (id: number) => {
-  console.log({id})
-  
   return useQuery({
     queryKey: ['products', id],
     queryFn: () => getProductApi(id),

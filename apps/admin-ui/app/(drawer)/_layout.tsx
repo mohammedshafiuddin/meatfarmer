@@ -1,6 +1,9 @@
 import { Drawer } from "expo-router/drawer";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import { useRouter } from "expo-router";
+import { TouchableOpacity, DeviceEventEmitter } from "react-native";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { REFRESH_EVENT } from "common-ui/src/lib/const-strs";
 
 function CustomDrawerContent() {
   const router = useRouter();
@@ -37,12 +40,33 @@ function CustomDrawerContent() {
 
 export default function Layout() {
   return (
-    <Drawer drawerContent={CustomDrawerContent} screenOptions={{ headerShown: true }}>
+    <Drawer
+      drawerContent={CustomDrawerContent}
+      screenOptions={{
+        headerShown: true,
+        headerRight: () => (
+          <TouchableOpacity
+            style={{ marginRight: 10 }}
+            onPress={() => {
+              DeviceEventEmitter.emit(REFRESH_EVENT);
+            }}
+          >
+            <MaterialIcons name="refresh" size={24} color="black" />
+          </TouchableOpacity>
+        ),
+      }}
+    >
       <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
       <Drawer.Screen name="add-product" options={{ title: "Add Product" }} />
       <Drawer.Screen name="manage-slots" options={{ title: "Manage Slots" }} />
-      <Drawer.Screen name="add-remove-slots" options={{ title: "Add/Remove Slots" }} />
-      <Drawer.Screen name="todays-orders" options={{ title: "Today's Orders" }} />
+      <Drawer.Screen
+        name="add-remove-slots"
+        options={{ title: "Add/Remove Slots" }}
+      />
+      <Drawer.Screen
+        name="todays-orders"
+        options={{ title: "Today's Orders" }}
+      />
       <Drawer.Screen name="edit-product" options={{ title: "Edit Product" }} />
     </Drawer>
   );

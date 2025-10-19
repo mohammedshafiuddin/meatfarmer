@@ -1,14 +1,14 @@
-import { Router } from "express";
-import productRouter from "./product/product.router";
-import deliverySlotRouter from "./product/delivery-slot.router";
+ import { Router } from "express";
+ import avRouter from "./admin-apis/av-router";
+ import commonRouter from "./common-apis/common.router";
+ import uvRouter from "./uv-apis/uv-router";
 
 const router = Router();
 
-// Product routes
-router.use("/products", productRouter);
+ router.use('/av', avRouter);
+ router.use('/cm', commonRouter);
+ router.use('/uv', uvRouter);
 
-// Delivery slot routes
-router.use("/slots", deliverySlotRouter);
 
 const v1Router = router;
 

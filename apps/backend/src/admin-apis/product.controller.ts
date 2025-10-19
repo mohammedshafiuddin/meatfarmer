@@ -129,10 +129,17 @@ export const getProductById = async (req: Request, res: Response) => {
     throw new ApiError("Product not found", 404);
   }
 
+  // Fetch special deals for this product
+  const deals = await db.query.specialDeals.findMany({
+    where: eq(specialDeals.productId, parseInt(id)),
+    orderBy: specialDeals.quantity,
+  });
+
   // Generate signed URLs for product images
   const productWithSignedUrls = {
     ...product,
     images: await generateSignedUrlsFromS3Urls((product.images as string[]) || []),
+    deals,
   };
 
   return res.status(200).json({
@@ -145,8 +152,10 @@ export const getProductById = async (req: Request, res: Response) => {
  */
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, shortDescription, longDescription, unitId, price } = req.body;
+  const { name, shortDescription, longDescription, unitId, price, deals:dealsRaw } = req.body;
 
+  const deals = JSON.parse(dealsRaw)
+  
   if (!name || !unitId || !price) {
     throw new ApiError("Name, unitId, and price are required", 400);
   }
@@ -190,6 +199,64 @@ export const updateProduct = async (req: Request, res: Response) => {
     throw new ApiError("Product not found", 404);
   }
 
+  // Handle deals if provided
+  if (deals && Array.isArray(deals)) {
+    // Get existing deals
+    const existingDeals = await db.query.specialDeals.findMany({
+      where: eq(specialDeals.productId, parseInt(id)),
+    });
+
+    // Create maps for comparison
+    const existingDealsMap = new Map(existingDeals.map(deal => [`${deal.quantity}-${deal.price}`, deal]));
+    const newDealsMap = new Map(deals.map((deal: CreateDeal) => [`${deal.quantity}-${deal.price}`, deal]));
+
+    // Find deals to add, update, and remove
+    const dealsToAdd = deals.filter((deal: CreateDeal) => {
+      const key = `${deal.quantity}-${deal.price}`;
+      return !existingDealsMap.has(key);
+    });
+
+    const dealsToRemove = existingDeals.filter(deal => {
+      const key = `${deal.quantity}-${deal.price}`;
+      return !newDealsMap.has(key);
+    });
+
+    const dealsToUpdate = deals.filter((deal: CreateDeal) => {
+      const key = `${deal.quantity}-${deal.price}`;
+      const existing = existingDealsMap.get(key);
+      return existing && existing.validTill.toISOString().split('T')[0] !== deal.validTill;
+    });
+
+    // Remove old deals
+    if (dealsToRemove.length > 0) {
+      await db.delete(specialDeals).where(
+        inArray(specialDeals.id, dealsToRemove.map(deal => deal.id))
+      );
+    }
+
+    // Add new deals
+    if (dealsToAdd.length > 0) {
+      const dealInserts = dealsToAdd.map((deal: CreateDeal) => ({
+        productId: parseInt(id),
+        quantity: deal.quantity.toString(),
+        price: deal.price.toString(),
+        validTill: new Date(deal.validTill),
+      }));
+      await db.insert(specialDeals).values(dealInserts);
+    }
+
+    // Update existing deals
+    for (const deal of dealsToUpdate) {
+      const key = `${deal.quantity}-${deal.price}`;
+      const existingDeal = existingDealsMap.get(key);
+      if (existingDeal) {
+        await db.update(specialDeals)
+          .set({ validTill: new Date(deal.validTill) })
+          .where(eq(specialDeals.id, existingDeal.id));
+      }
+    }
+  }
+
   return res.status(200).json({
     product: updatedProduct,
     message: "Product updated successfully",
@@ -218,69 +285,6 @@ export const deleteProduct = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Delete product error:", error);
     return res.status(500).json({ error: "Failed to delete product" });
-  }
-};
-
-/**
- * Get all products summary for dropdown
- */
-export const getAllProductsSummary = async (req: Request, res: Response) => {
-  console.log('from products summary method')
-
-  try {
-    const products = await db.query.productInfo.findMany({
-      // columns: {
-      //   id: true,
-      //   name: true,
-      //   shortDescription: true,
-      //   images: true,
-      // },
-    });
-    console.log({products})
-
-
-    // Generate signed URLs for product images
-    const formattedProducts = await Promise.all(
-      products.map(async (product) => ({
-        id: product.id,
-        name: product.name,
-        shortDescription: product.shortDescription,
-        imageUrls: await generateSignedUrlsFromS3Urls((product.images as string[]) || []),
-      }))
-    );
-
-    return res.status(200).json({
-      products: formattedProducts,
-      count: formattedProducts.length,
-    });
-  } catch (error) {
-    console.error("Get products summary error:", error);
-    return res.status(500).json({ error: "Failed to fetch products summary" });
-  }
-};
-
-/**
- * Get product IDs associated with a slot
- */
-export const getSlotProductIds = async (req: Request, res: Response) => {
-  try {
-    const { slotId } = req.params;
-
-    const associations = await db.query.productSlots.findMany({
-      where: eq(productSlots.slotId, parseInt(slotId)),
-      columns: {
-        productId: true,
-      },
-    });
-
-    const productIds = associations.map(assoc => assoc.productId);
-
-    return res.status(200).json({
-      productIds,
-    });
-  } catch (error) {
-    console.error("Get slot product IDs error:", error);
-    return res.status(500).json({ error: "Failed to fetch slot product IDs" });
   }
 };
 
@@ -339,6 +343,31 @@ export const updateSlotProducts = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Update slot products error:", error);
     return res.status(500).json({ error: "Failed to update slot products" });
+  }
+};
+
+/**
+ * Get product IDs associated with a slot
+ */
+export const getSlotProductIds = async (req: Request, res: Response) => {
+  try {
+    const { slotId } = req.params;
+
+    const associations = await db.query.productSlots.findMany({
+      where: eq(productSlots.slotId, parseInt(slotId)),
+      columns: {
+        productId: true,
+      },
+    });
+
+    const productIds = associations.map(assoc => assoc.productId);
+
+    return res.status(200).json({
+      productIds,
+    });
+  } catch (error) {
+    console.error("Get slot product IDs error:", error);
+    return res.status(500).json({ error: "Failed to fetch slot product IDs" });
   }
 };
 

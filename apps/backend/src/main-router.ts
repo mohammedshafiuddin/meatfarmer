@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
-import v1Router from "./v1-router";
+import avRouter from "./admin-apis/av-router";
 import { ApiError } from "./lib/api-error";
+import v1Router from "./v1-router";
 
 const router = Router();
 

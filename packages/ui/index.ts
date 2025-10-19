@@ -27,6 +27,8 @@ import SearchBar from './src/components/search-bar'
 import DataTable from './src/components/data-table';
 import Quantifier from './src/components/quantifier';
 import TabViewWrapper from './src/components/tab-view';
+import useFocusCallback from './hooks/useFocusCallback'
+import useManualRefresh from './hooks/useManualRefresh';
 
 export {
   RolesDropdown,
@@ -59,5 +61,7 @@ export {
   SearchBar,
   DataTable,
   Quantifier,
-  TabViewWrapper
+  TabViewWrapper,
+  useFocusCallback,
+  useManualRefresh
 };

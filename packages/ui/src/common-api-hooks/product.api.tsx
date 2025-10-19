@@ -10,7 +10,7 @@ export interface GetProductsSummaryResponse {
 const getAllProductsSummaryApi = async (): Promise<GetProductsSummaryResponse> => {
     console.log('getting products summary');
     
-  const response = await axios.get('/products/summary');
+  const response = await axios.get('/cm/products/summary');
   return response.data;
 };
 
@@ -22,7 +22,7 @@ export const useGetAllProductsSummary = () => {
 };
 
 const getSlotsProductIdsApi = async (payload: GetSlotsProductIdsPayload): Promise<GetSlotsProductIdsResponse> => {
-  const response = await axios.post('/products/slots/product-ids', payload);
+  const response = await axios.post('/av/products/slots/product-ids', payload);
   return response.data;
 };
 

@@ -5,7 +5,7 @@ import {
   getSlotById,
   updateSlot,
   deleteSlot,
-} from "../controllers/delivery-slot.controller";
+} from "./delivery-slot.controller";
 
 const router = Router();
 

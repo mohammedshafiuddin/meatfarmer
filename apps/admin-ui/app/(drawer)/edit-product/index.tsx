@@ -19,11 +19,22 @@ export default function EditProduct() {
       longDescription: values.longDescription,
       unitId: parseInt(values.unitId),
       price: parseFloat(values.price),
+      deals: values.deals?.filter((deal: any) =>
+        deal.quantity && deal.price && deal.validTill
+      ).map((deal: any) => ({
+        quantity: parseInt(deal.quantity),
+        price: parseFloat(deal.price),
+        validTill: deal.validTill instanceof Date
+          ? deal.validTill.toISOString().split('T')[0]
+          : deal.validTill, // Convert Date to YYYY-MM-DD string
+      })),
     };
 
     const formData = new FormData();
     Object.entries(payload).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
+      if (key === 'deals' && Array.isArray(value)) {
+        formData.append(key, JSON.stringify(value));
+      } else if (value !== undefined && value !== null) {
         formData.append(key, value as string);
       }
     });
@@ -69,7 +80,11 @@ export default function EditProduct() {
     longDescription: productData.longDescription || '',
     unitId: productData.unitId,
     price: productData.price.toString(),
-    deals: [{ quantity: '', price: '' }], // TODO: Handle deals if they exist
+    deals: productData.deals?.map(deal => ({
+      quantity: deal.quantity,
+      price: deal.price,
+      validTill: deal.validTill ? new Date(deal.validTill) : null, // Convert to Date object
+    })) || [{ quantity: '', price: '', validTill: null }],
   };
 
   return (

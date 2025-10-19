@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Dimensions, FlatList, Image, Text, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { tw } from 'common-ui';
-import { useGetProducts } from '../../../src/api-hooks/product.api';
+ import React from 'react';
+ import { View, Dimensions, FlatList, Image, Text, TouchableOpacity, Alert } from 'react-native';
+ import { useRouter } from 'expo-router';
+ import { tw, useManualRefresh } from 'common-ui';
+ import { useGetProducts } from '../../../src/api-hooks/product.api';
+ import useFocusCallback from 'common-ui/hooks/useFocusCallback';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -28,9 +29,11 @@ const renderProduct = ({ item, router }: { item: any, router: any }) => (
   </TouchableOpacity>
 );
 
-export default function Dashboard() {
-  const router = useRouter();
-  const { data: productsData, isLoading, error } = useGetProducts();
+ export default function Dashboard() {
+   const router = useRouter();
+   const { data: productsData, isLoading, error, refetch } = useGetProducts();
+
+  useManualRefresh(refetch);
 
   const products = productsData?.products || [];
 
