@@ -1,10 +1,11 @@
  import React, { useState } from 'react';
- import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+ import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
  import { useRouter, useLocalSearchParams } from 'expo-router';
  import { ImageCarousel, tw, BottomDialog, useManualRefresh } from 'common-ui';
  import dayjs from 'dayjs';
  import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useGetProductDetails } from '@/src/api-hooks/product.api';
+import { useAddToCart } from '@/src/api-hooks/cart.api';
 //  import { useGetProductDetails } from '../../src/api-hooks/product.api';
 
 
@@ -13,10 +14,22 @@ export default function ProductDetail() {
   const { id } = useLocalSearchParams();
   const [showAllSlots, setShowAllSlots] = useState(false);
   const { data: productDetail, isFetching:isLoading, error, refetch } = useGetProductDetails(Number(id));
+  const addToCart = useAddToCart();
 
   useManualRefresh(() => {
     refetch();
   });
+
+  const handleAddToCart = (productId: number) => {
+    addToCart.mutate({ productId, quantity: 1 }, {
+      onSuccess: () => {
+        Alert.alert('Success', 'Item added to cart!');
+      },
+      onError: (error: any) => {
+        Alert.alert('Error', error.message || 'Failed to add item to cart');
+      },
+    });
+  };
 
   if (isLoading) {
     return (
@@ -72,9 +85,9 @@ export default function ProductDetail() {
           <TouchableOpacity style={tw`bg-indigo-600 p-3 rounded-md flex-1 mr-2 items-center`} onPress={() => router.push('/(drawer)/my-cart')}>
             <Text style={tw`text-white text-base font-bold`}>Buy Now</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={tw`bg-indigo-600 p-3 rounded-md flex-1 ml-2 items-center`}>
-            <Text style={tw`text-white text-base font-bold`}>Add to Cart</Text>
-          </TouchableOpacity>
+           <TouchableOpacity style={tw`bg-indigo-600 p-3 rounded-md flex-1 ml-2 items-center`} onPress={() => handleAddToCart(productDetail.id)}>
+             <Text style={tw`text-white text-base font-bold`}>Add to Cart</Text>
+           </TouchableOpacity>
         </View>
 
         <Text style={tw`text-lg font-semibold mb-2`}>Description:</Text>

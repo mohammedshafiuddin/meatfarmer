@@ -4,8 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const v1_router_1 = __importDefault(require("./v1-router"));
 const api_error_1 = require("./lib/api-error");
+const v1_router_1 = __importDefault(require("./v1-router"));
 const router = (0, express_1.Router)();
 // Health check endpoint
 router.get('/health', (req, res) => {
