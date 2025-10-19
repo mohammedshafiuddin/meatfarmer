@@ -10,10 +10,9 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
  import { ImageCarousel, tw, useManualRefresh } from "common-ui";
-   import { useGetAllProductsSummary } from "common-ui/src/common-api-hooks/product.api";
-  //  import { useAddToCart } from "../../src/api-hooks/cart.api";
-  import dayjs from "dayjs";
-  import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+    import { useGetAllProductsSummary } from "common-ui/src/common-api-hooks/product.api";
+   import dayjs from "dayjs";
+   import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAddToCart } from "@/src/api-hooks/cart.api";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -69,26 +68,26 @@ const renderProduct = ({ item, router, handleAddToCart }: { item: any; router: a
   );
 };
 
-  export default function Dashboard() {
-    const router = useRouter();
-    const { data: productsData, isLoading, error, refetch } = useGetAllProductsSummary();
-    const products = productsData?.products || [];
-    const addToCart = useAddToCart();
+   export default function Dashboard() {
+     const router = useRouter();
+     const { data: productsData, isLoading, error, refetch } = useGetAllProductsSummary();
+     const products = productsData?.products || [];
+     const addToCart = useAddToCart();
 
-    useManualRefresh(() => {
-      refetch();
-    });
+     useManualRefresh(() => {
+       refetch();
+     });
 
-    const handleAddToCart = (productId: number) => {
-      addToCart.mutate({ productId, quantity: 1 }, {
-        onSuccess: () => {
-          Alert.alert('Success', 'Item added to cart!');
-        },
-        onError: (error: any) => {
-          Alert.alert('Error', error.message || 'Failed to add item to cart');
-        },
-      });
-    };
+     const handleAddToCart = (productId: number) => {
+       addToCart.mutate({ productId, quantity: 1 }, {
+         onSuccess: () => {
+           Alert.alert('Success', 'Item added to cart!');
+         },
+         onError: (error: any) => {
+           Alert.alert('Error', error.message || 'Failed to add item to cart');
+         },
+       });
+     };
 
   if (isLoading) {
     return (

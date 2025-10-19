@@ -1,7 +1,7 @@
 // import { StorageService } from '@/lib/StorageService';
 import {StorageService} from 'common-ui';
 
-export const JWT_KEY = 'jwt_token';
+export const AUTH_TOKEN_KEY = 'authToken';
 export const ROLES_KEY = 'user_roles';
 export const USER_ID_KEY = 'userId';
 
@@ -13,16 +13,16 @@ export async function getUserId() {
   return await StorageService.getItem(USER_ID_KEY);
 }
 
-export async function saveJWT(token: string) {
-  await StorageService.setItem(JWT_KEY, token);
+export async function saveAuthToken(token: string) {
+  await StorageService.setItem(AUTH_TOKEN_KEY, token);
 }
 
-export async function getJWT() {
-  return await StorageService.getItem(JWT_KEY);
+export async function getAuthToken() {
+  return await StorageService.getItem(AUTH_TOKEN_KEY);
 }
 
-export async function deleteJWT() {
-  await StorageService.removeItem(JWT_KEY);
+export async function deleteAuthToken() {
+  await StorageService.removeItem(AUTH_TOKEN_KEY);
 }
 
 export async function saveRoles(roles: string[]) {
@@ -30,8 +30,8 @@ export async function saveRoles(roles: string[]) {
 }
 
 export async function getRoles(): Promise<string[] | null> {
-  const jwt = await getJWT();
-  if (!jwt) {
+  const token = await getAuthToken();
+  if (!token) {
     StorageService.removeItem(ROLES_KEY);
     return null;
   }

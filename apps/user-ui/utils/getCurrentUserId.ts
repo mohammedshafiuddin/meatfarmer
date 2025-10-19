@@ -1,8 +1,8 @@
 import {jwtDecode} from 'jwt-decode';
-import { getJWT } from '@/hooks/useJWT';
+import { getAuthToken } from '../hooks/useJWT';
 
 export async function getCurrentUserId(): Promise<number | null> {
-  const token = await getJWT();
+  const token = await getAuthToken();
   if (!token) return null;
   try {
     const decoded: any = jwtDecode(token);

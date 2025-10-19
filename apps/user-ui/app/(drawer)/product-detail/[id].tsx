@@ -1,35 +1,35 @@
- import React, { useState } from 'react';
- import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
- import { useRouter, useLocalSearchParams } from 'expo-router';
- import { ImageCarousel, tw, BottomDialog, useManualRefresh } from 'common-ui';
- import dayjs from 'dayjs';
- import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useGetProductDetails } from '@/src/api-hooks/product.api';
-import { useAddToCart } from '@/src/api-hooks/cart.api';
-//  import { useGetProductDetails } from '../../src/api-hooks/product.api';
+  import React, { useState } from 'react';
+  import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+  import { useRouter, useLocalSearchParams } from 'expo-router';
+  import { ImageCarousel, tw, BottomDialog, useManualRefresh } from 'common-ui';
+  import dayjs from 'dayjs';
+  import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+ import { useGetProductDetails } from '@/src/api-hooks/product.api';
+ import { useAddToCart } from '@/src/api-hooks/cart.api';
+ //  import { useGetProductDetails } from '../../src/api-hooks/product.api';
 
 
-export default function ProductDetail() {
-  const router = useRouter();
-  const { id } = useLocalSearchParams();
-  const [showAllSlots, setShowAllSlots] = useState(false);
-  const { data: productDetail, isFetching:isLoading, error, refetch } = useGetProductDetails(Number(id));
-  const addToCart = useAddToCart();
+ export default function ProductDetail() {
+   const router = useRouter();
+   const { id } = useLocalSearchParams();
+   const [showAllSlots, setShowAllSlots] = useState(false);
+   const { data: productDetail, isFetching:isLoading, error, refetch } = useGetProductDetails(Number(id));
+   const addToCart = useAddToCart();
 
-  useManualRefresh(() => {
-    refetch();
-  });
+   useManualRefresh(() => {
+     refetch();
+   });
 
-  const handleAddToCart = (productId: number) => {
-    addToCart.mutate({ productId, quantity: 1 }, {
-      onSuccess: () => {
-        Alert.alert('Success', 'Item added to cart!');
-      },
-      onError: (error: any) => {
-        Alert.alert('Error', error.message || 'Failed to add item to cart');
-      },
-    });
-  };
+   const handleAddToCart = (productId: number) => {
+     addToCart.mutate({ productId, quantity: 1 }, {
+       onSuccess: () => {
+         Alert.alert('Success', 'Item added to cart!');
+       },
+       onError: (error: any) => {
+         Alert.alert('Error', error.message || 'Failed to add item to cart');
+       },
+     });
+   };
 
   if (isLoading) {
     return (

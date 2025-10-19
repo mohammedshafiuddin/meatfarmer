@@ -15,6 +15,13 @@
       "when": 1760786267753,
       "tag": "0001_busy_titania",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760876962326,
+      "tag": "0002_wandering_lifeguard",
+      "breakpoints": true
     }
   ]
 }

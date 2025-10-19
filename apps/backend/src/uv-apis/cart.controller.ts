@@ -10,8 +10,7 @@ import { generateSignedUrlsFromS3Urls } from "../lib/s3-client";
  */
 export const getCart = async (req: Request, res: Response) => {
   try {
-    // TODO: Get userId from authentication
-    const userId = 1; // Mock user ID for now
+    const userId = req.user.userId;
 
     const cartItemsWithProducts = await db
       .select({
@@ -65,8 +64,7 @@ export const getCart = async (req: Request, res: Response) => {
  */
 export const addToCart = async (req: Request, res: Response) => {
   try {
-    // TODO: Get userId from authentication
-    const userId = 1; // Mock user ID for now
+    const userId = req.user.userId;
     const { productId, quantity } = req.body;
 
     // Validate input
@@ -122,8 +120,7 @@ export const addToCart = async (req: Request, res: Response) => {
  */
 export const updateCartItem = async (req: Request, res: Response) => {
   try {
-    // TODO: Get userId from authentication
-    const userId = 1; // Mock user ID for now
+    const userId = req.user.userId;
     const { itemId } = req.params;
     const { quantity } = req.body;
 
@@ -159,8 +156,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
  */
 export const removeFromCart = async (req: Request, res: Response) => {
   try {
-    // TODO: Get userId from authentication
-    const userId = 1; // Mock user ID for now
+    const userId = req.user.userId;
     const { itemId } = req.params;
 
     const [deletedItem] = await db.delete(cartItems)
@@ -190,8 +186,7 @@ export const removeFromCart = async (req: Request, res: Response) => {
  */
 export const clearCart = async (req: Request, res: Response) => {
   try {
-    // TODO: Get userId from authentication
-    const userId = 1; // Mock user ID for now
+    const userId = req.user.userId;
 
     await db.delete(cartItems).where(eq(cartItems.userId, userId));
 

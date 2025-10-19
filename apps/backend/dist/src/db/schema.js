@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cartItemsRelations = exports.productCategoriesRelations = exports.notificationsRelations = exports.paymentsRelations = exports.orderItemsRelations = exports.ordersRelations = exports.specialDealsRelations = exports.productSlotsRelations = exports.deliverySlotInfoRelations = exports.productInfoRelations = exports.unitsRelations = exports.addressesRelations = exports.usersRelations = exports.cartItems = exports.productCategories = exports.notifications = exports.payments = exports.orderItems = exports.orders = exports.specialDeals = exports.productSlots = exports.deliverySlotInfo = exports.productInfo = exports.units = exports.addresses = exports.users = exports.orderStatusEnum = void 0;
+exports.cartItemsRelations = exports.productCategoriesRelations = exports.notificationsRelations = exports.paymentsRelations = exports.orderItemsRelations = exports.ordersRelations = exports.specialDealsRelations = exports.productSlotsRelations = exports.deliverySlotInfoRelations = exports.productInfoRelations = exports.unitsRelations = exports.addressesRelations = exports.userCredsRelations = exports.usersRelations = exports.cartItems = exports.productCategories = exports.notifications = exports.payments = exports.orderItems = exports.orders = exports.specialDeals = exports.productSlots = exports.deliverySlotInfo = exports.productInfo = exports.units = exports.addresses = exports.userCreds = exports.users = exports.orderStatusEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 const mf = (0, pg_core_1.pgSchema)('mf');
@@ -13,6 +13,14 @@ exports.users = mf.table('users', {
     createdAt: (0, pg_core_1.timestamp)('created_at').notNull().defaultNow(),
 }, (t) => ({
     unq_email: (0, pg_core_1.unique)('unique_email').on(t.email),
+}));
+exports.userCreds = mf.table('user_creds', {
+    id: (0, pg_core_1.integer)().primaryKey().generatedAlwaysAsIdentity(),
+    userId: (0, pg_core_1.integer)('user_id').notNull().references(() => exports.users.id),
+    userPassword: (0, pg_core_1.varchar)('user_password', { length: 255 }).notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at').notNull().defaultNow(),
+}, (t) => ({
+    unq_user: (0, pg_core_1.unique)('unique_user_cred').on(t.userId),
 }));
 exports.addresses = mf.table('addresses', {
     id: (0, pg_core_1.integer)().primaryKey().generatedAlwaysAsIdentity(),
@@ -106,11 +114,15 @@ exports.cartItems = mf.table('cart_items', {
     unq_user_product: (0, pg_core_1.unique)('unique_user_product').on(t.userId, t.productId),
 }));
 // Relations
-exports.usersRelations = (0, drizzle_orm_1.relations)(exports.users, ({ many }) => ({
+exports.usersRelations = (0, drizzle_orm_1.relations)(exports.users, ({ many, one }) => ({
     addresses: many(exports.addresses),
     orders: many(exports.orders),
     notifications: many(exports.notifications),
     cartItems: many(exports.cartItems),
+    userCreds: one(exports.userCreds),
+}));
+exports.userCredsRelations = (0, drizzle_orm_1.relations)(exports.userCreds, ({ one }) => ({
+    user: one(exports.users, { fields: [exports.userCreds.userId], references: [exports.users.id] }),
 }));
 exports.addressesRelations = (0, drizzle_orm_1.relations)(exports.addresses, ({ one, many }) => ({
     user: one(exports.users, { fields: [exports.addresses.userId], references: [exports.users.id] }),

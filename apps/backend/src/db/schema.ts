@@ -15,6 +15,15 @@ export const users = mf.table('users', {
   unq_email: unique('unique_email').on(t.email),
 }));
 
+export const userCreds = mf.table('user_creds', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  userPassword: varchar('user_password', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  unq_user: unique('unique_user_cred').on(t.userId),
+}));
+
 export const addresses = mf.table('addresses', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   userId: integer('user_id').notNull().references(() => users.id),
@@ -119,11 +128,16 @@ export const cartItems = mf.table('cart_items', {
 }));
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   addresses: many(addresses),
   orders: many(orders),
   notifications: many(notifications),
   cartItems: many(cartItems),
+  userCreds: one(userCreds),
+}));
+
+export const userCredsRelations = relations(userCreds, ({ one }) => ({
+  user: one(users, { fields: [userCreds.userId], references: [users.id] }),
 }));
 
 export const addressesRelations = relations(addresses, ({ one, many }) => ({

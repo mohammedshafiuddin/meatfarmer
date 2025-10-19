@@ -37,7 +37,7 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      next(new ApiError('Invalid token', 401));
+      next(new ApiError('Invalid Auth Credentials', 401));
     } else {
       next(error);
     }
