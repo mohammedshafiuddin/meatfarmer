@@ -89,6 +89,7 @@ export const orders = mf.table('orders', {
   isOnlinePayment: boolean('is_online_payment').notNull().default(false),
   paymentInfoId: integer('payment_info_id').references(() => paymentInfoTable.id),
   totalAmount: numeric('total_amount', { precision: 10, scale: 2 }).notNull(),
+  readableId: integer('readable_id').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -122,12 +123,17 @@ export const paymentInfoTable = mf.table('payment_info', {
 
 export const payments = mf.table('payments', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  orderId: integer('order_id').notNull().references(() => orders.id),
   status: varchar({ length: 50 }).notNull(),
   gateway: varchar({ length: 50 }).notNull(),
-  gatewayOrderId: varchar('gateway_order_id', { length: 255 }),
-  amount: numeric({ precision: 10, scale: 2 }).notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
+  orderId: integer('order_id').notNull().references(() => orders.id),
+  token: varchar({ length: 500 }),
+  merchantOrderId: varchar('merchant_order_id', { length: 255 }).notNull().unique(),
+  payload: jsonb('payload'),
+});
+
+export const keyValStore = mf.table('key_val_store', {
+  key: varchar('key', { length: 255 }).primaryKey(),
+  value: jsonb('value'),
 });
 
 export const notifications = mf.table('notifications', {

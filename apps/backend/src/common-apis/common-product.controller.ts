@@ -22,7 +22,6 @@ const getNextDeliveryDate = async (productId: number): Promise<Date | null> => {
     .orderBy(deliverySlotInfo.deliveryTime)
     .limit(1);
   
-  console.log({productId, result})
   
   return result[0]?.deliveryTime || null;
 };

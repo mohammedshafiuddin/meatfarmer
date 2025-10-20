@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from '../../services/axios-admin-ui';
+import { Order } from './order.api';
 
 // Types
 export interface CreateSlotPayload {
@@ -36,6 +37,11 @@ export interface UpdateSlotPayload extends CreateSlotPayload {
 
 export interface UpdateSlotResponse extends CreateSlotResponse {}
 
+export interface GetOrdersResponse {
+  data: Order[];
+  success: boolean;
+}
+
 // API functions
 const createSlotApi = async (payload: CreateSlotPayload): Promise<CreateSlotResponse> => {
   const response = await axios.post('/av/slots', payload);
@@ -55,6 +61,11 @@ const updateSlotApi = async (payload: UpdateSlotPayload): Promise<UpdateSlotResp
 
 const deleteSlotApi = async (id: number): Promise<{ message: string }> => {
   const response = await axios.delete(`/av/slots/${id}`);
+  return response.data;
+};
+
+const getSlotOrdersApi = async (slotId: number): Promise<GetOrdersResponse> => {
+  const response = await axios.get(`/av/orders/slot/${slotId}`);
   return response.data;
 };
 
@@ -93,5 +104,13 @@ export const useDeleteSlot = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['slots'] });
     },
+  });
+};
+
+export const useGetSlotOrders = (slotId: number) => {
+  return useQuery({
+    queryKey: ['slot-orders', slotId],
+    queryFn: () => getSlotOrdersApi(slotId),
+    enabled: !!slotId,
   });
 };

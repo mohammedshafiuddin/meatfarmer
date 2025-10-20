@@ -3,42 +3,34 @@ import { View, ScrollView, Text, TouchableOpacity, Dimensions, DeviceEventEmitte
 import dayjs from 'dayjs';
 import { REFRESH_EVENT } from 'common-ui/src/lib/const-strs';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { TabViewWrapper, AppContainer, MyText, useManualRefresh, CustomDropdown } from 'common-ui';
-import { Order, useUpdatePackaged } from '@/src/api-hooks/order.api';
+import { TabViewWrapper, AppContainer, MyText, CustomDropdown, useManualRefresh } from 'common-ui';
+import { Order, useUpdateDelivered } from '@/src/api-hooks/order.api';
 import { useGetSlots, useGetSlotOrders } from '@/src/api-hooks/slot.api';
 
-const OrderItem = ({ order, isPackagedTab, onTogglePackaged }: { order: Order; isPackagedTab: boolean; onTogglePackaged: (orderId: string, isPackaged: boolean) => void }) => {
-  const displayedItems = order.items.slice(0, 2);
-  const moreItems = order.items.length > 2 ? ` +${order.items.length - 2} more` : '';
-
+const DeliveryOrderItem = ({ order, isDeliveredTab, onToggleDelivered }: { order: Order; isDeliveredTab: boolean; onToggleDelivered: (orderId: string, isDelivered: boolean) => void }) => {
   return (
-    <TouchableOpacity style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
+    <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <MyText style={{ fontWeight: 'bold' }}>{order.customerName} - #{order.readableId}</MyText>
-        <TouchableOpacity onPress={() => onTogglePackaged(order.orderId, !isPackagedTab)}>
-          <MyText style={{ color: isPackagedTab ? 'red' : 'green' }}>
-            {isPackagedTab ? 'Mark not packaged' : 'Mark Packaged'}
+        <TouchableOpacity onPress={() => onToggleDelivered(order.orderId, !isDeliveredTab)}>
+          <MyText style={{ color: isDeliveredTab ? 'red' : 'green' }}>
+            {isDeliveredTab ? 'Mark not delivered' : 'Mark Delivered'}
           </MyText>
         </TouchableOpacity>
       </View>
       <MyText numberOfLines={1}>{order.address}</MyText>
-      <MyText>
-        Items: {displayedItems.map(item => `${item.name} (${item.quantity}) - ₹${item.amount}`).join(', ')}{moreItems}
-      </MyText>
-    </TouchableOpacity>
+      <MyText>₹{order.totalAmount}{order.isCod ? '' : ' (paid)'}</MyText>
+    </View>
   );
 };
 
-export default function Packaging() {
+export default function Delivery() {
   const [index, setIndex] = useState(0);
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
   const { data: ordersResponse, isLoading, error, refetch, isRefetching } = useGetSlotOrders(selectedSlotId || 0);
   const orders = ordersResponse?.data;
   const { data: slotsData } = useGetSlots();
-  const updatePackagedMutation = useUpdatePackaged();
-
-  useManualRefresh(() => refetch());
-  
+  const updateDeliveredMutation = useUpdateDelivered();
 
   useEffect(() => {
     if (slotsData?.slots && slotsData.slots.length > 0 && !selectedSlotId) {
@@ -46,17 +38,19 @@ export default function Packaging() {
     }
   }, [slotsData]);
 
-  const notPackagedCount = (orders || []).filter(order => !order.isPackaged).length;
-  const packagedCount = (orders || []).filter(order => order.isPackaged).length;
+  useManualRefresh(() => refetch());
 
-  const handleTogglePackaged = (orderId: string, isPackaged: boolean) => {
-    updatePackagedMutation.mutate({ orderId, isPackaged });
-  };
+  const notDeliveredCount = (orders || []).filter(order => !order.isDelivered).length;
+  const deliveredCount = (orders || []).filter(order => order.isDelivered).length;
 
   const routes = [
-    { key: 'not_packaged', title: `Not Packaged (${notPackagedCount})` },
-    { key: 'packaged', title: `Packaged (${packagedCount})` },
+    { key: 'not_delivered', title: `Not Delivered (${notDeliveredCount})` },
+    { key: 'delivered', title: `Delivered (${deliveredCount})` },
   ];
+
+  const handleToggleDelivered = (orderId: string, isDelivered: boolean) => {
+    updateDeliveredMutation.mutate({ orderId, isDelivered });
+  };
 
   if (isLoading) {
     return (
@@ -75,9 +69,9 @@ export default function Packaging() {
   }
 
   const renderScene = ({ route }: any) => {
-    const isPackagedTab = route.key === 'packaged';
+    const isDeliveredTab = route.key === 'delivered';
     const filteredOrders = (orders || []).filter(order => {
-      return route.key === 'not_packaged' ? !order.isPackaged : order.isPackaged;
+      return route.key === 'not_delivered' ? !order.isDelivered : order.isDelivered;
     });
     return (
       <View style={{ flex: 1, padding: 10 }}>
@@ -85,7 +79,7 @@ export default function Packaging() {
           <MyText>No orders</MyText>
         ) : (
           <ScrollView style={{ flex: 1 }}>
-            {filteredOrders.map(order => <OrderItem key={order.readableId} order={order} isPackagedTab={isPackagedTab} onTogglePackaged={handleTogglePackaged} />)}
+            {filteredOrders.map(order => <DeliveryOrderItem key={order.readableId} order={order} isDeliveredTab={isDeliveredTab} onToggleDelivered={handleToggleDelivered} />)}
           </ScrollView>
         )}
       </View>

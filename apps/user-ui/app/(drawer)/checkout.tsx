@@ -9,6 +9,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import axios from 'common-ui/src/services/axios';
 import dayjs from 'dayjs';
 import AddressForm from '@/src/components/AddressForm';
+import { useGetSlots } from '@/src/api-hooks/slot.api';
 
 interface Address {
   id: number;
@@ -36,6 +37,7 @@ export default function Checkout() {
     queryKey: ['addresses'],
     queryFn: fetchAddresses,
   });
+  const { data: slotsData } = useGetSlots();
 
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
   const [slotId, setSlotId] = useState<number | null>(null);
@@ -113,9 +115,13 @@ export default function Checkout() {
             <Text style={tw`text-lg font-bold`}>Total</Text>
             <Text style={tw`text-lg font-bold`}>₹{totalAmount}</Text>
           </View>
-          {slotId && (
-            <Text style={tw`text-sm text-gray-600 mt-2`}>Delivery Slot: {dayjs(/* slot time */).format('ddd DD MMM, h:mm a')}</Text>
-          )}
+           {slotId && (
+             <Text style={tw`text-sm text-gray-600 mt-2`}>
+               Delivery Slot: {slotsData?.slots?.find(slot => slot.id === slotId)?.deliveryTime
+                 ? dayjs(slotsData.slots.find(slot => slot.id === slotId).deliveryTime).format('ddd DD MMM, h:mm a')
+                 : 'Loading slot details...'}
+             </Text>
+           )}
         </View>
 
         {/* Address Selection */}

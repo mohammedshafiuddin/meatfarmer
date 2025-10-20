@@ -69,7 +69,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const response = await loginMutation.mutateAsync(credentials);
       const { token, user } = response;
-      console.log({token, user, response})
 
       await saveAuthToken(token);
       await saveUserId(user.id.toString());

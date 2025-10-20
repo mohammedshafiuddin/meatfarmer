@@ -68,8 +68,6 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
   if (!foundUser) {
     throw new ApiError('Invalid credentials', 401);
   }
-
-  console.log({foundUser})
   
   // Get user credentials
   const [userCredentials] = await db

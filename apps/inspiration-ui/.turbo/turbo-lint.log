@@ -24,9 +24,3 @@ Require stack:
 
 Node.js v20.18.1
 npm error Lifecycle script `lint` failed with error:
-npm error code 7
-npm error path /Users/mohammedshafiuddin/WebDev/mobile-dev/meat_farmer/apps/inspiration-ui
-npm error workspace inspiration-ui@1.0.0
-npm error location /Users/mohammedshafiuddin/WebDev/mobile-dev/meat_farmer/apps/inspiration-ui
-npm error command failed
-npm error command sh -c expo lint

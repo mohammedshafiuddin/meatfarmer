@@ -17,8 +17,6 @@ type CreateDeal = {
  */
 export const createProduct = async (req: Request, res: Response) => {
   const { name, shortDescription, longDescription, unitId, price, deals } = req.body;
-
-  console.log({body: req.body})
   
   // Validate required fields
   if (!name || !unitId || !price) {

@@ -30,10 +30,14 @@ function CustomDrawerContent() {
          label="Packaging"
          onPress={() => router.push("/(drawer)/packaging" as any)}
        />
-      <DrawerItem
-        label="Edit Product"
-        onPress={() => router.push("/(drawer)/edit-product" as any)}
-      />
+       <DrawerItem
+         label="Delivery"
+         onPress={() => router.push("/(drawer)/delivery" as any)}
+       />
+       <DrawerItem
+         label="Edit Product"
+         onPress={() => router.push("/(drawer)/edit-product" as any)}
+       />
     </DrawerContentScrollView>
   );
 }
@@ -63,11 +67,15 @@ export default function Layout() {
         name="add-remove-slots"
         options={{ title: "Add/Remove Slots" }}
       />
-       <Drawer.Screen
-         name="packaging"
-         options={{ title: "Packaging" }}
-       />
-      <Drawer.Screen name="edit-product" options={{ title: "Edit Product" }} />
+        <Drawer.Screen
+          name="packaging"
+          options={{ title: "Packaging" }}
+        />
+        <Drawer.Screen
+          name="delivery"
+          options={{ title: "Delivery" }}
+        />
+       <Drawer.Screen name="edit-product" options={{ title: "Edit Product" }} />
     </Drawer>
   );
 }

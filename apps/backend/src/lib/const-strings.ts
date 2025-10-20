@@ -4,3 +4,5 @@
  */
 
 // User role and designation constants
+
+export const READABLE_ORDER_ID_KEY = 'readableOrderId';

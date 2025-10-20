@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { db } from '../db/db_index';
-import { orders, orderItems, orderStatus, addresses, productInfo, paymentInfoTable } from '../db/schema';
+import { orders, orderItems, orderStatus, addresses, productInfo, paymentInfoTable, keyValStore } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
+import { READABLE_ORDER_ID_KEY } from '../lib/const-strings';
 
 interface PlaceOrderRequest {
   selectedItems: { productId: number; quantity: number }[];
@@ -42,6 +43,22 @@ export const placeOrder = async (req: Request, res: Response) => {
 
     // Create order in transaction
     const newOrder = await db.transaction(async (tx) => {
+      // Get and increment readable order ID
+      let currentReadableId = 1;
+      const existing = await tx.query.keyValStore.findFirst({
+        where: eq(keyValStore.key, READABLE_ORDER_ID_KEY),
+      });
+      if (existing) {
+        currentReadableId = (existing.value as { value: number }).value + 1;
+      }
+      await tx.insert(keyValStore).values({
+        key: READABLE_ORDER_ID_KEY,
+        value: { value: currentReadableId },
+      }).onConflictDoUpdate({
+        target: keyValStore.key,
+        set: { value: { value: currentReadableId } },
+      });
+
       let paymentInfoId: number | null = null;
 
       if (paymentMethod === 'online') {
@@ -63,6 +80,7 @@ export const placeOrder = async (req: Request, res: Response) => {
         isOnlinePayment: paymentMethod === 'online',
         paymentInfoId,
         totalAmount: totalAmount.toString(),
+        readableId: currentReadableId,
       }).returning();
 
       for (const item of orderItemsData) {

@@ -4,6 +4,91 @@ import { orders, orderItems, orderStatus, addresses, users, productInfo, deliver
 import { and, gte, lt, eq } from 'drizzle-orm';
 import dayjs from 'dayjs';
 
+export const updatePackaged = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const { isPackaged } = req.body;
+
+    await db.update(orderStatus).set({ isPackaged }).where(eq(orderStatus.orderId, parseInt(orderId)));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update packaged error:', error);
+    res.status(500).json({ error: 'Failed to update packaged status' });
+  }
+};
+
+export const updateDelivered = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const { isDelivered } = req.body;
+
+    await db.update(orderStatus).set({ isDelivered }).where(eq(orderStatus.orderId, parseInt(orderId)));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update delivered error:', error);
+    res.status(500).json({ error: 'Failed to update delivered status' });
+  }
+};
+
+export const getSlotOrders = async (req: Request, res: Response) => {
+  try {
+    const { slotId } = req.params;
+
+    const slotOrders = await db.query.orders.findMany({
+      where: eq(orders.slotId, parseInt(slotId)),
+      with: {
+        user: true,
+        address: true,
+        slot: true,
+        orderItems: {
+          with: {
+            product: true,
+          },
+        },
+        orderStatus: true,
+      },
+    });
+
+    const formattedOrders = slotOrders.map(order => {
+      const statusRecord = order.orderStatus[0]; // assuming one status per order
+      const status: 'pending' | 'delivered' | 'cancelled' = statusRecord?.isCancelled
+        ? 'cancelled'
+        : statusRecord?.isDelivered
+        ? 'delivered'
+        : 'pending';
+
+      const items = order.orderItems.map(item => ({
+        name: item.product.name,
+        quantity: parseFloat(item.quantity),
+        price: parseFloat(item.price.toString()),
+        amount: parseFloat(item.quantity) * parseFloat(item.price.toString()),
+      }));
+
+      return {
+        orderId: order.id.toString(),
+        readableId: order.readableId,
+        customerName: order.user.name,
+        address: `${order.address.addressLine1}${order.address.addressLine2 ? `, ${order.address.addressLine2}` : ''}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}`,
+        totalAmount: parseFloat(order.totalAmount),
+        items,
+        deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('h:mm a') : 'N/A',
+        status,
+        isPackaged: statusRecord?.isPackaged || false,
+        isDelivered: statusRecord?.isDelivered || false,
+        isCod: order.isCod,
+        slotId: order.slotId,
+      };
+    });
+
+    res.json({ success: true, data: formattedOrders });
+  } catch (error) {
+    console.error('Get slot orders error:', error);
+    res.status(500).json({ error: 'Failed to fetch slot orders' });
+  }
+};
+
 export const getTodaysOrders = async (req: Request, res: Response) => {
   try {
     const { slotId } = req.query;
@@ -47,6 +132,7 @@ export const getTodaysOrders = async (req: Request, res: Response) => {
 
       return {
         orderId: order.id.toString(),
+        readableId: order.readableId,
         customerName: order.user.name,
         address: `${order.address.addressLine1}${order.address.addressLine2 ? `, ${order.address.addressLine2}` : ''}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}`,
         totalAmount: parseFloat(order.totalAmount),
@@ -54,6 +140,8 @@ export const getTodaysOrders = async (req: Request, res: Response) => {
         deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('h:mm a') : 'N/A',
         status,
         isPackaged: statusRecord?.isPackaged || false,
+        isDelivered: statusRecord?.isDelivered || false,
+        isCod: order.isCod,
         slotId: order.slotId,
       };
     });

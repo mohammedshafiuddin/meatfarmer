@@ -203,8 +203,8 @@ export const useUpdateSlotProducts = () => {
 const getAllProductsSummaryApi = async (): Promise<GetProductsSummaryResponse> => {
   
   const response = await axios.get('/cm/products/summary');
-  console.log('getting products summary');
-  console.log({response});
+
+
   
   return response.data;
 };
