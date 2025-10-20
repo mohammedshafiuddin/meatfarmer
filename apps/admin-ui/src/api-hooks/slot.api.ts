@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from 'common-ui/src/services/axios';
+import axios from '../../services/axios-admin-ui';
 
 // Types
 export interface CreateSlotPayload {

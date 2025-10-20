@@ -23,6 +23,16 @@ export interface CartResponse {
   totalAmount: number;
 }
 
+export interface Slot {
+  id: number;
+  deliveryTime: string;
+  freezeTime: string;
+}
+
+export interface CartSlotsResponse {
+  [productId: number]: Slot[];
+}
+
 // API functions
 const getCartApi = async (): Promise<CartResponse> => {
   const response = await axios.get('/uv/cart');
@@ -41,6 +51,11 @@ const updateCartItemApi = async (itemId: number, quantity: number): Promise<Cart
 
 const removeFromCartApi = async (itemId: number): Promise<CartResponse> => {
   const response = await axios.delete(`/uv/cart/${itemId}`);
+  return response.data;
+};
+
+const getCartSlotsApi = async (): Promise<CartSlotsResponse> => {
+  const response = await axios.get('/uv/cart/slots');
   return response.data;
 };
 
@@ -84,5 +99,12 @@ export const useRemoveFromCart = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
+  });
+};
+
+export const useGetCartSlots = () => {
+  return useQuery({
+    queryKey: ['cart-slots'],
+    queryFn: getCartSlotsApi,
   });
 };

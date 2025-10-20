@@ -26,7 +26,7 @@ const demoImages = [
   "https://picsum.photos/800/400?random=3",
 ];
 
-const renderProduct = ({ item, router, handleAddToCart }: { item: any; router: any; handleAddToCart: any }) => {
+const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: any; router: any; handleAddToCart: any; handleBuyNow: any }) => {
   
   return (
     <TouchableOpacity
@@ -51,12 +51,13 @@ const renderProduct = ({ item, router, handleAddToCart }: { item: any; router: a
             </Text>
           </View>
         )}
-       <View style={tw`flex-col mt-2 w-full`}>
-        <TouchableOpacity
-          style={tw`bg-indigo-600 p-2 rounded-md my-1 items-center`}
-        >
-          <Text style={tw`text-white text-sm font-bold`}>Buy Now</Text>
-        </TouchableOpacity>
+        <View style={tw`flex-col mt-2 w-full`}>
+         <TouchableOpacity
+           style={tw`bg-indigo-600 p-2 rounded-md my-1 items-center`}
+           onPress={() => handleBuyNow(item.id)}
+         >
+           <Text style={tw`text-white text-sm font-bold`}>Buy Now</Text>
+         </TouchableOpacity>
          <TouchableOpacity
            style={tw`bg-indigo-600 p-2 rounded-md my-1 items-center`}
            onPress={() => handleAddToCart(item.id)}
@@ -78,16 +79,27 @@ const renderProduct = ({ item, router, handleAddToCart }: { item: any; router: a
        refetch();
      });
 
-     const handleAddToCart = (productId: number) => {
-       addToCart.mutate({ productId, quantity: 1 }, {
-         onSuccess: () => {
-           Alert.alert('Success', 'Item added to cart!');
-         },
-         onError: (error: any) => {
-           Alert.alert('Error', error.message || 'Failed to add item to cart');
-         },
-       });
-     };
+      const handleAddToCart = (productId: number) => {
+        addToCart.mutate({ productId, quantity: 1 }, {
+          onSuccess: () => {
+            Alert.alert('Success', 'Item added to cart!');
+          },
+          onError: (error: any) => {
+            Alert.alert('Error', error.message || 'Failed to add item to cart');
+          },
+        });
+      };
+
+      const handleBuyNow = (productId: number) => {
+        addToCart.mutate({ productId, quantity: 1 }, {
+          onSuccess: () => {
+            router.push(`/my-cart?select=${productId}`);
+          },
+          onError: (error: any) => {
+            Alert.alert('Error', error.message || 'Failed to add item to cart');
+          },
+        });
+      };
 
   if (isLoading) {
     return (
@@ -117,7 +129,7 @@ const renderProduct = ({ item, router, handleAddToCart }: { item: any; router: a
       <FlatList
         data={products}
         numColumns={2}
-         renderItem={({ item }) => renderProduct({ item, router, handleAddToCart })}
+          renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={tw`px-5`}
       />

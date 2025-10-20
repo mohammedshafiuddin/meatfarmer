@@ -1,9 +1,9 @@
-import { pgTable, pgSchema, integer, varchar, date, boolean, timestamp, numeric, jsonb, pgEnum, unique } from "drizzle-orm/pg-core";
+import { pgTable, pgSchema, integer, varchar, date, boolean, timestamp, numeric, jsonb, pgEnum, unique, real } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 const mf = pgSchema('mf');
 
-export const orderStatusEnum = pgEnum('order_status', ['pending', 'delivered', 'cancelled']);
+
 
 export const users = mf.table('users', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -27,8 +27,16 @@ export const userCreds = mf.table('user_creds', {
 export const addresses = mf.table('addresses', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   userId: integer('user_id').notNull().references(() => users.id),
-  address: varchar({ length: 500 }).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 15 }).notNull(),
+  addressLine1: varchar('address_line1', { length: 255 }).notNull(),
+  addressLine2: varchar('address_line2', { length: 255 }),
+  city: varchar('city', { length: 100 }).notNull(),
+  state: varchar('state', { length: 100 }).notNull(),
+  pincode: varchar('pincode', { length: 10 }).notNull(),
   isDefault: boolean('is_default').notNull().default(false),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
 });
 
 export const units = mf.table('units', {
@@ -76,9 +84,11 @@ export const orders = mf.table('orders', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   userId: integer('user_id').notNull().references(() => users.id),
   addressId: integer('address_id').notNull().references(() => addresses.id),
-  slotId: integer('slot_id').notNull().references(() => deliverySlotInfo.id),
+  slotId: integer('slot_id').references(() => deliverySlotInfo.id),
+  isCod: boolean('is_cod').notNull().default(false),
+  isOnlinePayment: boolean('is_online_payment').notNull().default(false),
+  paymentInfoId: integer('payment_info_id').references(() => paymentInfoTable.id),
   totalAmount: numeric('total_amount', { precision: 10, scale: 2 }).notNull(),
-  status: orderStatusEnum('status').notNull().default('pending'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -86,9 +96,28 @@ export const orderItems = mf.table('order_items', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   orderId: integer('order_id').notNull().references(() => orders.id),
   productId: integer('product_id').notNull().references(() => productInfo.id),
-  quantity: numeric({ precision: 10, scale: 2 }).notNull(),
+  quantity: varchar('quantity', { length: 50 }).notNull(),
   price: numeric({ precision: 10, scale: 2 }).notNull(),
-  amount: numeric({ precision: 10, scale: 2 }).notNull(),
+});
+
+export const orderStatus = mf.table('order_status', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  orderTime: timestamp('order_time').notNull().defaultNow(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  orderId: integer('order_id').notNull().references(() => orders.id),
+  isPackaged: boolean('is_packaged').notNull().default(false),
+  isDelivered: boolean('is_delivered').notNull().default(false),
+  isCancelled: boolean('is_cancelled').notNull().default(false),
+});
+
+export const paymentInfoTable = mf.table('payment_info', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  status: varchar({ length: 50 }).notNull(),
+  gateway: varchar({ length: 50 }).notNull(),
+  orderId: varchar('order_id', { length: 500 }),
+  token: varchar({ length: 500 }),
+  merchantOrderId: varchar('merchant_order_id', { length: 255 }).notNull().unique(),
+  payload: jsonb('payload'),
 });
 
 export const payments = mf.table('payments', {
@@ -177,11 +206,22 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   slot: one(deliverySlotInfo, { fields: [orders.slotId], references: [deliverySlotInfo.id] }),
   orderItems: many(orderItems),
   payment: one(payments),
+  paymentInfo: one(paymentInfoTable, { fields: [orders.paymentInfoId], references: [paymentInfoTable.id] }),
+  orderStatus: many(orderStatus),
 }));
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }),
   product: one(productInfo, { fields: [orderItems.productId], references: [productInfo.id] }),
+}));
+
+export const orderStatusRelations = relations(orderStatus, ({ one }) => ({
+  order: one(orders, { fields: [orderStatus.orderId], references: [orders.id] }),
+  user: one(users, { fields: [orderStatus.userId], references: [users.id] }),
+}));
+
+export const paymentInfoRelations = relations(paymentInfoTable, ({ one }) => ({
+  order: one(orders, { fields: [paymentInfoTable.id], references: [orders.paymentInfoId] }),
 }));
 
 export const paymentsRelations = relations(payments, ({ one }) => ({

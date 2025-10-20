@@ -1,76 +1,9 @@
 import React, { useState } from 'react';
-import { View, FlatList, Text, TouchableOpacity, Dimensions } from 'react-native';
-import { TabViewWrapper, AppContainer, MyText } from 'common-ui';
-
-interface Order {
-  orderId: string;
-  customerName: string;
-  address: string;
-  totalAmount: number;
-  items: { name: string; quantity: number; price: number; amount: number }[];
-  deliveryTime: string;
-  status: 'pending' | 'delivered' | 'cancelled';
-}
-
-const mockOrders: Order[] = [
-  {
-    orderId: '1',
-    customerName: 'John Doe',
-    address: '123 Main St, City',
-    totalAmount: 150,
-    items: [
-      { name: 'Chicken', quantity: 1, price: 100, amount: 100 },
-      { name: 'Beef', quantity: 0.5, price: 100, amount: 50 },
-    ],
-    deliveryTime: '10 AM',
-    status: 'pending',
-  },
-  {
-    orderId: '2',
-    customerName: 'Jane Smith',
-    address: '456 Elm St, City',
-    totalAmount: 200,
-    items: [
-      { name: 'Mutton', quantity: 2, price: 100, amount: 200 },
-    ],
-    deliveryTime: '11 AM',
-    status: 'pending',
-  },
-  {
-    orderId: '3',
-    customerName: 'Bob Johnson',
-    address: '789 Oak St, City',
-    totalAmount: 100,
-    items: [
-      { name: 'Fish', quantity: 1, price: 100, amount: 100 },
-    ],
-    deliveryTime: '12 PM',
-    status: 'delivered',
-  },
-  {
-    orderId: '4',
-    customerName: 'Alice Brown',
-    address: '101 Pine St, City',
-    totalAmount: 250,
-    items: [
-      { name: 'Chicken', quantity: 2, price: 100, amount: 200 },
-      { name: 'Eggs', quantity: 1, price: 50, amount: 50 },
-    ],
-    deliveryTime: '1 PM',
-    status: 'delivered',
-  },
-  {
-    orderId: '5',
-    customerName: 'Eve Wilson',
-    address: '202 Maple St, City',
-    totalAmount: 180,
-    items: [
-      { name: 'Pork', quantity: 1, price: 180, amount: 180 },
-    ],
-    deliveryTime: '2 PM',
-    status: 'cancelled',
-  },
-];
+import { View, FlatList, Text, TouchableOpacity, Dimensions, DeviceEventEmitter } from 'react-native';
+import { REFRESH_EVENT } from 'common-ui/src/lib/const-strs';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { TabViewWrapper, AppContainer, MyText, useManualRefresh } from 'common-ui';
+import { useGetTodaysOrders, Order } from '@/src/api-hooks/order.api';
 
 const OrderItem = ({ order }: { order: Order }) => {
   const displayedItems = order.items.slice(0, 2);
@@ -91,14 +24,33 @@ const OrderItem = ({ order }: { order: Order }) => {
 
 export default function TodaysOrders() {
   const [index, setIndex] = useState(0);
+  const { data: orders, isLoading, error, refetch, isRefetching } = useGetTodaysOrders();
+
+  useManualRefresh(() => refetch());
   const routes = [
     { key: 'pending', title: 'Pending' },
     { key: 'delivered', title: 'Delivered' },
     { key: 'cancelled', title: 'Cancelled' },
   ];
 
+  if (isLoading) {
+    return (
+      <AppContainer>
+        <MyText>Loading orders...</MyText>
+      </AppContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppContainer>
+        <MyText>Error loading orders</MyText>
+      </AppContainer>
+    );
+  }
+
   const renderScene = ({ route }: any) => {
-    const filteredOrders = mockOrders.filter(order => order.status === route.key);
+    const filteredOrders = (orders || []).filter(order => order.status === route.key);
     return (
       <FlatList
         data={filteredOrders}

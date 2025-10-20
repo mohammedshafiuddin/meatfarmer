@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from 'common-ui/src/services/axios';
+import axios from '../../services/axios-admin-ui';
 import type { ProductSummary } from 'common-ui/shared-types';
-import { useGetAllProductsSummary } from 'common-ui/src/common-api-hooks/product.api';
+import { GetProductsSummaryResponse } from "common-ui/src/common-api-hooks/product.api";
 
 // Types
 export interface CreateProductPayload {
@@ -200,5 +200,25 @@ export const useUpdateSlotProducts = () => {
   });
 };
 
-// Re-export from common location
-export { useGetAllProductsSummary };
+const getAllProductsSummaryApi = async (): Promise<GetProductsSummaryResponse> => {
+  
+  const response = await axios.get('/cm/products/summary');
+  console.log('getting products summary');
+  console.log({response});
+  
+  return response.data;
+};
+
+
+export const useGetAllProductsSummary = () => {
+  return useQuery({
+    queryKey: ['products-summary'],
+    queryFn: getAllProductsSummaryApi,
+    // queryFn: async () => {
+    //   const response = await axios.get('/cm/products/summary');
+    //   console.log({response: response.config})
+      
+    //   return response.data;
+    // }
+  });
+};

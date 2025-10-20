@@ -1,9 +1,9 @@
 import axiosParent from 'axios';
+import { FORCE_LOGOUT_EVENT } from 'common-ui/src/lib/const-strs';
 // import { getJWT } from '../hooks/useJWT';
 // import { getJWT } from '@/hooks/useJWT';
 import { DeviceEventEmitter } from 'react-native'
-import { FORCE_LOGOUT_EVENT } from '../lib/const-strs';
-import { getAuthToken } from '@/hooks/useJWT';
+// import { FORCE_LOGOUT_EVENT } from '../lib/const-strs';
 
 // const API_BASE_URL = 'http://192.168.1.5:4000'; // Change to your API base URL
 const API_BASE_URL = 'http://192.168.100.94:4000'; // Change to your API base URL
@@ -24,12 +24,12 @@ const axios = axiosParent.create({
 axios.interceptors.request.use(
   async (config) => {
     // const token = await getJWT();
-    const token = await getAuthToken();
+    // const token = await getAuthToken();
 
-    if (token) {
-      config.headers = config.headers || {};
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
+    // if (token) {
+    //   config.headers = config.headers || {};
+    //   config.headers['Authorization'] = `Bearer ${token}`;
+    // }
     return config;
   },
   (error) => Promise.reject(error)

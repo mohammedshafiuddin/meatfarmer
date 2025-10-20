@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Middleware to log all request URLs
 app.use((req, res, next) => {
   const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
+  console.log(`[${timestamp}] ${req.method} ${req.url}`);
   next();
 });
 

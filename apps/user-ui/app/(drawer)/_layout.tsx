@@ -65,6 +65,7 @@ function CustomDrawerContent() {
 
   export default function Layout() {
     const { isAuthenticated, isLoading } = useAuth();
+    const router = useRouter();
 
     if (isLoading) {
       return (
@@ -85,9 +86,14 @@ function CustomDrawerContent() {
         screenOptions={{
           headerShown: true,
           headerRight: () => (
-            <TouchableOpacity style={{ marginRight: 10 }} onPress={() => DeviceEventEmitter.emit(REFRESH_EVENT)}>
-              <MaterialIcons name="refresh" size={24} color="black" />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', marginRight: 10 }}>
+              <TouchableOpacity onPress={() => router.push('/my-cart')} style={{ marginRight: 10 }}>
+                <MaterialIcons name="shopping-cart" size={24} color="black" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => DeviceEventEmitter.emit(REFRESH_EVENT)}>
+                <MaterialIcons name="refresh" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       >

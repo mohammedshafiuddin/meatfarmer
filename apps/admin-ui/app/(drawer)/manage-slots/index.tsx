@@ -3,8 +3,8 @@
  import { AppContainer, useFocusCallback, useManualRefresh } from 'common-ui';
  import dayjs from 'dayjs';
  import { useGetSlots } from '../../../src/api-hooks/slot.api';
- import { useGetAllProductsSummary, useGetSlotsProductIds } from 'common-ui/src/common-api-hooks/product.api';
- import { useUpdateSlotProducts } from '../../../src/api-hooks/product.api';
+ import { useGetSlotsProductIds } from 'common-ui/src/common-api-hooks/product.api';
+ import { useGetAllProductsSummary, useUpdateSlotProducts } from '../../../src/api-hooks/product.api';
  import MultiSelectDropdown, { DropdownOption } from 'common-ui/src/components/multi-select';
 
 export default function ManageSlots() {
@@ -29,6 +29,7 @@ export default function ManageSlots() {
     refetchSlots();
     refetchSlotProducts();
   });
+  
 
   
   // State for selected products per slot

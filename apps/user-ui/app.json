@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Health Petal",
-    "slug": "health-petal",
+    "name": "Locality",
+    "slug": "locality",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mohammedshafiudin54.health_petal",
+      "bundleIdentifier": "com.mohammedshafiudin54.locality-user-ui",
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
           "ppemerchantsdkv1",
@@ -28,7 +28,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.mohammedshafiudin54.health_petal"
+      "package": "com.mohammedshafiudin54.locality-user-ui"
     },
     "web": {
       "bundler": "metro",
@@ -55,7 +55,6 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c61a345f-ddd5-4b10-94f3-304a83edd9d7"
       }
     }
   }

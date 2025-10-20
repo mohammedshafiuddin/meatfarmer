@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../db/db_index";
-import { cartItems, productInfo, units } from "../db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { cartItems, productInfo, units, productSlots, deliverySlotInfo } from "../db/schema";
+import { eq, and, sql, inArray, gt } from "drizzle-orm";
 import { ApiError } from "../lib/api-error";
 import { generateSignedUrlsFromS3Urls } from "../lib/s3-client";
 
@@ -81,27 +81,25 @@ export const addToCart = async (req: Request, res: Response) => {
       throw new ApiError("Product not found", 404);
     }
 
-    // Try to insert (will fail if already exists due to unique constraint)
-    try {
+    // Check if item already exists in cart
+    const existingItem = await db.query.cartItems.findFirst({
+      where: and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)),
+    });
+
+    if (existingItem) {
+      // Update quantity
+      await db.update(cartItems)
+        .set({
+          quantity: sql`${cartItems.quantity} + ${quantity}`,
+        })
+        .where(eq(cartItems.id, existingItem.id));
+    } else {
+      // Insert new item
       await db.insert(cartItems).values({
         userId,
         productId,
         quantity: quantity.toString(),
       });
-    } catch (error: any) {
-      // If unique constraint violation, update quantity instead
-      if (error.code === '23505') { // PostgreSQL unique violation
-        await db.update(cartItems)
-          .set({
-            quantity: sql`${cartItems.quantity} + ${quantity}`,
-          })
-          .where(and(
-            eq(cartItems.userId, userId),
-            eq(cartItems.productId, productId)
-          ));
-      } else {
-        throw error;
-      }
     }
 
     // Return updated cart
@@ -199,5 +197,61 @@ export const clearCart = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Clear cart error:", error);
     return res.status(500).json({ error: "Failed to clear cart" });
+  }
+};
+
+/**
+ * Get delivery slots for products in user's cart
+ */
+export const getCartSlots = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.userId;
+
+    // Get product IDs from user's cart
+    const cartProductIds = await db
+      .select({ productId: cartItems.productId })
+      .from(cartItems)
+      .where(eq(cartItems.userId, userId));
+
+    if (cartProductIds.length === 0) {
+      return res.status(200).json({});
+    }
+
+    const productIds = cartProductIds.map(item => item.productId);
+
+    // Get slots for these products where freeze time is after current time
+    const slotsData = await db
+      .select({
+        productId: productSlots.productId,
+        slotId: deliverySlotInfo.id,
+        deliveryTime: deliverySlotInfo.deliveryTime,
+        freezeTime: deliverySlotInfo.freezeTime,
+        isActive: deliverySlotInfo.isActive,
+      })
+      .from(productSlots)
+      .innerJoin(deliverySlotInfo, eq(productSlots.slotId, deliverySlotInfo.id))
+      .where(and(
+        inArray(productSlots.productId, productIds),
+        gt(deliverySlotInfo.freezeTime, new Date()),
+        eq(deliverySlotInfo.isActive, true)
+      ));
+
+    // Group by productId
+    const result: Record<number, any[]> = {};
+    slotsData.forEach(slot => {
+      if (!result[slot.productId]) {
+        result[slot.productId] = [];
+      }
+      result[slot.productId].push({
+        id: slot.slotId,
+        deliveryTime: slot.deliveryTime,
+        freezeTime: slot.freezeTime,
+      });
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Get cart slots error:", error);
+    res.status(500).json({ error: "Failed to fetch cart slots" });
   }
 };

@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."order_status" ADD COLUMN "is_cancelled" boolean DEFAULT false NOT NULL;

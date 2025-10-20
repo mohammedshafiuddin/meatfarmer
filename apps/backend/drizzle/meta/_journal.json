@@ -22,6 +22,20 @@
       "when": 1760876962326,
       "tag": "0002_wandering_lifeguard",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1760945207890,
+      "tag": "0003_tricky_the_twelve",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1760947179526,
+      "tag": "0004_lively_diamondback",
+      "breakpoints": true
     }
   ]
 }

@@ -20,16 +20,27 @@
      refetch();
    });
 
-   const handleAddToCart = (productId: number) => {
-     addToCart.mutate({ productId, quantity: 1 }, {
-       onSuccess: () => {
-         Alert.alert('Success', 'Item added to cart!');
-       },
-       onError: (error: any) => {
-         Alert.alert('Error', error.message || 'Failed to add item to cart');
-       },
-     });
-   };
+    const handleAddToCart = (productId: number) => {
+      addToCart.mutate({ productId, quantity: 1 }, {
+        onSuccess: () => {
+          Alert.alert('Success', 'Item added to cart!');
+        },
+        onError: (error: any) => {
+          Alert.alert('Error', error.message || 'Failed to add item to cart');
+        },
+      });
+    };
+
+    const handleBuyNow = (productId: number) => {
+      addToCart.mutate({ productId, quantity: 1 }, {
+        onSuccess: () => {
+          router.push(`/my-cart?select=${productId}`);
+        },
+        onError: (error: any) => {
+          Alert.alert('Error', error.message || 'Failed to add item to cart');
+        },
+      });
+    };
 
   if (isLoading) {
     return (
@@ -82,9 +93,9 @@
         )}
 
         <View style={tw`flex-row justify-between mb-4`}>
-          <TouchableOpacity style={tw`bg-indigo-600 p-3 rounded-md flex-1 mr-2 items-center`} onPress={() => router.push('/(drawer)/my-cart')}>
-            <Text style={tw`text-white text-base font-bold`}>Buy Now</Text>
-          </TouchableOpacity>
+           <TouchableOpacity style={tw`bg-indigo-600 p-3 rounded-md flex-1 mr-2 items-center`} onPress={() => handleBuyNow(productDetail.id)}>
+             <Text style={tw`text-white text-base font-bold`}>Buy Now</Text>
+           </TouchableOpacity>
            <TouchableOpacity style={tw`bg-indigo-600 p-3 rounded-md flex-1 ml-2 items-center`} onPress={() => handleAddToCart(productDetail.id)}>
              <Text style={tw`text-white text-base font-bold`}>Add to Cart</Text>
            </TouchableOpacity>

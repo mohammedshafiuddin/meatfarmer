@@ -26,10 +26,10 @@ function CustomDrawerContent() {
         label="Add/Remove Slots"
         onPress={() => router.push("/(drawer)/add-remove-slots" as any)}
       />
-      <DrawerItem
-        label="Today's Orders"
-        onPress={() => router.push("/(drawer)/todays-orders" as any)}
-      />
+       <DrawerItem
+         label="Packaging"
+         onPress={() => router.push("/(drawer)/packaging" as any)}
+       />
       <DrawerItem
         label="Edit Product"
         onPress={() => router.push("/(drawer)/edit-product" as any)}
@@ -63,10 +63,10 @@ export default function Layout() {
         name="add-remove-slots"
         options={{ title: "Add/Remove Slots" }}
       />
-      <Drawer.Screen
-        name="todays-orders"
-        options={{ title: "Today's Orders" }}
-      />
+       <Drawer.Screen
+         name="packaging"
+         options={{ title: "Packaging" }}
+       />
       <Drawer.Screen name="edit-product" options={{ title: "Edit Product" }} />
     </Drawer>
   );

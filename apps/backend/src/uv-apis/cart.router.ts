@@ -5,7 +5,8 @@ import {
   addToCart,
   updateCartItem,
   removeFromCart,
-  clearCart
+  clearCart,
+  getCartSlots
 } from './cart.controller';
 
 const router = Router();
@@ -13,6 +14,7 @@ const router = Router();
 router.use(verifyToken);
 
 router.get('/', getCart);
+router.get('/slots', getCartSlots);
 router.post('/', addToCart);
 router.put('/:itemId', updateCartItem);
 router.delete('/:itemId', removeFromCart);

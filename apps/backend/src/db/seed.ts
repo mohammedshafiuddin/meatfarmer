@@ -1,5 +1,6 @@
 import { db } from "./db_index";
-import { units } from "./schema";
+import { units, productInfo, deliverySlotInfo, productSlots } from "./schema";
+import { eq } from "drizzle-orm";
 
 export async function seed() {
   console.log("Seeding database...");
