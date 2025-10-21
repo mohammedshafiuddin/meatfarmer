@@ -1,20 +1,18 @@
- import React, { useState, useMemo, useEffect } from 'react';
- import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
- import { AppContainer, useFocusCallback, useManualRefresh } from 'common-ui';
- import dayjs from 'dayjs';
- import { useGetSlots } from '../../../src/api-hooks/slot.api';
- import { useGetSlotsProductIds } from 'common-ui/src/common-api-hooks/product.api';
- import { useGetAllProductsSummary, useUpdateSlotProducts } from '../../../src/api-hooks/product.api';
- import MultiSelectDropdown, { DropdownOption } from 'common-ui/src/components/multi-select';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { AppContainer, useFocusCallback, useManualRefresh } from 'common-ui';
+import dayjs from 'dayjs';
+import { useGetSlots } from '../../../src/api-hooks/slot.api';
+import { useGetSlotsProductIds } from 'common-ui/src/common-api-hooks/product.api';
+import { useGetAllProductsSummary, useUpdateSlotProducts } from '../../../src/api-hooks/product.api';
+import MultiSelectDropdown, { DropdownOption } from 'common-ui/src/components/multi-select';
 
-export default function ManageSlots() {
-
+export default function AvailabilityTab() {
   // Fetch data
   const { data: slotsData, isFetching: slotsLoading, refetch: refetchSlots } = useGetSlots();
   const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = useGetAllProductsSummary();
 
   useManualRefresh(() => { refetchSlots(); refetchProducts(); });
-  
 
   const slots = slotsData?.slots || [];
   const products = productsData?.products || [];
@@ -31,9 +29,8 @@ export default function ManageSlots() {
     refetchSlots();
     refetchSlotProducts();
   });
-  
 
-  
+
   // State for selected products per slot
   const [selectedProducts, setSelectedProducts] = useState<Record<number, string[]>>({});
 
@@ -94,7 +91,7 @@ export default function ManageSlots() {
 
   return (
     <AppContainer>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>Manage Slots</Text>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>Manage Product Availability</Text>
 
         {sortedSlots.map(slot => (
           <View key={slot.id} style={{ marginBottom: 24, padding: 16, backgroundColor: '#f9f9f9', borderRadius: 8 }}>
