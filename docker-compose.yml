@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: meat_farmer_db
+    environment:
+      POSTGRES_DB: meat_farmer
+      POSTGRES_USER: meat_farmer_user
+      POSTGRES_PASSWORD: meat_farmer_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meat_farmer_user -d meat_farmer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: mohdshafiuddin54/meat_farmer
+    container_name: meat_farmer_backend
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres_shafi_password@technocracy.ovh:5435/meat_farmer
+      PHONE_PE_BASE_URL: https://api-preprod.phonepe.com/
+      PHONE_PE_CLIENT_ID: TEST-M23F2IGP34ZAR_25090
+      PHONE_PE_CLIENT_VERSION: 1
+      PHONE_PE_CLIENT_SECRET: MTU1MmIzOTgtM2Q0Mi00N2M5LTkyMWUtNzBiMjdmYzVmZWUy
+      PHONE_PE_MERCHANT_ID: M23F2IGP34ZAR
+      S3_REGION: ap-hyderabad-1
+      S3_ACCESS_KEY_ID: admin
+      S3_SECRET_ACCESS_KEY: admin12345
+      S3_URL: http://technocracy.ovh:9000/
+      S3_BUCKET_NAME: meatfarmer
+      EXPO_ACCESS_TOKEN: Asvpy8cByRh6T4ksnWScO6PLcio2n35-BwES5zK-
+      JWT_SECRET: my_meatfarmer_jwt_secret_key
+      NODE_ENV: production
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
