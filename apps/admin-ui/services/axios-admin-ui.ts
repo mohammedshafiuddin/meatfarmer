@@ -21,7 +21,8 @@ const axios = axiosParent.create({
 axios.interceptors.request.use(
   async (config) => {
     const token = await getJWT();
-
+    console.log({token})
+    
     if (token) {
       config.headers = config.headers || {};
       config.headers['Authorization'] = `Bearer ${token}`;

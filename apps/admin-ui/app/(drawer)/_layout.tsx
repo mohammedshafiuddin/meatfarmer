@@ -41,6 +41,10 @@ function CustomDrawerContent() {
          onPress={() => router.push("/(drawer)/complaints" as any)}
        />
        <DrawerItem
+         label="Coupons"
+         onPress={() => router.push("coupons")}
+       />
+       <DrawerItem
          label="Logout"
          onPress={() => logout()}
        />
@@ -79,6 +83,7 @@ export default function Layout() {
         />
        <Drawer.Screen name="edit-product" options={{ title: "Edit Product" }} />
        <Drawer.Screen name="complaints" options={{ title: "Complaints" }} />
+       <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
     </Drawer>
   );
 }
