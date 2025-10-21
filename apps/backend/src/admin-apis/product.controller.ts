@@ -23,6 +23,15 @@ export const createProduct = async (req: Request, res: Response) => {
     throw new ApiError("Name, unitId, and price are required", 400);
   }
 
+  // Check for duplicate name
+  const existingProduct = await db.query.productInfo.findFirst({
+    where: eq(productInfo.name, name.trim()),
+  });
+
+  if (existingProduct) {
+    throw new ApiError("A product with this name already exists", 400);
+  }
+
   // Check if unit exists
   const unit = await db.query.units.findFirst({
     where: eq(units.id, unitId),

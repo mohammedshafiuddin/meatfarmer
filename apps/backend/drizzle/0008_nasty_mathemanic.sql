@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."product_info" ADD COLUMN "is_out_of_stock" boolean DEFAULT false NOT NULL;

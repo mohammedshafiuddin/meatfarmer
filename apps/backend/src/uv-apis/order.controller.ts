@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { db } from '../db/db_index';
-import { orders, orderItems, orderStatus, addresses, productInfo, paymentInfoTable, keyValStore } from '../db/schema';
+import { orders, orderItems, orderStatus, addresses, productInfo, paymentInfoTable, keyValStore, deliverySlotInfo } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { READABLE_ORDER_ID_KEY } from '../lib/const-strings';
+import { generateSignedUrlsFromS3Urls } from '../lib/s3-client';
 
 interface PlaceOrderRequest {
   selectedItems: { productId: number; quantity: number }[];
@@ -103,5 +104,127 @@ export const placeOrder = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Place order error:', error);
     res.status(500).json({ error: 'Failed to place order' });
+  }
+};
+
+export const getOrders = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.userId;
+
+    const userOrders = await db.query.orders.findMany({
+      where: eq(orders.userId, userId),
+      with: {
+        orderItems: {
+          with: {
+            product: true,
+          },
+        },
+        slot: true,
+        paymentInfo: true,
+        orderStatus: true,
+      },
+      orderBy: (orders, { desc }) => [desc(orders.createdAt)],
+    });
+
+    const mappedOrders = await Promise.all(userOrders.map(async (order) => {
+      const status = order.orderStatus[0]; // assuming one status per order
+      const deliveryStatus = status?.isCancelled ? 'cancelled' : status?.isDelivered ? 'success' : 'pending';
+      const orderStatus = status?.isCancelled ? 'cancelled' : 'success';
+      const paymentMode = order.isCod ? 'CoD' : 'Online';
+
+      const items = await Promise.all(order.orderItems.map(async (item) => {
+        const signedImages = item.product.images ? await generateSignedUrlsFromS3Urls(item.product.images as string[]) : [];
+        return {
+          productName: item.product.name,
+          quantity: parseFloat(item.quantity),
+          price: parseFloat(item.price.toString()),
+          amount: parseFloat(item.price.toString()) * parseFloat(item.quantity),
+          image: signedImages[0] || null,
+        };
+      }));
+
+      return {
+        orderId: `ORD${order.readableId.toString().padStart(3, '0')}`,
+        orderDate: order.createdAt.toISOString(),
+        deliveryStatus,
+        deliveryDate: order.slot?.deliveryTime.toISOString(),
+        orderStatus,
+        cancelReason: status?.cancelReason || null,
+        paymentMode,
+        isRefundDone: status?.isRefundDone || false,
+        items,
+      };
+    }));
+
+    res.status(200).json({ success: true, data: mappedOrders });
+  } catch (error) {
+    console.error('Get orders error:', error);
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+};
+
+export const cancelOrder = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.userId;
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    console.log('Cancel order request:', { userId, orderId: id, reason });
+
+    // Extract readable ID from orderId (e.g., ORD001 -> 1)
+    const readableIdMatch = id.match(/^ORD(\d+)$/);
+    if (!readableIdMatch) {
+      console.error('Invalid order ID format:', id);
+      return res.status(400).json({ error: 'Invalid order ID format' });
+    }
+    const readableId = parseInt(readableIdMatch[1]);
+
+    // Check if order exists and belongs to user
+    const order = await db.query.orders.findFirst({
+      where: eq(orders.readableId, readableId),
+      with: {
+        orderStatus: true,
+      },
+    });
+
+    if (!order) {
+      console.error('Order not found:', id);
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.userId !== userId) {
+      console.error('Order does not belong to user:', { orderId: id, orderUserId: order.userId, requestUserId: userId });
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const status = order.orderStatus[0];
+    if (!status) {
+      console.error('Order status not found for order:', id);
+      return res.status(400).json({ error: 'Order status not found' });
+    }
+
+    if (status.isCancelled) {
+      console.error('Order is already cancelled:', id);
+      return res.status(400).json({ error: 'Order is already cancelled' });
+    }
+
+    if (status.isDelivered) {
+      console.error('Cannot cancel delivered order:', id);
+      return res.status(400).json({ error: 'Cannot cancel delivered order' });
+    }
+
+    // Update order status
+    await db.update(orderStatus)
+      .set({
+        isCancelled: true,
+        cancelReason: reason,
+      })
+      .where(eq(orderStatus.id, status.id));
+
+    console.log('Order cancelled successfully:', id);
+    res.status(200).json({ success: true, message: 'Order cancelled successfully' });
+  } catch (error) {
+    console.error('Cancel order error:', error);
+    res.status(500).json({ error: 'Failed to cancel order' });
   }
 };

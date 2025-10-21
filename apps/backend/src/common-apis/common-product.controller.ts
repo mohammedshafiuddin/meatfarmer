@@ -39,6 +39,7 @@ export const getAllProductsSummary = async (req: Request, res: Response) => {
         shortDescription: productInfo.shortDescription,
         price: productInfo.price,
         images: productInfo.images,
+        isOutOfStock: productInfo.isOutOfStock,
         unitShortNotation: units.shortNotation,
       })
       .from(productInfo)
@@ -54,6 +55,7 @@ export const getAllProductsSummary = async (req: Request, res: Response) => {
           shortDescription: product.shortDescription,
           price: product.price,
           unit: product.unitShortNotation,
+          isOutOfStock: product.isOutOfStock,
           nextDeliveryDate: nextDeliveryDate ? nextDeliveryDate.toISOString() : null,
           images: await generateSignedUrlsFromS3Urls((product.images as string[]) || []),
         };

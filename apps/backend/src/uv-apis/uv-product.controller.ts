@@ -25,6 +25,7 @@ export const getProductDetails = async (req: Request, res: Response) => {
         longDescription: productInfo.longDescription,
         price: productInfo.price,
         images: productInfo.images,
+        isOutOfStock: productInfo.isOutOfStock,
         unitShortNotation: units.shortNotation,
       })
       .from(productInfo)
@@ -82,6 +83,7 @@ export const getProductDetails = async (req: Request, res: Response) => {
       price: product.price,
       unit: product.unitShortNotation,
       images: signedImages,
+      isOutOfStock: product.isOutOfStock,
       deliverySlots: deliverySlotsData,
       specialPackageDeals: specialDealsData,
     };

@@ -20,9 +20,7 @@ export const userCreds = mf.table('user_creds', {
   userId: integer('user_id').notNull().references(() => users.id),
   userPassword: varchar('user_password', { length: 255 }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-}, (t) => ({
-  unq_user: unique('unique_user_cred').on(t.userId),
-}));
+});
 
 export const addresses = mf.table('addresses', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -37,6 +35,14 @@ export const addresses = mf.table('addresses', {
   isDefault: boolean('is_default').notNull().default(false),
   latitude: real('latitude'),
   longitude: real('longitude'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const staffUsers = mf.table('staff_users', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  name: varchar({ length: 255 }).notNull(),
+  password: varchar({ length: 255 }).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
 export const units = mf.table('units', {
@@ -55,6 +61,7 @@ export const productInfo = mf.table('product_info', {
   unitId: integer('unit_id').notNull().references(() => units.id),
   price: numeric({ precision: 10, scale: 2 }).notNull(),
   images: jsonb('images'),
+  isOutOfStock: boolean('is_out_of_stock').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -109,6 +116,8 @@ export const orderStatus = mf.table('order_status', {
   isPackaged: boolean('is_packaged').notNull().default(false),
   isDelivered: boolean('is_delivered').notNull().default(false),
   isCancelled: boolean('is_cancelled').notNull().default(false),
+  cancelReason: varchar('cancel_reason', { length: 255 }),
+  isRefundDone: boolean('is_refund_done').notNull().default(false),
 });
 
 export const paymentInfoTable = mf.table('payment_info', {
@@ -161,6 +170,15 @@ export const cartItems = mf.table('cart_items', {
 }, (t) => ({
   unq_user_product: unique('unique_user_product').on(t.userId, t.productId),
 }));
+
+export const complaints = mf.table('complaints', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  orderId: integer('order_id').references(() => orders.id),
+  complaintBody: varchar('complaint_body', { length: 1000 }).notNull(),
+  isResolved: boolean('is_resolved').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
 
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -243,4 +261,9 @@ export const productCategoriesRelations = relations(productCategories, ({}) => (
 export const cartItemsRelations = relations(cartItems, ({ one }) => ({
   user: one(users, { fields: [cartItems.userId], references: [users.id] }),
   product: one(productInfo, { fields: [cartItems.productId], references: [productInfo.id] }),
+}));
+
+export const complaintsRelations = relations(complaints, ({ one }) => ({
+  user: one(users, { fields: [complaints.userId], references: [users.id] }),
+  order: one(orders, { fields: [complaints.orderId], references: [orders.id] }),
 }));
