@@ -1,11 +1,16 @@
 import { Router } from "express";
+import { authenticateStaff } from "../middleware/staff-auth";
 import productRouter from "./product.router";
 import deliverySlotRouter from "./delivery-slot.router";
 import orderRouter from "./order.router";
 import complaintRouter from "./complaint.router";
 import staffRouter from "./staff.router";
+import couponRouter from "./coupon.router";
 
 const router = Router();
+
+// Apply staff authentication to all admin routes
+router.use(authenticateStaff);
 
 // Product routes
 router.use("/products", productRouter);
@@ -21,6 +26,9 @@ router.use("/complaints", complaintRouter);
 
 // Staff routes
 router.use("/staff", staffRouter);
+
+// Coupon routes
+router.use("/coupons", couponRouter);
 
 const avRouter = router;
 

@@ -71,6 +71,27 @@
       "when": 1761044394994,
       "tag": "0009_peaceful_victor_mancha",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1761046587669,
+      "tag": "0010_flimsy_reavers",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1761046972821,
+      "tag": "0011_watery_lady_mastermind",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1761052893579,
+      "tag": "0012_flawless_jubilee",
+      "breakpoints": true
     }
   ]
 }

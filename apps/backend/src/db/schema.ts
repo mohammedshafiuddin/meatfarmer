@@ -180,6 +180,23 @@ export const complaints = mf.table('complaints', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+export const coupons = mf.table('coupons', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  couponCode: varchar('coupon_code', { length: 50 }).notNull().unique('unique_coupon_code'),
+  isUserBased: boolean('is_user_based').notNull().default(false),
+  discountPercent: numeric('discount_percent', { precision: 5, scale: 2 }),
+  flatDiscount: numeric('flat_discount', { precision: 10, scale: 2 }),
+  minOrder: numeric('min_order', { precision: 10, scale: 2 }),
+  targetUser: integer('target_user').references(() => users.id),
+  createdBy: integer('created_by').notNull().references(() => staffUsers.id),
+  maxValue: numeric('max_value', { precision: 10, scale: 2 }),
+  isApplyForAll: boolean('is_apply_for_all').notNull().default(false),
+  validTill: timestamp('valid_till'),
+  maxLimitForUser: integer('max_limit_for_user'),
+  isInvalidated: boolean('is_invalidated').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   addresses: many(addresses),
@@ -187,10 +204,15 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   notifications: many(notifications),
   cartItems: many(cartItems),
   userCreds: one(userCreds),
+  coupons: many(coupons),
 }));
 
 export const userCredsRelations = relations(userCreds, ({ one }) => ({
   user: one(users, { fields: [userCreds.userId], references: [users.id] }),
+}));
+
+export const staffUsersRelations = relations(staffUsers, ({ many }) => ({
+  coupons: many(coupons),
 }));
 
 export const addressesRelations = relations(addresses, ({ one, many }) => ({
@@ -266,4 +288,9 @@ export const cartItemsRelations = relations(cartItems, ({ one }) => ({
 export const complaintsRelations = relations(complaints, ({ one }) => ({
   user: one(users, { fields: [complaints.userId], references: [users.id] }),
   order: one(orders, { fields: [complaints.orderId], references: [orders.id] }),
+}));
+
+export const couponsRelations = relations(coupons, ({ one }) => ({
+  targetUser: one(users, { fields: [coupons.targetUser], references: [users.id] }),
+  creator: one(staffUsers, { fields: [coupons.createdBy], references: [staffUsers.id] }),
 }));

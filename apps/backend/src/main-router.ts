@@ -23,6 +23,7 @@ router.get('/seed', (req:Request, res: Response) => {
 })
 
 router.use('/v1', v1Router);
+// router.use('/av', avRouter);
 router.use('/test', testController);
 
 // Global error handling middleware

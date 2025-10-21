@@ -13,6 +13,7 @@ import type {
   notifications,
   productCategories,
   cartItems,
+  coupons,
 } from "./schema";
 
 export type User = InferSelectModel<typeof users>;
@@ -28,6 +29,7 @@ export type Payment = InferSelectModel<typeof payments>;
 export type Notification = InferSelectModel<typeof notifications>;
 export type ProductCategory = InferSelectModel<typeof productCategories>;
 export type CartItem = InferSelectModel<typeof cartItems>;
+export type Coupon = InferSelectModel<typeof coupons>;
 
 // Combined types
 export type ProductWithUnit = ProductInfo & {
