@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from '../db/db_index';
-import { orders, orderItems, orderStatus, addresses, productInfo, paymentInfoTable, keyValStore, deliverySlotInfo } from '../db/schema';
+import { orders, orderItems, orderStatus, addresses, productInfo, paymentInfoTable, keyValStore, deliverySlotInfo, coupons, couponUsage } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { READABLE_ORDER_ID_KEY } from '../lib/const-strings';
 import { generateSignedUrlsFromS3Urls } from '../lib/s3-client';
@@ -9,12 +9,13 @@ interface PlaceOrderRequest {
   selectedItems: { productId: number; quantity: number }[];
   addressId: number;
   paymentMethod: 'online' | 'cod';
+  couponId?: number;
 }
 
 export const placeOrder = async (req: Request, res: Response) => {
   try {
     const userId = req.user.userId;
-    const { selectedItems, addressId, slotId, paymentMethod } = req.body;
+    const { selectedItems, addressId, slotId, paymentMethod, couponId } = req.body;
 
     // Validate address belongs to user
     const address = await db.query.addresses.findFirst({
@@ -41,6 +42,64 @@ export const placeOrder = async (req: Request, res: Response) => {
         price: product.price,
       });
     }
+
+    // Validate and apply coupon if provided
+    let discountAmount = 0;
+    let appliedCoupon = null;
+    if (couponId) {
+      const coupon = await db.query.coupons.findFirst({
+        where: eq(coupons.id, couponId),
+        with: {
+          usages: {
+            where: eq(couponUsage.userId, userId)
+          }
+        }
+      });
+
+      if (!coupon) {
+        return res.status(400).json({ error: 'Invalid coupon' });
+      }
+
+      // Check if coupon is invalidated
+      if (coupon.isInvalidated) {
+        return res.status(400).json({ error: 'Coupon is no longer valid' });
+      }
+
+      // Check expiration
+      if (coupon.validTill && new Date(coupon.validTill) < new Date()) {
+        return res.status(400).json({ error: 'Coupon has expired' });
+      }
+
+      // Check minimum order requirement
+      if (coupon.minOrder && parseFloat(coupon.minOrder) > totalAmount) {
+        return res.status(400).json({ error: 'Order amount does not meet coupon minimum requirement' });
+      }
+
+      // Check usage limits
+      if (coupon.maxLimitForUser) {
+        const usageCount = coupon.usages.length;
+        if (usageCount >= coupon.maxLimitForUser) {
+          return res.status(400).json({ error: 'Coupon usage limit exceeded' });
+        }
+      }
+
+      // Calculate discount
+      if (coupon.discountPercent) {
+        discountAmount = Math.min(
+          (totalAmount * parseFloat(coupon.discountPercent)) / 100,
+          coupon.maxValue ? parseFloat(coupon.maxValue) : Infinity
+        );
+      } else if (coupon.flatDiscount) {
+        discountAmount = Math.min(
+          parseFloat(coupon.flatDiscount),
+          coupon.maxValue ? parseFloat(coupon.maxValue) : totalAmount
+        );
+      }
+
+      appliedCoupon = coupon;
+    }
+
+    const finalAmount = totalAmount - discountAmount;
 
     // Create order in transaction
     const newOrder = await db.transaction(async (tx) => {
@@ -73,16 +132,16 @@ export const placeOrder = async (req: Request, res: Response) => {
         paymentInfoId = paymentInfo.id;
       }
 
-      const [order] = await tx.insert(orders).values({
-        userId,
-        addressId,
-        slotId,
-        isCod: paymentMethod === 'cod',
-        isOnlinePayment: paymentMethod === 'online',
-        paymentInfoId,
-        totalAmount: totalAmount.toString(),
-        readableId: currentReadableId,
-      }).returning();
+       const [order] = await tx.insert(orders).values({
+         userId,
+         addressId,
+         slotId,
+         isCod: paymentMethod === 'cod',
+         isOnlinePayment: paymentMethod === 'online',
+         paymentInfoId,
+         totalAmount: finalAmount.toString(),
+         readableId: currentReadableId,
+       }).returning();
 
       for (const item of orderItemsData) {
         await tx.insert(orderItems).values({
@@ -99,6 +158,15 @@ export const placeOrder = async (req: Request, res: Response) => {
 
       return order;
     });
+
+    // Add coupon usage record if coupon was applied
+    if (appliedCoupon) {
+      await db.insert(couponUsage).values({
+        userId,
+        couponId: appliedCoupon.id,
+        usedAt: new Date(),
+      });
+    }
 
     res.status(201).json({ success: true, data: newOrder });
   } catch (error) {

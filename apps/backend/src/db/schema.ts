@@ -197,6 +197,13 @@ export const coupons = mf.table('coupons', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+export const couponUsage = mf.table('coupon_usage', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  couponId: integer('coupon_id').notNull().references(() => coupons.id),
+  usedAt: timestamp('used_at').notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   addresses: many(addresses),
@@ -205,6 +212,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   cartItems: many(cartItems),
   userCreds: one(userCreds),
   coupons: many(coupons),
+  couponUsages: many(couponUsage),
 }));
 
 export const userCredsRelations = relations(userCreds, ({ one }) => ({
@@ -290,7 +298,13 @@ export const complaintsRelations = relations(complaints, ({ one }) => ({
   order: one(orders, { fields: [complaints.orderId], references: [orders.id] }),
 }));
 
-export const couponsRelations = relations(coupons, ({ one }) => ({
+export const couponsRelations = relations(coupons, ({ one, many }) => ({
   targetUser: one(users, { fields: [coupons.targetUser], references: [users.id] }),
   creator: one(staffUsers, { fields: [coupons.createdBy], references: [staffUsers.id] }),
+  usages: many(couponUsage),
+}));
+
+export const couponUsageRelations = relations(couponUsage, ({ one }) => ({
+  user: one(users, { fields: [couponUsage.userId], references: [users.id] }),
+  coupon: one(coupons, { fields: [couponUsage.couponId], references: [coupons.id] }),
 }));
