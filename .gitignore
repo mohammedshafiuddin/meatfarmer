@@ -19,6 +19,7 @@ jspm_packages/
 bower_components/
 
 # Build outputs
+**/dist/
 dist/
 build/
 out/
@@ -29,9 +30,8 @@ coverage/
 .expo/
 .expo-shared/
 .next/
-android/app/build/
-ios/build/
-ios/Pods/
+android/
+ios/
 
 # React Native specific
 *.xcuserstate
@@ -45,6 +45,7 @@ ios/Pods/
 ios/DerivedData/
 *.ipa
 *.app
+*.aab
 *.dSYM.zip
 *.dSYM
 *.keystore
