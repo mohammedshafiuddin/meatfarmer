@@ -9,6 +9,7 @@ export interface ProductDetails {
   price: number;
   unit: string;
   images: string[];
+  isOutOfStock: boolean;
   deliverySlots: {
     deliveryTime: string;
     freezeTime: string;

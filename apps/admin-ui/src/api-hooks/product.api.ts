@@ -10,6 +10,7 @@ export interface CreateProductPayload {
   longDescription?: string;
   unitId: number;
   price: number;
+  isOutOfStock?: boolean;
   deals?: {
     quantity: number;
     price: number;
@@ -23,6 +24,7 @@ export interface UpdateProductPayload {
   longDescription?: string;
   unitId: number;
   price: number;
+  isOutOfStock?: boolean;
   deals?: {
     quantity: number;
     price: number;
@@ -37,6 +39,7 @@ export interface Product {
   longDescription?: string;
   unitId: number;
   price: number;
+  isOutOfStock?: boolean;
   images?: string[];
   createdAt: string;
   unit?: {
@@ -117,6 +120,11 @@ const deleteProductApi = async (id: number): Promise<{ message: string }> => {
   return response.data;
 };
 
+const toggleOutOfStockApi = async (id: number): Promise<{ message: string }> => {
+  const response = await axios.patch(`/av/products/${id}/toggle-out-of-stock`);
+  return response.data;
+};
+
 
 
 const getSlotProductIdsApi = async (slotId: number): Promise<GetSlotProductIdsResponse> => {
@@ -172,6 +180,16 @@ export const useDeleteProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deleteProductApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};
+
+export const useToggleOutOfStock = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: toggleOutOfStockApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },

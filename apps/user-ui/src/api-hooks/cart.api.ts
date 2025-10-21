@@ -12,6 +12,7 @@ export interface CartItem {
     name: string;
     price: number;
     unit: string;
+    isOutOfStock: boolean;
     images: string[];
   };
   subtotal: number;

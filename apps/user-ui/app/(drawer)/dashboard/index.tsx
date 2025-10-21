@@ -53,18 +53,20 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
         )}
         <View style={tw`flex-col mt-2 w-full`}>
          <TouchableOpacity
-           style={tw`bg-indigo-600 p-2 rounded-md my-1 items-center`}
-           onPress={() => handleBuyNow(item.id)}
+           style={tw`p-2 rounded-md my-1 items-center ${item.isOutOfStock ? 'bg-gray-400' : 'bg-indigo-600'}`}
+           onPress={() => !item.isOutOfStock && handleBuyNow(item.id)}
+           disabled={item.isOutOfStock}
          >
-           <Text style={tw`text-white text-sm font-bold`}>Buy Now</Text>
+           <Text style={tw`text-white text-sm font-bold`}>{item.isOutOfStock ? 'Out of Stock' : 'Buy Now'}</Text>
          </TouchableOpacity>
          <TouchableOpacity
-           style={tw`bg-indigo-600 p-2 rounded-md my-1 items-center`}
-           onPress={() => handleAddToCart(item.id)}
+           style={tw`p-2 rounded-md my-1 items-center ${item.isOutOfStock ? 'bg-gray-400' : 'bg-indigo-600'}`}
+           onPress={() => !item.isOutOfStock && handleAddToCart(item.id)}
+           disabled={item.isOutOfStock}
          >
-           <Text style={tw`text-white text-sm font-bold`}>Add to Cart</Text>
+           <Text style={tw`text-white text-sm font-bold`}>{item.isOutOfStock ? 'Out of Stock' : 'Add to Cart'}</Text>
          </TouchableOpacity>
-      </View>
+       </View>
     </TouchableOpacity>
   );
 };

@@ -214,7 +214,11 @@ export interface ProductSummary {
   id: number;
   name: string;
   shortDescription?: string;
-  imageUrls: string[];
+  price: number;
+  unit: string;
+  isOutOfStock: boolean;
+  nextDeliveryDate: string | null;
+  images: string[];
 }
 
 export interface GetSlotsProductIdsPayload {

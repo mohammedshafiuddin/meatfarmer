@@ -38,6 +38,10 @@ function CustomDrawerContent() {
          label="Edit Product"
          onPress={() => router.push("/(drawer)/edit-product" as any)}
        />
+       <DrawerItem
+         label="Complaints"
+         onPress={() => router.push("/(drawer)/complaints" as any)}
+       />
     </DrawerContentScrollView>
   );
 }
@@ -76,6 +80,7 @@ export default function Layout() {
           options={{ title: "Delivery" }}
         />
        <Drawer.Screen name="edit-product" options={{ title: "Edit Product" }} />
+       <Drawer.Screen name="complaints" options={{ title: "Complaints" }} />
     </Drawer>
   );
 }

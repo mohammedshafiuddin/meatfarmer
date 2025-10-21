@@ -11,7 +11,9 @@ export default function ManageSlots() {
 
   // Fetch data
   const { data: slotsData, isFetching: slotsLoading, refetch: refetchSlots } = useGetSlots();
-  const { data: productsData, isLoading: productsLoading } = useGetAllProductsSummary();
+  const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = useGetAllProductsSummary();
+
+  useManualRefresh(() => { refetchSlots(); refetchProducts(); });
   
 
   const slots = slotsData?.slots || [];

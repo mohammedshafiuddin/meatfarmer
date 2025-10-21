@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { tw } from 'common-ui';
+import { tw, useManualRefresh } from 'common-ui';
 import { CustomDropdown, Checkbox } from 'common-ui';
 import { Quantifier } from 'common-ui';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -16,9 +16,11 @@ import dayjs from 'dayjs';
 export default function MyCart() {
   const [checkedProducts, setCheckedProducts] = useState<Record<number, boolean>>({});
   const { data: cartData, isLoading, error, refetch } = useGetCart();
-  const { data: slotsData } = useGetCartSlots();
+  const { data: slotsData, refetch: refetchSlots } = useGetCartSlots();
   const updateCartItem = useUpdateCartItem();
   const removeFromCart = useRemoveFromCart();
+
+  useManualRefresh(() => { refetch(); refetchSlots(); });
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   
   const cartItems = cartData?.items || [];
@@ -76,7 +78,7 @@ export default function MyCart() {
         const newChecked = { ...prev };
         Object.keys(newChecked).forEach(cartId => {
           const item = cartItems.find(i => i.id === Number(cartId));
-          if (item && !allowedProductIds.includes(item.productId)) {
+          if (item && (!allowedProductIds.includes(item.productId) || item.product.isOutOfStock)) {
             delete newChecked[Number(cartId)];
             hasUnselected = true;
           }
@@ -85,14 +87,14 @@ export default function MyCart() {
       });
 
       if (hasUnselected) {
-        Alert.alert('Notice', 'Some items were unselected as they are not available in the selected time slot');
+        Alert.alert('Notice', 'Some items were unselected as they are not available in the selected time slot or are out of stock');
       }
     }
   }, [selectedSlot, slotsData, cartItems]);
 
   
 
-  const totalPrice = cartItems.filter(item => checkedProducts[item.id]).reduce((sum, item) => sum + item.product.price * (quantities[item.id] || item.quantity), 0);
+  const totalPrice = cartItems.filter(item => checkedProducts[item.id] && !item.product.isOutOfStock).reduce((sum, item) => sum + item.product.price * (quantities[item.id] || item.quantity), 0);
 
   if (isLoading) {
     return (
@@ -132,54 +134,57 @@ export default function MyCart() {
               <Text style={tw`text-red-500 text-center mb-4`}>Please select a delivery slot to select items.</Text>
             )}
             {cartItems.map((item) => {
-              const isAvailable = allowedProductIds.includes(item.productId);
+              const isAvailable = allowedProductIds.includes(item.productId) && !item.product.isOutOfStock;
            return (
            <View key={item.id} style={tw`mb-4 p-4 bg-gray-100 rounded ${!isAvailable ? 'opacity-50' : ''}`}>
-             <View style={tw`flex-row items-center mb-2`}>
-                <Checkbox
-                  checked={checkedProducts[item.id] || false}
-                  onPress={() => {
-                    if (!selectedSlot) {
-                      Alert.alert('Error', 'Please select a delivery slot before selecting a product.');
-                      return;
-                    }
-                    if (!isAvailable) {
-                      Alert.alert('Error', 'This item is not available in the selected delivery slot.');
-                      return;
-                    }
-                    setCheckedProducts(prev => ({ ...prev, [item.id]: !prev[item.id] }));
-                  }}
-                  style={tw`mr-4`}
-                  disabled={!selectedSlot || !isAvailable}
-                />
+              <View style={tw`flex-row items-center mb-2`}>
+                 <Checkbox
+                   checked={checkedProducts[item.id] || false}
+                   onPress={() => {
+                     if (!selectedSlot) {
+                       Alert.alert('Error', 'Please select a delivery slot before selecting a product.');
+                       return;
+                     }
+                     if (!isAvailable) {
+                       const reason = item.product.isOutOfStock ? 'This item is out of stock.' : 'This item is not available in the selected delivery slot.';
+                       Alert.alert('Error', reason);
+                       return;
+                     }
+                     setCheckedProducts(prev => ({ ...prev, [item.id]: !prev[item.id] }));
+                   }}
+                   style={tw`mr-4`}
+                   disabled={!selectedSlot || !isAvailable}
+                 />
                <Image source={{ uri: item.product.images?.[0] }} style={tw`w-16 h-16 rounded mr-4`} />
-               <View style={tw`flex-1`}>
-                 <Text style={tw`text-lg font-semibold`}>{item.product.name}</Text>
-                 {!isAvailable && (
-                   <Text style={tw`text-sm text-red-500`}>Not available in selected slot</Text>
-                 )}
-                 <View style={tw`flex-row items-center mt-1`}>
-                   <Text style={tw`text-sm mr-2`}>Quantity:</Text>
-                   {checkedProducts[item.id] ? (
-                     <Quantifier
-                       value={quantities[item.id] || item.quantity}
-                       setValue={(value) => {
-                         setQuantities(prev => ({ ...prev, [item.id]: value }));
-                         updateCartItem.mutate({ itemId: item.id, quantity: value }, {
-                           onSuccess: () => {
-                             // Optionally refetch or update local state
-                           },
-                           onError: (error: any) => {
-                             Alert.alert('Error', error.message || 'Failed to update quantity');
-                           },
-                         });
-                       }}
-                       step={1} // Assuming step 1 for now, can be from product if available
-                     />
-                   ) : (
-                     <Text style={tw`text-sm`}>{item.quantity} {item.product.unit}</Text>
-                   )}
-                 </View>
+                <View style={tw`flex-1`}>
+                  <Text style={tw`text-lg font-semibold`}>{item.product.name}</Text>
+                  {!isAvailable && (
+                    <Text style={tw`text-sm text-red-500`}>
+                      {item.product.isOutOfStock ? 'Out of stock' : 'Not available in selected slot'}
+                    </Text>
+                  )}
+                  <View style={tw`flex-row items-center mt-1`}>
+                    <Text style={tw`text-sm mr-2`}>Quantity:</Text>
+                    {checkedProducts[item.id] && !item.product.isOutOfStock ? (
+                      <Quantifier
+                        value={quantities[item.id] || item.quantity}
+                        setValue={(value) => {
+                          setQuantities(prev => ({ ...prev, [item.id]: value }));
+                          updateCartItem.mutate({ itemId: item.id, quantity: value }, {
+                            onSuccess: () => {
+                              // Optionally refetch or update local state
+                            },
+                            onError: (error: any) => {
+                              Alert.alert('Error', error.message || 'Failed to update quantity');
+                            },
+                          });
+                        }}
+                        step={1} // Assuming step 1 for now, can be from product if available
+                      />
+                    ) : (
+                      <Text style={tw`text-sm`}>{item.quantity} {item.product.unit}</Text>
+                    )}
+                  </View>
                  <Text style={tw`text-base font-bold`}>₹{item.product.price * (quantities[item.id] || item.quantity)}</Text>
                </View>
                <TouchableOpacity

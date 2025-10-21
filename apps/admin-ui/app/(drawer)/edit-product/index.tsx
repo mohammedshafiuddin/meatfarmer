@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { AppContainer } from 'common-ui';
+import { AppContainer, useManualRefresh } from 'common-ui';
 import ProductForm from '../../../src/components/ProductForm';
 import { useGetProduct, useUpdateProduct } from '../../../src/api-hooks/product.api';
 
@@ -9,8 +9,10 @@ export default function EditProduct() {
   const { id } = useLocalSearchParams();
   const productId = Number(id);
 
-  const { data: product, isLoading: isFetching } = useGetProduct(productId);
+  const { data: product, isLoading: isFetching, refetch } = useGetProduct(productId);
   const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
+
+  useManualRefresh(() => refetch());
 
   const handleSubmit = (values: any) => {
     const payload = {

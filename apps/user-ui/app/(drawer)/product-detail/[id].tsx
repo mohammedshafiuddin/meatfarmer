@@ -94,11 +94,11 @@
         )}
 
         <View style={tw`flex-row justify-between mb-4`}>
-           <TouchableOpacity style={tw`bg-indigo-600 p-3 rounded-md flex-1 mr-2 items-center`} onPress={() => handleBuyNow(productDetail.id)}>
-             <Text style={tw`text-white text-base font-bold`}>Buy Now</Text>
+           <TouchableOpacity style={tw`p-3 rounded-md flex-1 mr-2 items-center ${productDetail.isOutOfStock ? 'bg-gray-400' : 'bg-indigo-600'}`} onPress={() => !productDetail.isOutOfStock && handleBuyNow(productDetail.id)} disabled={productDetail.isOutOfStock}>
+             <Text style={tw`text-white text-base font-bold`}>{productDetail.isOutOfStock ? 'Out of Stock' : 'Buy Now'}</Text>
            </TouchableOpacity>
-           <TouchableOpacity style={tw`bg-indigo-600 p-3 rounded-md flex-1 ml-2 items-center`} onPress={() => handleAddToCart(productDetail.id)}>
-             <Text style={tw`text-white text-base font-bold`}>Add to Cart</Text>
+           <TouchableOpacity style={tw`p-3 rounded-md flex-1 ml-2 items-center ${productDetail.isOutOfStock ? 'bg-gray-400' : 'bg-indigo-600'}`} onPress={() => !productDetail.isOutOfStock && handleAddToCart(productDetail.id)} disabled={productDetail.isOutOfStock}>
+             <Text style={tw`text-white text-base font-bold`}>{productDetail.isOutOfStock ? 'Out of Stock' : 'Add to Cart'}</Text>
            </TouchableOpacity>
         </View>
 

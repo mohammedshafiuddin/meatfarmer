@@ -1,5 +1,5 @@
  import React from 'react';
- import { View, Dimensions, FlatList, Image, Text, TouchableOpacity, Alert } from 'react-native';
+ import { View, Dimensions, FlatList, Image, Text, TouchableOpacity } from 'react-native';
  import { useRouter } from 'expo-router';
  import { tw, useManualRefresh } from 'common-ui';
  import { useGetProducts } from '../../../src/api-hooks/product.api';
@@ -10,7 +10,7 @@ const { width: screenWidth } = Dimensions.get('window');
 const renderProduct = ({ item, router }: { item: any, router: any }) => (
   <TouchableOpacity
     style={tw`flex-1 m-2.5 bg-gray-100 rounded-lg p-2.5 items-center`}
-    onPress={() => Alert.alert('Edit Product', `Navigate to edit product ${item.id}`)}
+    onPress={() => router.push(`/product-detail/${item.id}`)}
   >
     <Image
       source={{ uri: item.images?.[0] || 'https://picsum.photos/200/200?random=default' }}
@@ -24,6 +24,12 @@ const renderProduct = ({ item, router }: { item: any, router: any }) => (
         onPress={() => router.push(`/edit-product?id=${item.id}`)}
       >
         <Text style={tw`text-white text-sm font-bold`}>Edit</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={tw`bg-green-600 p-2 rounded-md my-1 items-center`}
+        onPress={() => router.push(`/product-detail/${item.id}`)}
+      >
+        <Text style={tw`text-white text-sm font-bold`}>View Details</Text>
       </TouchableOpacity>
     </View>
   </TouchableOpacity>
