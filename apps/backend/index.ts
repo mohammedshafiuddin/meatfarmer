@@ -8,6 +8,7 @@ import mainRouter from './src/main-router';
 import initFunc from './src/lib/init';
 // import { seed } from 'src/db/seed';
 
+
 const app = express();
 
 app.use(cors());

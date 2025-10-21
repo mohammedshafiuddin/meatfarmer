@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import avRouter from "./admin-apis/av-router";
 import { ApiError } from "./lib/api-error";
 import v1Router from "./v1-router";
+import testController from "./test-controller";
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.get('/seed', (req:Request, res: Response) => {
 })
 
 router.use('/v1', v1Router);
+router.use('/test', testController);
 
 // Global error handling middleware
 router.use((err: Error, req: Request, res: Response, next: NextFunction) => {

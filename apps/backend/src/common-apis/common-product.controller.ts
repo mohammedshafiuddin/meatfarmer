@@ -1,8 +1,8 @@
 import { eq, gt, and, sql } from "drizzle-orm";
 import { Request, Response } from "express";
-import { db } from "src/db/db_index";
-import { productInfo, units, productSlots, deliverySlotInfo } from "src/db/schema";
-import { generateSignedUrlsFromS3Urls } from "src/lib/s3-client";
+import { db } from "../db/db_index";
+import { productInfo, units, productSlots, deliverySlotInfo } from "../db/schema";
+import { generateSignedUrlsFromS3Urls } from "../lib/s3-client";
 
 /**
  * Get next delivery date for a product

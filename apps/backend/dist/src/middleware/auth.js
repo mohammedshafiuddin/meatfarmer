@@ -25,7 +25,7 @@ const verifyToken = (req, res, next) => {
     }
     catch (error) {
         if (error instanceof jsonwebtoken_1.default.JsonWebTokenError) {
-            next(new api_error_1.ApiError('Invalid token', 401));
+            next(new api_error_1.ApiError('Invalid Auth Credentials', 401));
         }
         else {
             next(error);

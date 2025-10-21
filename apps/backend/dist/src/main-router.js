@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const api_error_1 = require("./lib/api-error");
 const v1_router_1 = __importDefault(require("./v1-router"));
+const test_controller_1 = __importDefault(require("./test-controller"));
 const router = (0, express_1.Router)();
 // Health check endpoint
 router.get('/health', (req, res) => {
@@ -23,6 +24,7 @@ router.get('/seed', (req, res) => {
     });
 });
 router.use('/v1', v1_router_1.default);
+router.use('/test', test_controller_1.default);
 // Global error handling middleware
 router.use((err, req, res, next) => {
     console.error('Error:', err);

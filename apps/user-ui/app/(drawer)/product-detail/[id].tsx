@@ -15,6 +15,7 @@
    const [showAllSlots, setShowAllSlots] = useState(false);
    const { data: productDetail, isFetching:isLoading, error, refetch } = useGetProductDetails(Number(id));
    const addToCart = useAddToCart();
+   
 
    useManualRefresh(() => {
      refetch();

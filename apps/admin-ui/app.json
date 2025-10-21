@@ -22,13 +22,12 @@
       }
     },
     "android": {
-      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.mohammedshafiudin54.com.mohammedshafiudin54.locality-admin-ui"
+      "package": "com.mohammedshafiuddin54.meatfarmeradmin"
     },
     "web": {
       "bundler": "metro",
@@ -46,8 +45,7 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-secure-store",
-      "./withPhonepe.js"
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
@@ -55,7 +53,7 @@
     "extra": {
       "router": {},
       "eas": {
-
+        "projectId": "c61a345f-ddd5-4b10-94f3-304a83edd9d7"
       }
     }
   }

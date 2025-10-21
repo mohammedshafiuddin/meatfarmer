@@ -7,7 +7,7 @@ import { DeviceEventEmitter } from 'react-native'
 
 // const API_BASE_URL = 'http://192.168.1.5:4000'; // Change to your API base URL
 const API_BASE_URL = 'http://192.168.100.94:4000'; // Change to your API base URL
-// const API_BASE_URL = 'https://www.technocracy.ovh'; // Change to your API base URL
+// const API_BASE_URL = 'https://www.technocracy.ovh/mf'; // Change to your API base URL
 // const API_BASE_URL = 'http://10.195.26.42:4000'; // Change to your API base URL
 // const API_BASE_URL = 'http://localhost:4000/api/mobile/'; // Change to your API base URL
 // const API_BASE_URL = 'https://car-safar.com/api/mobile/'; // Change to your API base URL

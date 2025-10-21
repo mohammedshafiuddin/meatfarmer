@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { db } from "src/db/db_index";
-import { productInfo, units, productSlots, deliverySlotInfo, specialDeals } from "src/db/schema";
-import { generateSignedUrlsFromS3Urls } from "src/lib/s3-client";
+import { db } from "../db/db_index";
+import { productInfo, units, productSlots, deliverySlotInfo, specialDeals } from "../db/schema";
+import { generateSignedUrlsFromS3Urls } from "../lib/s3-client";
 import { eq, and, gt, sql } from "drizzle-orm";
 
 /**
