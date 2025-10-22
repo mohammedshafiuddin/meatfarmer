@@ -70,6 +70,7 @@ export const deliverySlotInfo = mf.table('delivery_slot_info', {
   deliveryTime: timestamp('delivery_time').notNull(),
   freezeTime: timestamp('freeze_time').notNull(),
   isActive: boolean('is_active').notNull().default(true),
+  deliverySequence: jsonb('delivery_sequence').$defaultFn(() => []),
 });
 
 export const productSlots = mf.table('product_slots', {

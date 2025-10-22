@@ -20,34 +20,30 @@ function CustomDrawerContent() {
         label="Add Product"
         onPress={() => router.push("/(drawer)/add-product" as any)}
       />
-      <DrawerItem
-        label="Slots"
-        onPress={() => router.push("/(drawer)/slots" as any)}
-      />
        <DrawerItem
-         label="Packaging"
-         onPress={() => router.push("/(drawer)/packaging" as any)}
+         label="Slots"
+         onPress={() => router.push("/(drawer)/slots" as any)}
        />
-       <DrawerItem
-         label="Delivery"
-         onPress={() => router.push("/(drawer)/delivery" as any)}
-       />
-       <DrawerItem
-         label="Edit Product"
-         onPress={() => router.push("/(drawer)/edit-product" as any)}
-       />
-       <DrawerItem
-         label="Complaints"
-         onPress={() => router.push("/(drawer)/complaints" as any)}
-       />
-       <DrawerItem
-         label="Coupons"
-         onPress={() => router.push("coupons")}
-       />
-       <DrawerItem
-         label="Logout"
-         onPress={() => logout()}
-       />
+        <DrawerItem
+          label="Edit Product"
+          onPress={() => router.push("/(drawer)/edit-product" as any)}
+        />
+        <DrawerItem
+          label="Complaints"
+          onPress={() => router.push("/(drawer)/complaints" as any)}
+        />
+          <DrawerItem
+            label="Manage Orders"
+            onPress={() => router.push("/(drawer)/manage-orders" as any)}
+          />
+         <DrawerItem
+           label="Coupons"
+           onPress={() => router.push("coupons")}
+         />
+        <DrawerItem
+          label="Logout"
+          onPress={() => logout()}
+        />
     </DrawerContentScrollView>
   );
 }
@@ -70,20 +66,13 @@ export default function Layout() {
         ),
       }}
     >
-      <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
-      <Drawer.Screen name="add-product" options={{ title: "Add Product" }} />
-      <Drawer.Screen name="slots" options={{ title: "Slots" }} />
-        <Drawer.Screen
-          name="packaging"
-          options={{ title: "Packaging" }}
-        />
-        <Drawer.Screen
-          name="delivery"
-          options={{ title: "Delivery" }}
-        />
-       <Drawer.Screen name="edit-product" options={{ title: "Edit Product" }} />
-       <Drawer.Screen name="complaints" options={{ title: "Complaints" }} />
-       <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
+       <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
+       <Drawer.Screen name="add-product" options={{ title: "Add Product" }} />
+       <Drawer.Screen name="slots" options={{ title: "Slots" }} />
+         <Drawer.Screen name="edit-product" options={{ title: "Edit Product" }} />
+         <Drawer.Screen name="manage-orders" options={{ title: "Manage Orders" }} />
+         <Drawer.Screen name="complaints" options={{ title: "Complaints" }} />
+         <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
     </Drawer>
   );
 }

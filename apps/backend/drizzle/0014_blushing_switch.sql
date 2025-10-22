@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."delivery_slot_info" ADD COLUMN "delivery_sequence" jsonb;

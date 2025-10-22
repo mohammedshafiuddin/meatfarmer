@@ -9,6 +9,7 @@ import couponRouter from "./coupon.router";
 
 const router = Router();
 
+router.use("/staff", staffRouter);
 // Apply staff authentication to all admin routes
 router.use(authenticateStaff);
 
@@ -25,7 +26,6 @@ router.use("/orders", orderRouter);
 router.use("/complaints", complaintRouter);
 
 // Staff routes
-router.use("/staff", staffRouter);
 
 // Coupon routes
 router.use("/coupons", couponRouter);

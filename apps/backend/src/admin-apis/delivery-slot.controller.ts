@@ -115,3 +115,53 @@ export const deleteSlot = async (req: Request, res: Response) => {
     message: "Slot deleted successfully",
   });
 };
+
+/**
+ * Get delivery sequence for a slot
+ */
+export const getDeliverySequence = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const slot = await db.query.deliverySlotInfo.findFirst({
+    where: eq(deliverySlotInfo.id, parseInt(id)),
+  });
+
+  if (!slot) {
+    throw new ApiError("Slot not found", 404);
+  }
+
+  return res.status(200).json({
+    deliverySequence: slot.deliverySequence || [],
+  });
+};
+
+/**
+ * Update delivery sequence for a slot
+ */
+export const updateDeliverySequence = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { deliverySequence } = req.body;
+
+  // Validate that deliverySequence is an array of numbers
+  if (!Array.isArray(deliverySequence) || !deliverySequence.every(id => typeof id === 'number')) {
+    throw new ApiError("deliverySequence must be an array of order IDs", 400);
+  }
+
+  const [updatedSlot] = await db
+    .update(deliverySlotInfo)
+    .set({ deliverySequence })
+    .where(eq(deliverySlotInfo.id, parseInt(id)))
+    .returning({
+      id: deliverySlotInfo.id,
+      deliverySequence: deliverySlotInfo.deliverySequence,
+    });
+
+  if (!updatedSlot) {
+    throw new ApiError("Slot not found", 404);
+  }
+
+  return res.status(200).json({
+    slot: updatedSlot,
+    message: "Delivery sequence updated successfully",
+  });
+};

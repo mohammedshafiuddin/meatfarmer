@@ -24,6 +24,7 @@ router.get('/seed', (req, res) => {
     });
 });
 router.use('/v1', v1_router_1.default);
+// router.use('/av', avRouter);
 router.use('/test', test_controller_1.default);
 // Global error handling middleware
 router.use((err, req, res, next) => {

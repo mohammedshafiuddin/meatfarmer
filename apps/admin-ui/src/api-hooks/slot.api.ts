@@ -24,6 +24,7 @@ export interface Slot {
   deliveryTime: string;
   freezeTime: string;
   isActive: boolean;
+  deliverySequence?: number[];
 }
 
 export interface GetSlotsResponse {
@@ -112,5 +113,36 @@ export const useGetSlotOrders = (slotId: number) => {
     queryKey: ['slot-orders', slotId],
     queryFn: () => getSlotOrdersApi(slotId),
     enabled: !!slotId,
+  });
+};
+
+// Delivery sequence API functions
+const getDeliverySequenceApi = async (slotId: number): Promise<{ deliverySequence: number[] }> => {
+  const response = await axios.get(`/av/slots/${slotId}/delivery-sequence`);
+  return response.data;
+};
+
+const updateDeliverySequenceApi = async ({ slotId, deliverySequence }: { slotId: number; deliverySequence: number[] }) => {
+  const response = await axios.put(`/av/slots/${slotId}/delivery-sequence`, { deliverySequence });
+  return response.data;
+};
+
+// Delivery sequence hooks
+export const useGetDeliverySequence = (slotId: number) => {
+  return useQuery({
+    queryKey: ['delivery-sequence', slotId],
+    queryFn: () => getDeliverySequenceApi(slotId),
+    enabled: !!slotId,
+  });
+};
+
+export const useUpdateDeliverySequence = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateDeliverySequenceApi,
+    onSuccess: (_, { slotId }) => {
+      queryClient.invalidateQueries({ queryKey: ['delivery-sequence', slotId] });
+      queryClient.invalidateQueries({ queryKey: ['slot-orders', slotId] });
+    },
   });
 };
