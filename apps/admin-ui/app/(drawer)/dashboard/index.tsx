@@ -4,6 +4,7 @@
  import { tw, useManualRefresh } from 'common-ui';
  import { useGetProducts } from '../../../src/api-hooks/product.api';
  import useFocusCallback from 'common-ui/hooks/useFocusCallback';
+import { trpc } from '@/src/trpc-client';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -36,6 +37,9 @@ const renderProduct = ({ item, router }: { item: any, router: any }) => (
 );
 
  export default function Dashboard() {
+   const { data: helloData } = trpc.hello.useQuery( { name: 'Admin' } );
+   console.log({helloData})
+   
    const router = useRouter();
    const { data: productsData, isLoading, error, refetch } = useGetProducts();
 

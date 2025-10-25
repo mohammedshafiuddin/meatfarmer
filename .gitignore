@@ -27,7 +27,7 @@ out/
 .tmp/
 .cache/
 coverage/
-.expo/
+**/.expo/
 .expo-shared/
 .next/
 android/
