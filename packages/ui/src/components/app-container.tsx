@@ -12,7 +12,7 @@ function AppContainer(props: Props) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={tw`flex-1 bg-gray-50 dark:bg-gray-900`}
+      style={tw`flex-1 bg-gray1 dark:bg-gray-900`}
       keyboardVerticalOffset={80}
     >
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={tw`p-4 flex-grow`}>

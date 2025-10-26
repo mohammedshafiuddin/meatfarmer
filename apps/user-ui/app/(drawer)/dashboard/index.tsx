@@ -9,16 +9,17 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
- import { ImageCarousel, tw, useManualRefresh } from "common-ui";
+ import { ImageCarousel, theme, tw, useManualRefresh } from "common-ui";
     import { useGetAllProductsSummary } from "common-ui/src/common-api-hooks/product.api";
    import dayjs from "dayjs";
    import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAddToCart } from "@/src/api-hooks/cart.api";
 
+
 const { width: screenWidth } = Dimensions.get("window");
 const imageWidth = screenWidth * 0.8;
 const imageHeight = (imageWidth * 9) / 16;
-const itemWidth = (screenWidth - 40) / 2; // 40px for px-5 padding (20px each side)
+const itemWidth = (screenWidth - 40 - 20) / 2; // 40px for px-5 padding (20px each side), 20px for margins
 
 const demoImages = [
   "https://picsum.photos/800/400?random=1",
@@ -27,48 +28,84 @@ const demoImages = [
 ];
 
 const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: any; router: any; handleAddToCart: any; handleBuyNow: any }) => {
-  console.log({item})
   
   return (
-    <TouchableOpacity
-      style={[tw`bg-gray-100 rounded-lg p-2.5 items-center`, { width: itemWidth }]}
-      onPress={() => router.push(`/product-detail/${item.id}`)}
-    >
-       <Image
-         source={{ uri: item.images?.[0] }}
-         style={tw`w-25 h-25 rounded-lg`}
-       />
-      <Text style={tw`text-base font-bold mt-2`} numberOfLines={1}>
-        {item.name}
-      </Text>
-       <Text style={tw`text-sm text-gray-600 mt-1`}>
-         ₹{item.price} per {item.unit || "unit"}
-       </Text>
-        {item.nextDeliveryDate && (
-          <View style={tw`flex-row items-center mt-1`}>
-            <MaterialIcons name="local-shipping" size={12} color="#6b7280" />
-            <Text style={tw`text-xs text-gray-500 ml-1`}>
-              {dayjs(item.nextDeliveryDate).format('ddd DD MMM, h a')}
-            </Text>
-          </View>
-        )}
-        <View style={tw`flex-col mt-2 w-full`}>
-         <TouchableOpacity
-           style={tw`p-2 rounded-md my-1 items-center ${item.isOutOfStock ? 'bg-gray-400' : 'bg-indigo-600'}`}
-           onPress={() => !item.isOutOfStock && handleBuyNow(item.id)}
-           disabled={item.isOutOfStock}
-         >
-           <Text style={tw`text-white text-sm font-bold`}>{item.isOutOfStock ? 'Out of Stock' : 'Buy Now'}</Text>
-         </TouchableOpacity>
-         <TouchableOpacity
-           style={tw`p-2 rounded-md my-1 items-center ${item.isOutOfStock ? 'bg-gray-400' : 'bg-indigo-600'}`}
-           onPress={() => !item.isOutOfStock && handleAddToCart(item.id)}
-           disabled={item.isOutOfStock}
-         >
-           <Text style={tw`text-white text-sm font-bold`}>{item.isOutOfStock ? 'Out of Stock' : 'Add to Cart'}</Text>
-         </TouchableOpacity>
-       </View>
-    </TouchableOpacity>
+     <TouchableOpacity
+       style={[tw`bg-white rounded-lg items-center shadow-md mb-3 mr-2.5`, { width: itemWidth }]}
+       onPress={() => router.push(`/product-detail/${item.id}`)}
+     >
+        <Image
+          source={{ uri: item.images?.[0] }}
+          style={[{ width: itemWidth, height: itemWidth }, tw`rounded-t-lg`]}
+        />
+        <View style={tw`p-2.5 w-full`}>
+          <Text style={tw`text-base font-medium`} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={tw`text-sm text-black mt-1`}>
+            ₹{item.price} per {item.unit || "unit"}
+          </Text>
+           {item.nextDeliveryDate && (
+             <View style={tw`flex-row items-center mt-1`}>
+               <MaterialIcons name="local-shipping" size={12} color="#6b7280" />
+               <Text style={tw`text-xs text-gray-500 ml-1`}>
+                 {dayjs(item.nextDeliveryDate).format('ddd DD MMM, h a')}
+               </Text>
+             </View>
+           )}
+          {item.isOutOfStock ? (
+            <View style={tw`mt-2 items-center`}>
+              <Text style={[tw`text-sm font-medium`, { color: theme.colors.red1 }]}>
+                Out of Stock
+              </Text>
+            </View>
+          ) : (
+            <View style={tw`flex-row mt-2 justify-end w-full`}>
+              <TouchableOpacity
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginRight: 8,
+                }}
+                onPress={() => handleBuyNow(item.id)}
+              >
+                <View style={{
+                  position: 'absolute',
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: theme.colors.pink1,
+                  opacity: 0.7,
+                }} />
+                <MaterialIcons name="flash-on" size={24} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+                onPress={() => handleAddToCart(item.id)}
+              >
+                <View style={{
+                  position: 'absolute',
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: theme.colors.pink1,
+                  opacity: 0.7,
+                }} />
+                <MaterialIcons name="shopping-cart" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+     </TouchableOpacity>
   );
 };
 
@@ -121,7 +158,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
   }
 
   return (
-    <View style={tw`flex-1`}>
+    <View style={tw`flex-1 bg-gray1`}>
       {/* <View style={tw`items-center mb-5`}>
         <ImageCarousel
           urls={demoImages}
@@ -129,13 +166,13 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
           imageHeight={imageHeight}
         />
       </View> */}
-      <FlatList
-        data={products}
-        numColumns={2}
-          renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={tw`px-5`}
-      />
+       <FlatList
+         data={products}
+         numColumns={2}
+           renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}
+         keyExtractor={(item, index) => index.toString()}
+         contentContainerStyle={tw`px-5 pt-5`}
+       />
     </View>
   );
 }

@@ -1,12 +1,12 @@
-  import { Drawer } from "expo-router/drawer";
-  import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-  import { useRouter, Redirect } from "expo-router";
-  import { useNavigation, DrawerActions } from "@react-navigation/native";
-  import { TouchableOpacity, DeviceEventEmitter, View, ActivityIndicator } from "react-native";
-  import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-  import { REFRESH_EVENT } from "common-ui/src/lib/const-strs";
-  import { useAuth } from "@/src/contexts/AuthContext";
-  import { tw, MyText, theme } from "common-ui";
+   import { Drawer } from "expo-router/drawer";
+   import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
+   import { useRouter, Redirect } from "expo-router";
+   import { useNavigation, DrawerActions } from "@react-navigation/native";
+   import { TouchableOpacity, DeviceEventEmitter, View, ActivityIndicator, Image } from "react-native";
+   import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+   import { REFRESH_EVENT } from "common-ui/src/lib/const-strs";
+   import { useAuth } from "@/src/contexts/AuthContext";
+   import { tw, MyText, theme } from "common-ui";
 
 function CustomDrawerContent() {
   const router = useRouter();
@@ -33,7 +33,7 @@ function CustomDrawerContent() {
         </View>
       )}
       <DrawerItem
-        label="Dashboard"
+        label=""
         onPress={() => router.push("/(drawer)/dashboard")}
         icon={({ color, size }) => (
           <MaterialIcons name="dashboard" size={size} color={color} />
@@ -64,10 +64,10 @@ function CustomDrawerContent() {
   );
 }
 
-  export default function Layout() {
-    const { isAuthenticated, isLoading } = useAuth();
-    const router = useRouter();
-    const navigation = useNavigation();
+   export default function Layout() {
+     const { isAuthenticated, isLoading } = useAuth();
+     const router = useRouter();
+     const navigation = useNavigation();
 
     if (isLoading) {
       return (
@@ -85,55 +85,102 @@ function CustomDrawerContent() {
       <Drawer
         drawerContent={CustomDrawerContent}
         backBehavior="history"
-        screenOptions={({ navigation }) => ({
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: theme.colors.gray1,
-            shadowOpacity: 0,
-            shadowRadius: 0,
-            shadowOffset: { height: 0 },
-            elevation: 0,
-          },
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => (navigation as any).openDrawer()}
-              style={{
-                marginLeft: 10,
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: theme.colors.gray2,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <MaterialIcons name="menu" size={24} color="black" />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', marginRight: 10 }}>
-              <TouchableOpacity onPress={() => router.push('/my-cart')} style={{ marginRight: 10 }}>
-                <MaterialIcons name="shopping-cart" size={24} color="black" />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => DeviceEventEmitter.emit(REFRESH_EVENT)}>
-                <MaterialIcons name="refresh" size={24} color="black" />
-              </TouchableOpacity>
-            </View>
-          ),
+        // style={{ backgroundColor: theme.colors.gray1 }}
+         screenOptions={({ navigation, route }) => ({
+           headerShown: true,
+           headerStyle: {
+             backgroundColor: theme.colors.gray1,
+             shadowOpacity: 0,
+             shadowRadius: 0,
+             shadowOffset: { height: 0, width:0 },
+             elevation: 0,
+           },
+           headerTitle: route.name === "dashboard" ? () => (
+            <View style={tw`-ml-8`}>
+
+             <Image
+               source={require("@/assets/logo.png")}
+               style={{ width: 120, height: 40, resizeMode: "contain" }}
+               />
+               </View>
+           ) : undefined,
+           headerTitleAlign: 'center',
+           headerLeft: () => (
+             <TouchableOpacity
+               onPress={() => (navigation as any).openDrawer()}
+               style={{
+                 marginLeft: 15,
+                 width: 40,
+                 height: 40,
+                 borderRadius: 20,
+                 backgroundColor: theme.colors.gray2,
+                 justifyContent: 'center',
+                 alignItems: 'center',
+               }}
+             >
+               <MaterialIcons name="menu" size={24} color="black" />
+             </TouchableOpacity>
+           ),
+           headerRight: () => (
+             <View style={{ flexDirection: 'row', marginRight: 15 }}>
+               <TouchableOpacity
+                 onPress={() => router.push('/my-cart')}
+                 style={{
+                   marginRight: 10,
+                   width: 40,
+                   height: 40,
+                   borderRadius: 20,
+                   justifyContent: 'center',
+                   alignItems: 'center',
+                 }}
+               >
+                 <View style={{
+                   position: 'absolute',
+                   width: 40,
+                   height: 40,
+                   borderRadius: 20,
+                   backgroundColor: theme.colors.pink1,
+                   opacity: 0.7,
+                 }} />
+                 <MaterialIcons name="shopping-cart" size={24} color="white" />
+               </TouchableOpacity>
+               <TouchableOpacity
+                 onPress={() => DeviceEventEmitter.emit(REFRESH_EVENT)}
+                 style={{
+                   width: 40,
+                   height: 40,
+                   borderRadius: 20,
+                   justifyContent: 'center',
+                   alignItems: 'center',
+                 }}
+               >
+                 <View style={{
+                   position: 'absolute',
+                   width: 40,
+                   height: 40,
+                   borderRadius: 20,
+                   backgroundColor: theme.colors.pink1,
+                   opacity: 0.7,
+                 }} />
+                  <MaterialIcons name="person" size={24} color="white" />
+               </TouchableOpacity>
+             </View>
+           ),
         })}
       >
         <Drawer.Screen
           name="dashboard"
           options={{
-            title: "Dashboard",
+            title: "",
           }}
         />
-        <Drawer.Screen
-          name="product-detail"
-          options={{
-            title: "Product Details",
-          }}
-        />
+         <Drawer.Screen
+           name="product-detail"
+           options={{
+             title: "Product Details",
+             headerShown: false,
+           }}
+         />
         <Drawer.Screen
           name="my-cart"
           options={{

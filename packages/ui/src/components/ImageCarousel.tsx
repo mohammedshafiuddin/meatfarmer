@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, FlatList, Dimensions, StyleSheet } from 'react-native';
 import ImageViewerURI from './image-viewer';
+import { theme } from '../theme';
 
 interface ImageCarouselProps {
   urls: string[];
   imageHeight?: number;
   imageWidth?: number;
+  showPaginationDots?: boolean;
 }
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -14,6 +16,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   urls,
   imageHeight = 400,
   imageWidth = screenWidth,
+  showPaginationDots = true,
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -42,17 +45,19 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   );
 
   return (
-    <View style={[styles.container, { height: imageHeight }]}>
-      <FlatList
-        data={urls}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        renderItem={renderItem}
-        keyExtractor={(_, index) => index.toString()}
-      />
-      {urls.length > 1 && (
+    <View style={styles.wrapper}>
+      <View style={[styles.container, { height: imageHeight }]}>
+        <FlatList
+          data={urls}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          renderItem={renderItem}
+          keyExtractor={(_, index) => index.toString()}
+        />
+      </View>
+      {showPaginationDots && (
         <View style={styles.pagination}>
           {urls.map((_, index) => (
             <View
@@ -60,7 +65,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
               style={[
                 styles.dot,
                 {
-                  backgroundColor: index === activeIndex ? '#4f46e5' : '#ccc',
+                  backgroundColor: index === activeIndex ? theme.colors.pink1 : '#ccc',
                 },
               ]}
             />
@@ -72,20 +77,32 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
 };
 
 const styles = StyleSheet.create({
+  wrapper: {
+    alignItems: 'center',
+  },
   container: {
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   slide: {
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fff',
   },
   image: {
     resizeMode: 'cover',
   },
   pagination: {
     flexDirection: 'row',
-    position: 'absolute',
-    bottom: 16,
+    marginTop: 12,
     alignSelf: 'center',
   },
   dot: {
