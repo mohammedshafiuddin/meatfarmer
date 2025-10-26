@@ -8,6 +8,7 @@ export interface EligibleCoupon {
   discountValue: number;
   maxValue?: number;
   minOrder?: number;
+  productIds?: number[];
   description: string;
 }
 

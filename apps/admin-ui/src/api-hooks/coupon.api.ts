@@ -5,18 +5,19 @@ export interface Coupon {
   id: number;
   couponCode: string;
   isUserBased: boolean;
-  discountPercent?: string;
-  flatDiscount?: string;
-  minOrder?: string;
-  targetUser?: number;
-  createdBy: number;
-  maxValue?: string;
-  isApplyForAll: boolean;
-  validTill?: string;
-  maxLimitForUser?: number;
+  discountPercent?: string | null;
+  flatDiscount?: string | null;
+  minOrder?: string | null;
+  targetUser?: number | null;
+  productIds?: number[] | null;
+  createdBy: number | null;
+  maxValue?: string | null;
+  isApplyForAll: boolean | null;
+  validTill?: string | null;
+  maxLimitForUser?: number | null;
   isInvalidated: boolean;
   createdAt: string;
-  targetUserDetails?: { id: number; name: string; email?: string };
+  targetUserDetails?: { id: number; name: string; email?: string } | null;
   creator: { id: number; name: string };
 }
 
@@ -27,6 +28,7 @@ export interface CreateCouponPayload {
   flatDiscount?: number;
   minOrder?: number;
   targetUser?: number;
+  productIds?: number[];
   maxValue?: number;
   isApplyForAll?: boolean;
   validTill?: string;
@@ -59,8 +61,14 @@ export const useCreateCoupon = () => {
 export const useUpdateCoupon = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Coupon> & { id: number }) => {
-      const response = await axiosAdmin.put<Coupon>(`/av/coupons/${id}`, updates);
+    mutationFn: async ({
+      id,
+      ...updates
+    }: Partial<Coupon> & { id: number }) => {
+      const response = await axiosAdmin.put<Coupon>(
+        `/av/coupons/${id}`,
+        updates
+      );
       return response.data;
     },
     onSuccess: () => {

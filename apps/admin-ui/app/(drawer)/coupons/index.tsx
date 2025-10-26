@@ -4,13 +4,18 @@ import { tw, AppContainer, BottomDialog, MyButton } from 'common-ui';
 import useManualRefresh from 'common-ui/hooks/useManualRefresh';
 import { useGetCoupons, useCreateCoupon, useDeleteCoupon, CreateCouponPayload, Coupon } from '../../../src/api-hooks/coupon.api';
 import CouponForm from '../../../src/components/CouponForm';
+import { trpc } from '@/src/trpc-client';
 
 export default function Coupons() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const { data: coupons = [], isLoading, error, refetch } = useGetCoupons();
-  const createCoupon = useCreateCoupon();
-  const deleteCoupon = useDeleteCoupon();
+  // const { data: coupons = [], isLoading, error, refetch } = useGetCoupons();
+  const { data: coupons = [], isLoading, error, refetch } = trpc.admin.coupon.getAll.useQuery();
+
+  const createCoupon = trpc.admin.coupon.create.useMutation();
+  const deleteCoupon = trpc.admin.coupon.delete.useMutation();
+  // const createCoupon = useCreateCoupon();
+  // const deleteCoupon = useDeleteCoupon();
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -39,7 +44,7 @@ export default function Coupons() {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
-          deleteCoupon.mutate(id, {
+          deleteCoupon.mutate({id}, {
             onSuccess: () => {
               Alert.alert('Success', 'Coupon deleted successfully');
             },
@@ -62,7 +67,10 @@ export default function Coupons() {
       <Text style={tw`text-base mb-1`}>Min Order: {item.minOrder ? `₹${item.minOrder}` : 'N/A'}</Text>
       <Text style={tw`text-base mb-1`}>Max Value: {item.maxValue ? `₹${item.maxValue}` : 'N/A'}</Text>
       <Text style={tw`text-base mb-1`}>Valid Till: {item.validTill ? new Date(item.validTill).toLocaleDateString() : 'N/A'}</Text>
-      <Text style={tw`text-base mb-1`}>Target: {item.isApplyForAll ? 'All Users' : `User ${item.targetUser}`}</Text>
+       <Text style={tw`text-base mb-1`}>
+         Target: {item.isApplyForAll ? 'All Users' : item.targetUser ? `User ${item.targetUser}` : 'All Users'}
+         {item.productIds && item.productIds.length > 0 && ` • Products: ${item.productIds.length} selected`}
+       </Text>
       <Text style={tw`text-base mb-1`}>Status: {item.isInvalidated ? 'Invalidated' : 'Active'}</Text>
       <View style={tw`flex-row mt-2`}>
         <TouchableOpacity

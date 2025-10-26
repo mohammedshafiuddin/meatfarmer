@@ -27,6 +27,7 @@ const demoImages = [
 ];
 
 const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: any; router: any; handleAddToCart: any; handleBuyNow: any }) => {
+  console.log({item})
   
   return (
     <TouchableOpacity
@@ -76,7 +77,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
      const { data: productsData, isLoading, error, refetch } = useGetAllProductsSummary();
      const products = productsData?.products || [];
      const addToCart = useAddToCart();
-
+    
      useManualRefresh(() => {
        refetch();
      });

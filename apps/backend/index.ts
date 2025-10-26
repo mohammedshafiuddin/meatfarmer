@@ -28,18 +28,41 @@ app.use((req, res, next) => {
 
 app.use('/api/trpc', createExpressMiddleware({
   router: appRouter,
-  createContext: ({ req, res }) => {
+  createContext: async ({ req, res }) => {
     let user = null;
+    let staffUser = null;
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
-        user = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+
+        // Check if this is a staff token (has staffId)
+        if (decoded.staffId) {
+          // This is a staff token, verify staff exists
+          const { db } = await import('./src/db/db_index');
+          const { staffUsers } = await import('./src/db/schema');
+          const { eq } = await import('drizzle-orm');
+
+          const staff = await db.query.staffUsers.findFirst({
+            where: eq(staffUsers.id, decoded.staffId),
+          });
+
+          if (staff) {
+            staffUser = {
+              id: staff.id,
+              name: staff.name,
+            };
+          }
+        } else {
+          // This is a regular user token
+          user = decoded;
+        }
       } catch (err) {
-        // Invalid token, user remains null
+        // Invalid token, both user and staffUser remain null
       }
     }
-    return { req, res, user };
+    return { req, res, user, staffUser };
   },
 }));
 

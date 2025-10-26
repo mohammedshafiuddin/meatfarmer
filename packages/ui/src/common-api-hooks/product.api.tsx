@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from '../services/axios';
+import axios from "../services/axios";
 import type { ProductSummary, GetSlotsProductIdsPayload, GetSlotsProductIdsResponse } from '../../shared-types';
 
 export interface GetProductsSummaryResponse {

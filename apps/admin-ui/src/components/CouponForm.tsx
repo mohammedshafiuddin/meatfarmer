@@ -5,6 +5,8 @@ import * as Yup from 'yup';
 import { MyTextInput, MyButton } from 'common-ui';
 import { CreateCouponPayload } from '../api-hooks/coupon.api';
 import DateTimePickerMod from '../../components/date-time-picker';
+import { trpc } from '../trpc-client';
+import MultiSelectDropdown, { DropdownOption } from 'common-ui/src/components/multi-select';
 
 interface CouponFormProps {
   onSubmit: (values: CreateCouponPayload) => void;
@@ -52,6 +54,14 @@ const couponValidationSchema = Yup.object().shape({
 export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
   const { height: screenHeight } = Dimensions.get('window');
   const maxFormHeight = screenHeight * 0.75;
+
+  const { data: productsData } = trpc.common.product.getAllProductsSummary.useQuery();
+  const products = productsData?.products || [];
+
+  const productOptions: DropdownOption[] = products.map(product => ({
+    label: `${product.name} (${product.unit})`,
+    value: product.id.toString(),
+  }));
 
   const defaultValues: CreateCouponPayload = {
     couponCode: '',
@@ -240,21 +250,38 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
             </TouchableOpacity>
           </View>
 
-          {/* Target User Selection (if user-based) */}
-          {values.isUserBased && (
+           {/* Target User Selection (if user-based) */}
+           {values.isUserBased && (
+             <View style={{ marginBottom: 16 }}>
+               <MyTextInput
+                 topLabel="Target User ID *"
+                 placeholder="e.g., 123"
+                 value={values.targetUser?.toString() || ''}
+                 onChangeText={(text) => setFieldValue('targetUser', parseInt(text) || undefined)}
+                 keyboardType="numeric"
+                 error={!!(touched.targetUser && errors.targetUser)}
+               />
+             </View>
+           )}
+
+            {/* Product Selection */}
             <View style={{ marginBottom: 16 }}>
-              <MyTextInput
-                topLabel="Target User ID *"
-                placeholder="e.g., 123"
-                value={values.targetUser?.toString() || ''}
-                onChangeText={(text) => setFieldValue('targetUser', parseInt(text) || undefined)}
-                keyboardType="numeric"
-                error={!!(touched.targetUser && errors.targetUser)}
+              <Text style={{ fontSize: 16, marginBottom: 8 }}>Target Products (Optional)</Text>
+              <MultiSelectDropdown
+                data={productOptions}
+                value={values.productIds ? values.productIds.map(id => id.toString()) : []}
+                onChange={(selectedValues) => {
+                  setFieldValue('productIds', selectedValues.map(v => Number(v)));
+                }}
+                placeholder="Select products (optional)"
+                search={true}
+                maxHeight={200}
               />
             </View>
-          )}
 
-          {/* Submit Button */}
+
+
+           {/* Submit Button */}
           <MyButton
             onPress={() => handleSubmit()}
             loading={isLoading}

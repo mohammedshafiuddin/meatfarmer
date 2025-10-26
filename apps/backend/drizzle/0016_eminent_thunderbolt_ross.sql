@@ -1,0 +1,2 @@
+ALTER TABLE "mf"."coupons" ADD COLUMN "product_id" integer;--> statement-breakpoint
+ALTER TABLE "mf"."coupons" ADD CONSTRAINT "coupons_product_id_product_info_id_fk" FOREIGN KEY ("product_id") REFERENCES "mf"."product_info"("id") ON DELETE no action ON UPDATE no action;

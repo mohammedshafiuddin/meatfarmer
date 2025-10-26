@@ -44,7 +44,11 @@ export const getSlotOrders = async (req: Request, res: Response) => {
         slot: true,
         orderItems: {
           with: {
-            product: true,
+            product: {
+              with: {
+                unit: true,
+              },
+            },
           },
         },
         orderStatus: true,
@@ -64,6 +68,7 @@ export const getSlotOrders = async (req: Request, res: Response) => {
         quantity: parseFloat(item.quantity),
         price: parseFloat(item.price.toString()),
         amount: parseFloat(item.quantity) * parseFloat(item.price.toString()),
+        unit: item.product.unit?.shortNotation || '',
       }));
 
       return {
@@ -108,7 +113,11 @@ export const getTodaysOrders = async (req: Request, res: Response) => {
         slot: true,
         orderItems: {
           with: {
-            product: true,
+            product: {
+              with: {
+                unit: true,
+              },
+            },
           },
         },
         orderStatus: true,
@@ -128,6 +137,7 @@ export const getTodaysOrders = async (req: Request, res: Response) => {
         quantity: parseFloat(item.quantity),
         price: parseFloat(item.price.toString()),
         amount: parseFloat(item.quantity) * parseFloat(item.price.toString()),
+        unit: item.product.unit?.shortNotation || '',
       }));
 
       return {

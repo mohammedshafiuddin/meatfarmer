@@ -5,7 +5,7 @@
  import MaterialIcons from "@expo/vector-icons/MaterialIcons";
  import { REFRESH_EVENT } from "common-ui/src/lib/const-strs";
  import { useAuth } from "@/src/contexts/AuthContext";
- import { tw, MyText } from "common-ui";
+ import { tw, MyText, theme } from "common-ui";
 
 function CustomDrawerContent() {
   const router = useRouter();
@@ -38,27 +38,27 @@ function CustomDrawerContent() {
           <MaterialIcons name="dashboard" size={size} color={color} />
         )}
       />
-      <DrawerItem
-        label="My Orders"
-        onPress={() => router.push("/(drawer)/my-orders")}
-        icon={({ color, size }) => (
-          <MaterialIcons name="shopping-bag" size={size} color={color} />
-        )}
-      />
-      <DrawerItem
-        label="My Cart"
-        onPress={() => router.push("/(drawer)/my-cart")}
-        icon={({ color, size }) => (
-          <MaterialIcons name="shopping-cart" size={size} color={color} />
-        )}
-      />
-      <DrawerItem
-        label="Logout"
-        onPress={handleLogout}
-        icon={({ color, size }) => (
-          <MaterialIcons name="logout" size={size} color={color} />
-        )}
-      />
+       <DrawerItem
+         label="My Cart"
+         onPress={() => router.push("/(drawer)/my-cart")}
+         icon={({ color, size }) => (
+           <MaterialIcons name="shopping-cart" size={size} color={color} />
+         )}
+       />
+       <DrawerItem
+         label="Me"
+         onPress={() => router.push("/(drawer)/me")}
+         icon={({ color, size }) => (
+           <MaterialIcons name="person" size={size} color={color} />
+         )}
+       />
+       <DrawerItem
+         label="Logout"
+         onPress={handleLogout}
+         icon={({ color, size }) => (
+           <MaterialIcons name="logout" size={size} color={color} />
+         )}
+       />
     </DrawerContentScrollView>
   );
 }
@@ -85,6 +85,9 @@ function CustomDrawerContent() {
         backBehavior="history"
         screenOptions={{
           headerShown: true,
+          headerStyle: {
+            backgroundColor: theme.colors.gray1
+          },
           headerRight: () => (
             <View style={{ flexDirection: 'row', marginRight: 10 }}>
               <TouchableOpacity onPress={() => router.push('/my-cart')} style={{ marginRight: 10 }}>
@@ -110,15 +113,15 @@ function CustomDrawerContent() {
           }}
         />
         <Drawer.Screen
-          name="my-orders"
-          options={{
-            title: "My Orders",
-          }}
-        />
-        <Drawer.Screen
           name="my-cart"
           options={{
             title: "My Cart",
+          }}
+        />
+        <Drawer.Screen
+          name="me"
+          options={{
+            title: "Me",
           }}
         />
       </Drawer>

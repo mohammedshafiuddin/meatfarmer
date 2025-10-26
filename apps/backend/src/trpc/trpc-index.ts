@@ -5,6 +5,10 @@ export interface Context {
   req: CreateExpressContextOptions['req'];
   res: CreateExpressContextOptions['res'];
   user?: any;
+  staffUser?: {
+    id: number;
+    name: string;
+  } | null;
 }
 
 const t = initTRPC.context<Context>().create();

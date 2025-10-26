@@ -61,19 +61,37 @@ export default function ManageOrders() {
           </MyText>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#2e7d32',
-            padding: 20,
-            borderRadius: 10,
-            alignItems: 'center',
-          }}
-          onPress={() => router.push(`/(drawer)/delivery-sequences?slotId=${selectedSlotId}`)}
-        >
-          <MyText style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-            Delivery Sequences
-          </MyText>
-        </TouchableOpacity>
+         <TouchableOpacity
+           style={{
+             backgroundColor: '#2e7d32',
+             padding: 20,
+             borderRadius: 10,
+             alignItems: 'center',
+           }}
+           onPress={() => router.push(`/(drawer)/delivery-sequences?slotId=${selectedSlotId}`)}
+         >
+           <MyText style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
+             Delivery Sequences
+           </MyText>
+         </TouchableOpacity>
+
+         <TouchableOpacity
+           style={{
+             backgroundColor: '#2e7d32',
+             padding: 20,
+             borderRadius: 10,
+             alignItems: 'center',
+           }}
+           onPress={() => {
+             if (selectedSlotId) {
+               router.push(`/(drawer)/product-quantities?slotId=${selectedSlotId}`);
+             }
+           }}
+         >
+           <MyText style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
+             Product Quantities
+           </MyText>
+         </TouchableOpacity>
       </View>
     </AppContainer>
   );

@@ -7,7 +7,7 @@ export interface Order {
   customerName: string;
   address: string;
   totalAmount: number;
-  items: { name: string; quantity: number; price: number; amount: number }[];
+  items: { name: string; quantity: number; price: number; amount: number; unit: string }[];
   deliveryTime: string;
   status: 'pending' | 'delivered' | 'cancelled';
   isPackaged: boolean;

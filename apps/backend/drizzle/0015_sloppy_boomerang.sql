@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."complaints" ADD COLUMN "response" varchar(1000);

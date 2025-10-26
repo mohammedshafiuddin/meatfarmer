@@ -7,6 +7,7 @@ import {
   BUSINESS_ROLE_OPTIONS,
 } from "./src/lib/constants";
 import { colors, colorsType } from "./src/lib/theme-colors";
+import { theme } from "./src/theme";
 import MyButton, { MyTextButton } from "./src/components/button";
 import { useTheme, Theme } from "./hooks/theme-context";
 import MyTextInput from "./src/components/textinput";
@@ -30,6 +31,7 @@ import TabViewWrapper from './src/components/tab-view';
 import useFocusCallback from './hooks/useFocusCallback'
 import useManualRefresh from './hooks/useManualRefresh';
 
+const BASE_API_URL = 'http://192.168.100.95:4000';
 export {
   RolesDropdown,
   StorageService,
@@ -37,9 +39,10 @@ export {
   ROLE_DISPLAY_NAMES,
   ROLE_OPTIONS,
   BUSINESS_ROLE_OPTIONS,
-  colors,
-  colorsType,
-  MyButton,
+   colors,
+   colorsType,
+   theme,
+   MyButton,
   MyTextButton,
   useTheme,
   Theme,
@@ -63,5 +66,6 @@ export {
   Quantifier,
   TabViewWrapper,
   useFocusCallback,
-  useManualRefresh
+  useManualRefresh,
+  BASE_API_URL
 };

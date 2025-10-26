@@ -177,6 +177,7 @@ export const complaints = mf.table('complaints', {
   userId: integer('user_id').notNull().references(() => users.id),
   orderId: integer('order_id').references(() => orders.id),
   complaintBody: varchar('complaint_body', { length: 1000 }).notNull(),
+  response: varchar('response', { length: 1000 }),
   isResolved: boolean('is_resolved').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -189,6 +190,7 @@ export const coupons = mf.table('coupons', {
   flatDiscount: numeric('flat_discount', { precision: 10, scale: 2 }),
   minOrder: numeric('min_order', { precision: 10, scale: 2 }),
   targetUser: integer('target_user').references(() => users.id),
+  productIds: jsonb('product_ids'),
   createdBy: integer('created_by').notNull().references(() => staffUsers.id),
   maxValue: numeric('max_value', { precision: 10, scale: 2 }),
   isApplyForAll: boolean('is_apply_for_all').notNull().default(false),

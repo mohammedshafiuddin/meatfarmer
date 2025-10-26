@@ -36,3 +36,8 @@
 - **Cleaner navigation** - Reduced drawer clutter, focused workflow
 - **Better space utilization** - More compact order displays
 - **Improved UX** - Streamlined order management process
+
+## Important Notes
+- **Do not run build, compile, or migration commands** - These should be handled manually by developers
+- Avoid running `npm run build`, `tsc`, `drizzle-kit generate`, or similar compilation/migration commands
+- Schema changes should be committed and migrations generated manually

@@ -51,6 +51,7 @@ function CustomDrawerContent() {
 export default function Layout() {
   return (
     <Drawer
+      backBehavior="history"
       drawerContent={CustomDrawerContent}
       screenOptions={{
         headerShown: true,

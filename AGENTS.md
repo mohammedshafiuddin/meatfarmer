@@ -44,3 +44,8 @@
 - Shared UI components in `packages/ui`
 - Apps: `user-ui`, `admin-ui`, `inspiration-ui`, `inspiration-backend`
 - Database: Drizzle ORM with PostgreSQL
+
+## Important Notes
+- **Do not run build, compile, or migration commands** - These should be handled manually by developers
+- Avoid running `npm run build`, `tsc`, `drizzle-kit generate`, or similar compilation/migration commands
+- Schema changes should be committed and migrations generated manually

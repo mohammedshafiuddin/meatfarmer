@@ -4,11 +4,13 @@ import { Entypo } from '@expo/vector-icons';
 import { tw, useManualRefresh } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 import { useGetUserOrders, useCancelOrder, useRaiseComplaint } from '../../../src/api-hooks/order.api';
+import { trpc } from '@/src/trpc-client';
 
 export default function MyOrders() {
   const { data: ordersData, isLoading, error, refetch } = useGetUserOrders();
   const cancelOrderMutation = useCancelOrder();
-  const raiseComplaintMutation = useRaiseComplaint();
+  // const raiseComplaintMutation = useRaiseComplaint();
+  const raiseComplaintMutation = trpc.user.complaint.raise.useMutation();
   const orders = ordersData?.data || [];
 
   useManualRefresh(() => refetch());
@@ -87,6 +89,8 @@ export default function MyOrders() {
       setComplaintBody('');
       setMenuDialogOpen(false);
     } catch (error) {
+      console.log(error)
+      
       Alert.alert('Error', 'Failed to raise complaint');
     }
   };

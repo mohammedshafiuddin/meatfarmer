@@ -16,6 +16,7 @@ import Toast from "react-native-toast-message";
 import { NotificationProvider } from "@/services/notif-service/notif-context";
 import { Provider as PaperProvider } from 'react-native-paper';
 import { AuthProvider } from "@/src/contexts/AuthContext";
+import { trpc, trpcClient } from "@/src/trpc-client";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -26,11 +27,11 @@ export default function RootLayout() {
   if (!loaded) {
     return null;
   }
-
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <View style={{ flex: 1, backgroundColor: "white" }}>
         <QueryClientProvider client={queryClient}>
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
           <AuthProvider>
             <NotificationProvider>
               <PaperProvider>
@@ -38,6 +39,7 @@ export default function RootLayout() {
               </PaperProvider>
             </NotificationProvider>
           </AuthProvider>
+          </trpc.Provider>
         </QueryClientProvider>
       </View>
       <Toast />

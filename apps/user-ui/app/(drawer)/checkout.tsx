@@ -7,11 +7,12 @@ import { Checkbox } from 'common-ui';
 import { CustomDropdown } from 'common-ui';
 import { useGetCart } from '@/src/api-hooks/cart.api';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import axios from 'common-ui/src/services/axios';
 import dayjs from 'dayjs';
 import AddressForm from '@/src/components/AddressForm';
 import { useGetSlots } from '@/src/api-hooks/slot.api';
 import { useGetEligibleCoupons, EligibleCoupon } from '@/src/api-hooks/coupon.api';
+import axios from '@/services/axios-user-ui';
+import { trpc } from '@/src/trpc-client';
 
 interface Address {
   id: number;
@@ -66,7 +67,33 @@ export default function Checkout() {
     selectedItems.reduce((sum, item) => sum + item.subtotal, 0),
     [selectedItems]
   );
-   const { data: eligibleCoupons } = useGetEligibleCoupons(totalAmount);
+
+  // Extract product IDs from selected items
+  const selectedProductIds = useMemo(() =>
+    selectedItems.map(item => item.productId),
+    [selectedItems]
+  );
+
+  // Filter items eligible for discount if coupon is product-specific
+  const eligibleItems = useMemo(() =>
+    selectedCoupon?.productIds && selectedCoupon.productIds.length > 0
+      ? selectedItems.filter(item => selectedCoupon.productIds?.includes(item.productId))
+      : selectedItems,
+    [selectedItems]
+  );
+
+  // Calculate discount base (sum of eligible items' subtotals)
+  const discountBase = useMemo(() =>
+    eligibleItems.reduce((sum, item) => sum + item.subtotal, 0),
+    [eligibleItems]
+  );
+
+  const { data: eligibleCouponsRaw } = trpc.user.coupon.getEligible.useQuery({
+    orderAmount: totalAmount,
+    productIds: selectedProductIds,
+  });
+  const eligibleCoupons: EligibleCoupon[] = eligibleCouponsRaw?.data || [];
+  //  const { data: eligibleCoupons } = useGetEligibleCoupons(totalAmount);
 
    const dropdownData = useMemo(() =>
      eligibleCoupons?.map(coupon => ({
@@ -91,9 +118,9 @@ export default function Checkout() {
 
   const discountAmount = useMemo(() => selectedCoupon ?
     selectedCoupon.discountType === 'percentage'
-      ? Math.min((totalAmount * selectedCoupon.discountValue) / 100, selectedCoupon.maxValue || Infinity)
-      : Math.min(selectedCoupon.discountValue, selectedCoupon.maxValue || totalAmount)
-    : 0, [selectedCoupon, totalAmount]);
+      ? Math.min((discountBase * selectedCoupon.discountValue) / 100, selectedCoupon.maxValue || Infinity)
+      : Math.min(selectedCoupon.discountValue, selectedCoupon.maxValue || discountBase)
+    : 0, [selectedCoupon, discountBase]);
 
   const finalAmount = useMemo(() => totalAmount - discountAmount, [totalAmount, discountAmount]);
 
@@ -171,7 +198,7 @@ export default function Checkout() {
            {slotId && (
              <Text style={tw`text-sm text-gray-600 mt-2`}>
                Delivery Slot: {slotsData?.slots?.find(slot => slot.id === slotId)?.deliveryTime
-                 ? dayjs(slotsData.slots.find(slot => slot.id === slotId).deliveryTime).format('ddd DD MMM, h:mm a')
+                 ? dayjs((slotsData as any)?.slots?.find((slot:any) => slot.id === slotId).deliveryTime).format('ddd DD MMM, h:mm a')
                  : 'Loading slot details...'}
              </Text>
            )}
