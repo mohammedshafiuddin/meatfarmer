@@ -1,11 +1,12 @@
- import { Drawer } from "expo-router/drawer";
- import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
- import { useRouter, Redirect } from "expo-router";
- import { TouchableOpacity, DeviceEventEmitter, View, ActivityIndicator } from "react-native";
- import MaterialIcons from "@expo/vector-icons/MaterialIcons";
- import { REFRESH_EVENT } from "common-ui/src/lib/const-strs";
- import { useAuth } from "@/src/contexts/AuthContext";
- import { tw, MyText, theme } from "common-ui";
+  import { Drawer } from "expo-router/drawer";
+  import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
+  import { useRouter, Redirect } from "expo-router";
+  import { useNavigation, DrawerActions } from "@react-navigation/native";
+  import { TouchableOpacity, DeviceEventEmitter, View, ActivityIndicator } from "react-native";
+  import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+  import { REFRESH_EVENT } from "common-ui/src/lib/const-strs";
+  import { useAuth } from "@/src/contexts/AuthContext";
+  import { tw, MyText, theme } from "common-ui";
 
 function CustomDrawerContent() {
   const router = useRouter();
@@ -66,6 +67,7 @@ function CustomDrawerContent() {
   export default function Layout() {
     const { isAuthenticated, isLoading } = useAuth();
     const router = useRouter();
+    const navigation = useNavigation();
 
     if (isLoading) {
       return (
@@ -83,11 +85,31 @@ function CustomDrawerContent() {
       <Drawer
         drawerContent={CustomDrawerContent}
         backBehavior="history"
-        screenOptions={{
+        screenOptions={({ navigation }) => ({
           headerShown: true,
           headerStyle: {
-            backgroundColor: theme.colors.gray1
+            backgroundColor: theme.colors.gray1,
+            shadowOpacity: 0,
+            shadowRadius: 0,
+            shadowOffset: { height: 0 },
+            elevation: 0,
           },
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => (navigation as any).openDrawer()}
+              style={{
+                marginLeft: 10,
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: theme.colors.gray2,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <MaterialIcons name="menu" size={24} color="black" />
+            </TouchableOpacity>
+          ),
           headerRight: () => (
             <View style={{ flexDirection: 'row', marginRight: 10 }}>
               <TouchableOpacity onPress={() => router.push('/my-cart')} style={{ marginRight: 10 }}>
@@ -98,7 +120,7 @@ function CustomDrawerContent() {
               </TouchableOpacity>
             </View>
           ),
-        }}
+        })}
       >
         <Drawer.Screen
           name="dashboard"

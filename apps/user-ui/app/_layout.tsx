@@ -11,6 +11,7 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { View } from "react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { theme } from "common-ui";
 import queryClient from "@/utils/queryClient";
 import Toast from "react-native-toast-message";
 import { NotificationProvider } from "@/services/notif-service/notif-context";
@@ -29,7 +30,7 @@ export default function RootLayout() {
   }
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <View style={{ flex: 1, backgroundColor: "white" }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.gray1 }}>
         <QueryClientProvider client={queryClient}>
           <trpc.Provider client={trpcClient} queryClient={queryClient}>
           <AuthProvider>
