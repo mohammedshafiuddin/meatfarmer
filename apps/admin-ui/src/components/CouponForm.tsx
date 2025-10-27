@@ -6,7 +6,8 @@ import { MyTextInput, MyButton } from 'common-ui';
 import { CreateCouponPayload } from '../api-hooks/coupon.api';
 import DateTimePickerMod from '../../components/date-time-picker';
 import { trpc } from '../trpc-client';
-import MultiSelectDropdown, { DropdownOption } from 'common-ui/src/components/multi-select';
+import { BottomDropdown } from 'common-ui';
+import { DropdownOption } from 'common-ui/src/components/bottom-dropdown';
 
 interface CouponFormProps {
   onSubmit: (values: CreateCouponPayload) => void;
@@ -267,15 +268,15 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
             {/* Product Selection */}
             <View style={{ marginBottom: 16 }}>
               <Text style={{ fontSize: 16, marginBottom: 8 }}>Target Products (Optional)</Text>
-              <MultiSelectDropdown
-                data={productOptions}
+              <BottomDropdown
+                label="Target Products"
+                options={productOptions}
                 value={values.productIds ? values.productIds.map(id => id.toString()) : []}
-                onChange={(selectedValues) => {
-                  setFieldValue('productIds', selectedValues.map(v => Number(v)));
+                onValueChange={(selectedValues) => {
+                  setFieldValue('productIds', (selectedValues as string[]).map(v => Number(v)));
                 }}
                 placeholder="Select products (optional)"
-                search={true}
-                maxHeight={200}
+                multiple={true}
               />
             </View>
 

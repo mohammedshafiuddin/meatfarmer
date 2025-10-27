@@ -62,7 +62,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         renderItem={(item: DropdownOption) => {
           const isSelected = value.includes(item.value);
           return (
-            <View style={[styles.item, isSelected && styles.selectedItem]}> 
+            <View style={[styles.item, isSelected && styles.selectedItem]}>
               <Text style={isSelected ? styles.selectedTextStyle : styles.itemTextStyle}>
                 {item.label}
               </Text>

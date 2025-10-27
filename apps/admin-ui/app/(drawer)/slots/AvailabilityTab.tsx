@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { useGetSlots } from '../../../src/api-hooks/slot.api';
 import { useGetSlotsProductIds } from 'common-ui/src/common-api-hooks/product.api';
 import { useGetAllProductsSummary, useUpdateSlotProducts } from '../../../src/api-hooks/product.api';
-import MultiSelectDropdown, { DropdownOption } from 'common-ui/src/components/multi-select';
+import BottomDropdown, { DropdownOption } from 'common-ui/src/components/bottom-dropdown';
 
 export default function AvailabilityTab() {
   // Fetch data
@@ -23,6 +23,8 @@ export default function AvailabilityTab() {
   const slotIds = useMemo(() => sortedSlots.map(slot => slot.id), [sortedSlots]);
 
   const { data: associationsData, isFetching: associationsLoading, refetch: refetchSlotProducts } = useGetSlotsProductIds(slotIds);
+  console.log({associationsData})
+  
   useFocusCallback(refetchSlotProducts)
 
   useManualRefresh(() => {
@@ -103,13 +105,13 @@ export default function AvailabilityTab() {
             </Text>
 
             <Text style={{ fontSize: 16, marginBottom: 8 }}>Select Products:</Text>
-            <MultiSelectDropdown
-              data={productOptions}
+            <BottomDropdown
+              label="Select Products"
+              options={productOptions}
               value={selectedProducts[slot.id] || []}
-              onChange={(values) => handleProductChange(slot.id, values)}
+              onValueChange={(values) => handleProductChange(slot.id, values as string[])}
               placeholder="Select products for this slot"
-              search={true}
-              maxHeight={200}
+              multiple={true}
             />
 
             <TouchableOpacity

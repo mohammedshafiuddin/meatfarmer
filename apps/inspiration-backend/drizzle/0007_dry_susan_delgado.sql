@@ -1,1 +1,0 @@
-ALTER TABLE "doctor_availability" ADD COLUMN "consultations_done" integer DEFAULT 0 NOT NULL;

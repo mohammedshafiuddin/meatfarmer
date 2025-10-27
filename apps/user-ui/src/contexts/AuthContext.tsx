@@ -3,6 +3,7 @@ import { getAuthToken, saveAuthToken, deleteAuthToken, saveUserId, getUserId } f
 import { getCurrentUserId } from '@/utils/getCurrentUserId';
 import { useLogin, useRegister } from '@/src/api-hooks/auth.api';
 import { AuthState, AuthContextType, LoginCredentials, RegisterData, User } from '@/src/types/auth';
+import { trpc } from '@/src/trpc-client';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -29,20 +30,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userId = await getCurrentUserId();
 
         if (token && userId) {
-          // TODO: Validate token with backend or decode to get user info
-          // For now, create a basic user object
-          const user: User = {
-            id: userId,
-            name: '', // TODO: Fetch from backend
-            email: '',
-            mobile: '',
-            createdAt: '',
-          };
-
+          // Use existing token, only fetch user data
           setAuthState({
-            user,
+            user: {
+              id: userId,
+              name: '', // Will be populated by useQuery
+              email: '',
+              mobile: '',
+              createdAt: '',
+            },
             isAuthenticated: true,
-            isLoading: false,
+            isLoading: true, // Keep loading while fetching user data
             token,
           });
         } else {
@@ -63,13 +61,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
+  // Fetch user data using tRPC query
+  const { data: selfData, error: selfDataError } = trpc.user.user.getSelfData.useQuery(undefined, {
+    enabled: !!(authState.token && authState.user?.id), // Only run if we have token and userId
+    retry: false, // Don't retry on auth errors
+  });
+
+  // Handle user data response
+  useEffect(() => {
+    if (selfData && authState.isAuthenticated) {
+      const { user } = selfData.data;
+
+      setAuthState(prev => ({
+        ...prev,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          createdAt: '',
+        },
+        isLoading: false,
+      }));
+    } else if (selfDataError && authState.isAuthenticated) {
+      console.error('Failed to fetch user data:', selfDataError);
+      // If token is invalid, clear auth state
+      // deleteAuthToken();
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        token: null,
+      });
+    }
+  }, [selfData, selfDataError, authState.isAuthenticated]);
+
   const login = async (credentials: LoginCredentials): Promise<void> => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }));
 
       const response = await loginMutation.mutateAsync(credentials);
+      // const response = loginMutation.mutate(credentials);
       const { token, user } = response;
-
+      console.log({token,user})
+      
       await saveAuthToken(token);
       await saveUserId(user.id.toString());
 

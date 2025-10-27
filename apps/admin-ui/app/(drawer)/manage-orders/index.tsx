@@ -1,5 +1,5 @@
 import { View, TouchableOpacity } from 'react-native';
-import { AppContainer, MyText, CustomDropdown } from 'common-ui';
+import { AppContainer, MyText, BottomDropdown } from 'common-ui';
 import { useRouter } from 'expo-router';
 import { useGetSlots } from '@/src/api-hooks/slot.api';
 import dayjs from 'dayjs';
@@ -23,7 +23,7 @@ export default function ManageOrders() {
       </MyText>
 
       <View style={{ marginBottom: 20 }}>
-        <CustomDropdown
+        <BottomDropdown
           label='Select Slot'
           options={slotsData?.slots?.map(slot => ({ label: dayjs(slot.deliveryTime).format('ddd DD MMM, h:mm a'), value: slot.id })) || []}
           value={selectedSlotId || ''}

@@ -32,7 +32,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
   return (
      <TouchableOpacity
        style={[tw`bg-white rounded-lg items-center shadow-md mb-3 mr-2.5`, { width: itemWidth }]}
-       onPress={() => router.push(`/product-detail/${item.id}`)}
+        onPress={() => router.push(`/product-detail?id=${item.id}`)}
      >
         <Image
           source={{ uri: item.images?.[0] }}

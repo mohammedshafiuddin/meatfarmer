@@ -1,1 +1,0 @@
-ALTER TABLE "role_info" RENAME COLUMN "displayName" TO "display_name";

@@ -1,1 +1,0 @@
-ALTER TABLE "mobile_numbers" ALTER COLUMN "password" DROP NOT NULL;

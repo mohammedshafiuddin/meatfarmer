@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { tw, useManualRefresh } from 'common-ui';
-import { CustomDropdown, Checkbox } from 'common-ui';
+import { BottomDropdown, Checkbox } from 'common-ui';
 import { Quantifier } from 'common-ui';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useGetCart, useUpdateCartItem, useRemoveFromCart, useGetCartSlots } from '@/src/api-hooks/cart.api';
@@ -10,13 +10,12 @@ import dayjs from 'dayjs';
 // import { useGetCart, useUpdateCartItem, useRemoveFromCart } from '../../src/api-hooks/cart.api';
 
 
-
-// TODO: Implement delivery slot selection based on product availability
-
 export default function MyCart() {
   const [checkedProducts, setCheckedProducts] = useState<Record<number, boolean>>({});
   const { data: cartData, isLoading, error, refetch } = useGetCart();
   const { data: slotsData, refetch: refetchSlots } = useGetCartSlots();
+  console.log({slotsData})
+  
   const updateCartItem = useUpdateCartItem();
   const removeFromCart = useRemoveFromCart();
 
@@ -117,7 +116,7 @@ export default function MyCart() {
       <View style={tw`p-4`}>
         <View style={tw`mb-4`}>
           <Text style={tw`text-lg font-semibold mb-2`}>Select Delivery Slot</Text>
-          <CustomDropdown
+          <BottomDropdown
             label="Delivery Slot"
             options={availableSlots}
             value={selectedSlot || ''}
@@ -136,7 +135,7 @@ export default function MyCart() {
             {cartItems.map((item) => {
               const isAvailable = allowedProductIds.includes(item.productId) && !item.product.isOutOfStock;
            return (
-           <View key={item.id} style={tw`mb-4 p-4 bg-gray-100 rounded ${!isAvailable ? 'opacity-50' : ''}`}>
+           <View key={item.id} style={tw`mb-4 p-4 border-b border-gray-400 rounded ${!isAvailable ? 'opacity-50' : ''}`}>
               <View style={tw`flex-row items-center mb-2`}>
                  <Checkbox
                    checked={checkedProducts[item.id] || false}
@@ -163,28 +162,30 @@ export default function MyCart() {
                       {item.product.isOutOfStock ? 'Out of stock' : 'Not available in selected slot'}
                     </Text>
                   )}
-                  <View style={tw`flex-row items-center mt-1`}>
-                    <Text style={tw`text-sm mr-2`}>Quantity:</Text>
-                    {checkedProducts[item.id] && !item.product.isOutOfStock ? (
-                      <Quantifier
-                        value={quantities[item.id] || item.quantity}
-                        setValue={(value) => {
-                          setQuantities(prev => ({ ...prev, [item.id]: value }));
-                          updateCartItem.mutate({ itemId: item.id, quantity: value }, {
-                            onSuccess: () => {
-                              // Optionally refetch or update local state
-                            },
-                            onError: (error: any) => {
-                              Alert.alert('Error', error.message || 'Failed to update quantity');
-                            },
-                          });
-                        }}
-                        step={1} // Assuming step 1 for now, can be from product if available
-                      />
-                    ) : (
-                      <Text style={tw`text-sm`}>{item.quantity} {item.product.unit}</Text>
-                    )}
-                  </View>
+                  {isAvailable && (
+                    <View style={tw`flex-row items-center mt-1`}>
+                      <Text style={tw`text-sm mr-2`}>Quantity:</Text>
+                      {checkedProducts[item.id] ? (
+                        <Quantifier
+                          value={quantities[item.id] || item.quantity}
+                          setValue={(value) => {
+                            setQuantities(prev => ({ ...prev, [item.id]: value }));
+                            updateCartItem.mutate({ itemId: item.id, quantity: value }, {
+                              onSuccess: () => {
+                                // Optionally refetch or update local state
+                              },
+                              onError: (error: any) => {
+                                Alert.alert('Error', error.message || 'Failed to update quantity');
+                              },
+                            });
+                          }}
+                          step={1} // Assuming step 1 for now, can be from product if available
+                        />
+                      ) : (
+                        <Text style={tw`text-sm`}>{item.quantity} {item.product.unit}</Text>
+                      )}
+                    </View>
+                  )}
                  <Text style={tw`text-base font-bold`}>₹{item.product.price * (quantities[item.id] || item.quantity)}</Text>
                </View>
                <TouchableOpacity
@@ -208,13 +209,18 @@ export default function MyCart() {
           )
         })}
 
-        <View style={tw`mt-4 p-4 bg-gray-200 rounded`}>
-          <Text style={tw`text-xl font-bold`}>Total: ₹{totalPrice}</Text>
+        <View style={tw`mt-4 p-4 bg-pink2 rounded`}>
+          <View style={tw`flex-row justify-between items-center`}>
+            <Text style={tw`text-xl font-bold`}>Total: ₹{totalPrice}</Text>
+            <Text style={tw`text-sm text-gray-600`}>
+              {Object.values(checkedProducts).filter(Boolean).length} items
+            </Text>
+          </View>
         </View>
 
         <View style={tw`flex-row justify-between mt-4`}>
           <TouchableOpacity
-            style={tw`bg-indigo-600 p-3 rounded-md flex-1 mr-2 items-center`}
+            style={tw`bg-pink1 p-3 rounded-md flex-1 mr-2 items-center`}
             onPress={() => {
               const selectedItems = Object.keys(checkedProducts).filter(id => checkedProducts[Number(id)]);
               if (selectedItems.length === 0) {
@@ -230,8 +236,8 @@ export default function MyCart() {
           >
             <Text style={tw`text-white text-base font-bold`}>Checkout</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={tw`bg-gray-600 p-3 rounded-md flex-1 ml-2 items-center`}>
-            <Text style={tw`text-white text-base font-bold`}>Continue Shopping</Text>
+          <TouchableOpacity style={tw`bg-pink2 p-3 rounded-md flex-1 ml-2 items-center`}>
+            <Text style={tw` text-base font-bold`}>Continue Shopping</Text>
           </TouchableOpacity>
         </View>
           </>

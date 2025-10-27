@@ -1,1 +1,0 @@
-ALTER TABLE "users" ALTER COLUMN "mobile_id" DROP NOT NULL;

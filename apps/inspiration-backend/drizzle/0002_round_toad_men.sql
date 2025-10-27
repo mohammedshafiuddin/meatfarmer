@@ -1,1 +1,0 @@
-ALTER TABLE "role_info" ALTER COLUMN "displayName" SET NOT NULL;

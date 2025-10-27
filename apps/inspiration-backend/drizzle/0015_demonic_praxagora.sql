@@ -1,1 +1,0 @@
-ALTER TABLE "hospital" ADD COLUMN "hospitalImages" varchar(2000);

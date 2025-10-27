@@ -233,10 +233,11 @@ export const getCartSlots = async (req: Request, res: Response) => {
       .from(productSlots)
       .innerJoin(deliverySlotInfo, eq(productSlots.slotId, deliverySlotInfo.id))
       .where(and(
-        inArray(productSlots.productId, productIds),
-        gt(deliverySlotInfo.freezeTime, new Date()),
+        // inArray(productSlots.productId, productIds),
+        gt(deliverySlotInfo.freezeTime, sql`NOW()`),
         eq(deliverySlotInfo.isActive, true)
       ));
+    
 
     // Group by productId
     const result: Record<number, any[]> = {};
@@ -250,7 +251,8 @@ export const getCartSlots = async (req: Request, res: Response) => {
         freezeTime: slot.freezeTime,
       });
     });
-
+    console.log({result})
+    
     res.status(200).json(result);
   } catch (error) {
     console.error("Get cart slots error:", error);

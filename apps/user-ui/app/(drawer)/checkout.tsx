@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { tw } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 import { Checkbox } from 'common-ui';
-import { CustomDropdown } from 'common-ui';
+import { BottomDropdown } from 'common-ui';
 import { useGetCart } from '@/src/api-hooks/cart.api';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -35,11 +35,13 @@ export default function Checkout() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
-  const { data: cartData } = useGetCart();
-  const { data: addresses } = useQuery({
-    queryKey: ['addresses'],
-    queryFn: fetchAddresses,
-  });
+  // const { data: cartData } = useGetCart();
+  const { data: cartData } = trpc.user.cart.getCart.useQuery();
+  const { data: addresses } = trpc.user.address.getUserAddresses.useQuery();
+  // const { data: addresses } = useQuery({
+  //   queryKey: ['addresses'],
+  //   queryFn: fetchAddresses,
+  // });
   const { data: slotsData } = useGetSlots();
   
   
@@ -168,7 +170,6 @@ export default function Checkout() {
   return (
     <ScrollView style={tw`flex-1 bg-white`}>
       <View style={tw`p-4`}>
-        <Text style={tw`text-2xl font-bold mb-4`}>Checkout</Text>
 
         {/* Order Summary */}
         <View style={tw`mb-6`}>
@@ -208,7 +209,7 @@ export default function Checkout() {
         {eligibleCoupons && eligibleCoupons.length > 0 && (
           <View style={tw`mb-6`}>
             <Text style={tw`text-lg font-semibold mb-2`}>Apply Coupon</Text>
-            <CustomDropdown
+            <BottomDropdown
               label="Available Coupons"
               options={dropdownData}
               value={selectedCouponId || ''}
@@ -236,11 +237,11 @@ export default function Checkout() {
         {/* Address Selection */}
         <View style={tw`mb-6`}>
           <Text style={tw`text-lg font-semibold mb-2`}>Select Address</Text>
-          {(!addresses || addresses.length === 0) ? (
+          {(!addresses?.data || addresses?.data.length === 0) ? (
             <Text style={tw`text-center text-gray-500 mb-2`}>No addresses found</Text>
           ) : (
             <ScrollView style={{ maxHeight: Dimensions.get('window').height * 0.5 }} showsVerticalScrollIndicator={true}>
-              {addresses.map((address) => {
+              {addresses.data.map((address) => {
                 const addressText = `${address.name}, ${address.addressLine1}${address.addressLine2 ? `, ${address.addressLine2}` : ''}, ${address.city}, ${address.state} - ${address.pincode}, ${address.phone}${address.isDefault ? ' (Default)' : ''}`;
                 return (
                   <View

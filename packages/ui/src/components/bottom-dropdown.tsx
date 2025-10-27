@@ -1,149 +1,160 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { BottomDialog } from './dialog';
-import  MyText  from './text';
+import tw from '../lib/tailwind';
+import { theme } from '../theme';
 
 export interface DropdownOption {
   label: string;
-  value: string;
+  value: string | number;
 }
 
-export interface BottomDropdownProps {
+interface BottomDropdownProps {
+  label: string;
+  value: string | number | string[];
   options: DropdownOption[];
-  value?: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  labelField?: string;
-  valueField?: string;
+  onValueChange: (value: string | number | string[]) => void;
+  multiple?: boolean;
+  error?: boolean;
   style?: any;
-  placeholderStyle?: any;
-  selectedTextStyle?: any;
-  optionContainerStyle?: any;
-  optionStyle?: any;
+  placeholder?: string;
   disabled?: boolean;
+  className?: string;
 }
 
 const BottomDropdown: React.FC<BottomDropdownProps> = ({
-  options:data,
+  label,
   value,
-  onChange,
-  placeholder = 'Select option',
-  labelField = 'label',
-  valueField = 'value',
+  options,
+  onValueChange,
+  multiple = false,
+  error,
   style,
-  placeholderStyle,
-  selectedTextStyle,
-  optionContainerStyle,
-  optionStyle,
-  disabled = false,
+  placeholder,
+  disabled,
+  className,
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const selectedOption = data.find(option => option.value === value);
+  const getDisplayText = () => {
+    if (multiple) {
+      const selectedValues = value as string[];
+      if (selectedValues.length === 0) return placeholder ?? label;
 
-  const handleSelect = (option: DropdownOption) => {
-    onChange(option.value);
-    setIsVisible(false);
+      const selectedLabels = options
+        .filter(option => selectedValues.includes(option.value as string))
+        .map(option => option.label);
+
+      return selectedLabels.length > 0 ? selectedLabels.join(', ') : (placeholder ?? label);
+    } else {
+      const selectedOption = options.find(option => option.value === value);
+      return selectedOption ? selectedOption.label : (placeholder ?? label);
+    }
   };
 
-  const handlePress = () => {
-    if (!disabled) {
-      setIsVisible(true);
+  const handleSelect = (optionValue: string | number) => {
+    if (multiple) {
+      const currentValues = value as string[];
+      const newValues = currentValues.includes(optionValue as string)
+        ? currentValues.filter(v => v !== optionValue)
+        : [...currentValues, optionValue as string];
+      onValueChange(newValues);
+    } else {
+      onValueChange(optionValue);
+      setIsOpen(false);
+    }
+  };
+
+  const handleDone = () => {
+    setIsOpen(false);
+  };
+
+  const isSelected = (optionValue: string | number) => {
+    if (multiple) {
+      return (value as string[]).includes(optionValue as string);
+    } else {
+      return value === optionValue;
     }
   };
 
   return (
-    <View style={style}>
-      <TouchableOpacity style={styles.dropdownContainer} onPress={handlePress} disabled={disabled}>
-        {selectedOption ? (
-          <MyText style={[styles.selectedText, selectedTextStyle]}>
-            {selectedOption[labelField as keyof DropdownOption]}
-          </MyText>
-        ) : (
-          <MyText style={[styles.placeholderText, placeholderStyle]}>
-            {placeholder}
-          </MyText>
-        )}
-        <MyText style={styles.arrow}>{'▼'}</MyText>
+    <View style={[tw``, style]}>
+      <TouchableOpacity
+        style={[
+          tw`border rounded-md px-3 py-2 flex-row items-center justify-between`,
+          error ? tw`border-red-500` : tw`border-gray-300`,
+          disabled && tw`bg-gray-100 border-gray-200`,
+          tw`${className || ''}`,
+        ]}
+        onPress={() => !disabled && setIsOpen(true)}
+        disabled={disabled}
+      >
+        <Text
+          style={[
+            tw`flex-1`,
+            (multiple ? (value as string[]).length > 0 : options.some(opt => opt.value === value))
+              ? tw`text-gray-900 font-medium`
+              : tw`text-gray-500`,
+            disabled && tw`text-gray-400`,
+          ]}
+          numberOfLines={1}
+        >
+          {getDisplayText()}
+        </Text>
+        <Ionicons
+          name="chevron-down"
+          size={16}
+          color={disabled ? '#9ca3af' : '#6b7280'}
+          style={tw`ml-2`}
+        />
       </TouchableOpacity>
 
-      <BottomDialog open={isVisible} onClose={() => setIsVisible(false)}>
-        <View style={[styles.optionsContainer, optionContainerStyle]}>
-          <MyText style={styles.title}>Select Option</MyText>
-          {data.map((option, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.option,
-                optionStyle,
-                value === option.value && styles.selectedOption
-              ]}
-              onPress={() => handleSelect(option)}
-            >
-              <Text style={[
-                styles.optionText, 
-                value === option.value && styles.selectedOptionText
-              ]}>
-                {option[labelField as keyof DropdownOption]}
-              </Text>
-            </TouchableOpacity>
-          ))}
+      <BottomDialog open={isOpen} onClose={() => setIsOpen(false)}>
+        <View style={tw`py-4`}>
+          <Text style={tw`text-lg font-semibold mb-4 text-center`}>{label}</Text>
+          <ScrollView style={tw`max-h-80`}>
+            {options.map((option) => {
+              const selected = isSelected(option.value);
+              return (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    tw`px-4 py-3 rounded-md my-1 mx-2 flex-row items-center justify-between`,
+                    selected ? { backgroundColor: theme.colors.pink2 } : tw`bg-transparent`,
+                  ]}
+                  onPress={() => handleSelect(option.value)}
+                  disabled={disabled}
+                >
+                  <Text
+                    style={[
+                      selected ? tw`text-pink-800 font-semibold` : tw`text-gray-800`,
+                      disabled && tw`text-gray-400`,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  {selected && (
+                    <Ionicons name="checkmark" size={20} color="#FA7189" />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          {multiple && (
+            <View style={tw`flex-row justify-between mt-4 px-4`}>
+              <TouchableOpacity
+                style={[tw`px-4 py-2 rounded-md flex-1 mr-2`, { backgroundColor: theme.colors.pink1 }]}
+                onPress={handleDone}
+              >
+                <Text style={tw`text-white text-center font-medium`}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </BottomDialog>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  dropdownContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: '#fff',
-  },
-  selectedText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  placeholderText: {
-    fontSize: 16,
-    color: '#888',
-  },
-  arrow: {
-    fontSize: 12,
-    color: '#666',
-  },
-  optionsContainer: {
-    padding: 20,
-    paddingTop: 10,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  option: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  selectedOption: {
-    backgroundColor: '#f0f8ff',
-  },
-  selectedOptionText: {
-    fontWeight: 'bold',
-    color: '#4361ee',
-  },
-});
 
 export default BottomDropdown;

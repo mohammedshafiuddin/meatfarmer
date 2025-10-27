@@ -2,7 +2,7 @@
  import { View, TouchableOpacity, Image } from 'react-native';
  import { Formik, FieldArray } from 'formik';
  import * as Yup from 'yup';
- import { MyTextInput, CustomDropdown, MyText as Text, ImageUploader, useTheme, DatePicker } from 'common-ui';
+ import { MyTextInput, BottomDropdown, MyText as Text, ImageUploader, useTheme, DatePicker } from 'common-ui';
  import usePickImage from 'common-ui/src/components/use-pick-image';
 
 interface ProductFormData {
@@ -115,7 +115,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               </View>
             )}
 
-            <CustomDropdown
+            <BottomDropdown
               label="Unit"
               value={values.unitId}
               options={unitOptions}

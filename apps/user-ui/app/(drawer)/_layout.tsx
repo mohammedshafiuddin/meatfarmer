@@ -33,7 +33,7 @@ function CustomDrawerContent() {
         </View>
       )}
       <DrawerItem
-        label=""
+        label="Dashboard"
         onPress={() => router.push("/(drawer)/dashboard")}
         icon={({ color, size }) => (
           <MaterialIcons name="dashboard" size={size} color={color} />

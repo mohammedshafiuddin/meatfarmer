@@ -1,1 +1,0 @@
-DROP TABLE "running_counter" CASCADE;
