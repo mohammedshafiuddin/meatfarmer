@@ -16,7 +16,7 @@ export const orderRouter = router({
       })),
       addressId: z.number().int().positive(),
       paymentMethod: z.enum(['online', 'cod']),
-      couponId: z.number().int().positive().optional(),
+      couponId: z.number().int().positive().optional().nullable(),
       slotId: z.number().int().positive(),
     }))
     .mutation(async ({ input, ctx }) => {

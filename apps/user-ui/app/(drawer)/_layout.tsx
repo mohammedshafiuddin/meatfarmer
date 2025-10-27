@@ -188,6 +188,12 @@ function CustomDrawerContent() {
           }}
         />
         <Drawer.Screen
+          name="checkout"
+          options={{
+            title: "Checkout",
+          }}
+        />
+        <Drawer.Screen
           name="me"
           options={{
             title: "Me",

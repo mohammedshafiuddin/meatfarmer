@@ -1,35 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { tw } from 'common-ui';
+import { tw, theme } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 import { Checkbox } from 'common-ui';
 import { BottomDropdown } from 'common-ui';
-import { useGetCart } from '@/src/api-hooks/cart.api';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import AddressForm from '@/src/components/AddressForm';
-import { useGetSlots } from '@/src/api-hooks/slot.api';
 import { useGetEligibleCoupons, EligibleCoupon } from '@/src/api-hooks/coupon.api';
-import axios from '@/services/axios-user-ui';
 import { trpc } from '@/src/trpc-client';
 
-interface Address {
-  id: number;
-  name: string;
-  phone: string;
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  state: string;
-  pincode: string;
-  isDefault: boolean;
-}
 
-const fetchAddresses = async (): Promise<Address[]> => {
-  const response = await axios.get('/uv/address');
-  return response.data.data;
-};
+
+
 
 export default function Checkout() {
   const router = useRouter();
@@ -38,11 +22,9 @@ export default function Checkout() {
   // const { data: cartData } = useGetCart();
   const { data: cartData } = trpc.user.cart.getCart.useQuery();
   const { data: addresses } = trpc.user.address.getUserAddresses.useQuery();
-  // const { data: addresses } = useQuery({
-  //   queryKey: ['addresses'],
-  //   queryFn: fetchAddresses,
-  // });
-  const { data: slotsData } = useGetSlots();
+  const { data: slotsData } = trpc.user.slots.getSlots.useQuery();
+  // const { data: slotsData } = useGetSlots();
+
   
   
 
@@ -126,18 +108,7 @@ export default function Checkout() {
 
   const finalAmount = useMemo(() => totalAmount - discountAmount, [totalAmount, discountAmount]);
 
-  const placeOrderMutation = useMutation({
-    mutationFn: async (paymentMethod: 'cod' | 'online') => {
-      const orderData = {
-        selectedItems: selectedItems.map(item => ({ productId: item.productId, quantity: item.quantity })),
-        addressId: selectedAddress,
-        slotId,
-        paymentMethod,
-        couponId: selectedCouponId,
-      };
-      const response = await axios.post('/uv/orders', orderData);
-      return response.data;
-    },
+  const placeOrderMutation = trpc.user.order.placeOrder.useMutation({
     onSuccess: (data) => {
       router.replace(`/order-success?orderId=${data.data.id}`);
     },
@@ -155,8 +126,42 @@ export default function Checkout() {
       Alert.alert('Error', 'Please select an address');
       return;
     }
-    placeOrderMutation.mutate('cod');
+    if (!slotId) {
+      Alert.alert('Error', 'Please select a delivery slot');
+      return;
+    }
+
+    const orderData = {
+      selectedItems: selectedItems.map(item => ({ productId: item.productId, quantity: item.quantity })),
+      addressId: selectedAddress,
+      slotId,
+      paymentMethod: 'cod' as const,
+      couponId: selectedCouponId,
+    };
+    placeOrderMutation.mutate(orderData);
   };
+
+  // const handleOrderOnline = () => {
+  //   if (!selectedAddress) {
+  //     Alert.alert('Error', 'Please select an address');
+  //     return;
+  //   }
+  //   if (!slotId) {
+  //     Alert.alert('Error', 'Please select a delivery slot');
+  //     return;
+  //   }
+  //   // For now, just mutate, later integrate payment
+  //   const orderData = {
+  //     selectedItems: selectedItems.map(item => ({ productId: item.productId, quantity: item.quantity })),
+  //     addressId: selectedAddress,
+  //     slotId,
+  //     paymentMethod: 'online' as const,
+  //     couponId: selectedCouponId,
+  //   };
+  //   placeOrderMutation.mutate(orderData);
+  // };
+  //   placeOrderMutation.mutate(orderData);
+  // };
 
   const handleOrderOnline = () => {
     if (!selectedAddress) {
@@ -164,37 +169,44 @@ export default function Checkout() {
       return;
     }
     // For now, just mutate, later integrate payment
-    placeOrderMutation.mutate('online');
+    const orderData = {
+      selectedItems: selectedItems.map(item => ({ productId: item.productId, quantity: item.quantity })),
+      addressId: selectedAddress,
+      slotId: Number(slotId!),
+      paymentMethod: 'online' as const,
+      couponId: selectedCouponId,
+    };
+    placeOrderMutation.mutate(orderData);
   };
 
   return (
-    <ScrollView style={tw`flex-1 bg-white`}>
-      <View style={tw`p-4`}>
+    <ScrollView style={tw`flex-1 bg-gray1`}>
+      <View style={tw`px-5 py-4`}>
 
         {/* Order Summary */}
-        <View style={tw`mb-6`}>
-          <Text style={tw`text-lg font-semibold mb-2`}>Order Summary</Text>
+        <View style={tw`mb-6 bg-white rounded-lg p-4 shadow-md`}>
+          <Text style={tw`text-lg font-semibold mb-3`}>Order Summary</Text>
           {selectedItems.map((item) => (
             <View key={item.id} style={tw`flex-row justify-between py-2 border-b border-gray-200`}>
-              <Text style={tw`flex-1`}>{item.product.name} (x{item.quantity})</Text>
-              <Text style={tw`font-semibold`}>₹{item.subtotal}</Text>
+              <Text style={tw`flex-1 text-base`}>{item.product.name} (x{item.quantity})</Text>
+              <Text style={tw`font-semibold text-base`}>₹{item.subtotal}</Text>
             </View>
           ))}
-           <View style={tw`flex-row justify-between mt-2`}>
+           <View style={tw`flex-row justify-between mt-3`}>
              <Text style={tw`text-lg font-bold`}>Subtotal</Text>
-             <Text style={tw`text-lg`}>₹{totalAmount}</Text>
+             <Text style={tw`text-lg font-semibold`}>₹{totalAmount}</Text>
            </View>
 
            {selectedCoupon && discountAmount > 0 && (
-             <View style={tw`flex-row justify-between mt-1`}>
-               <Text style={tw`text-green-600`}>Discount ({selectedCoupon.code})</Text>
-               <Text style={tw`text-green-600`}>-₹{discountAmount}</Text>
+             <View style={tw`flex-row justify-between mt-2`}>
+               <Text style={tw`text-green-600 font-medium`}>Discount ({selectedCoupon.code})</Text>
+               <Text style={tw`text-green-600 font-medium`}>-₹{discountAmount}</Text>
              </View>
            )}
 
-           <View style={tw`flex-row justify-between mt-2 border-t border-gray-300 pt-2`}>
-             <Text style={tw`text-lg font-bold`}>Total</Text>
-             <Text style={tw`text-lg font-bold`}>₹{finalAmount}</Text>
+           <View style={tw`flex-row justify-between mt-3 border-t border-gray-300 pt-3`}>
+             <Text style={tw`text-xl font-bold`}>Total</Text>
+             <Text style={tw`text-xl font-bold`}>₹{finalAmount}</Text>
            </View>
            {slotId && (
              <Text style={tw`text-sm text-gray-600 mt-2`}>
@@ -207,8 +219,8 @@ export default function Checkout() {
 
         {/* Coupon Selection */}
         {eligibleCoupons && eligibleCoupons.length > 0 && (
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-lg font-semibold mb-2`}>Apply Coupon</Text>
+          <View style={tw`mb-6 bg-white rounded-lg p-4 shadow-md`}>
+            <Text style={tw`text-lg font-semibold mb-3`}>Apply Coupon</Text>
             <BottomDropdown
               label="Available Coupons"
               options={dropdownData}
@@ -218,15 +230,15 @@ export default function Checkout() {
             />
 
             {selectedCoupon && discountAmount > 0 && (
-              <View style={tw`mt-2 p-3 bg-green-50 border border-green-200 rounded`}>
-                <Text style={tw`text-green-800 text-sm`}>
+              <View style={tw`mt-3 p-3 bg-green-50 border border-green-200 rounded`}>
+                <Text style={tw`text-green-800 text-sm font-medium`}>
                   🎉 You save ₹{discountAmount} with {selectedCoupon.code}
                 </Text>
               </View>
             )}
 
             <TouchableOpacity
-              style={tw`mt-2`}
+              style={tw`mt-3`}
               onPress={() => setSelectedCouponId(null)}
             >
               <Text style={tw`text-gray-500 text-sm underline`}>Remove coupon</Text>
@@ -235,8 +247,8 @@ export default function Checkout() {
         )}
 
         {/* Address Selection */}
-        <View style={tw`mb-6`}>
-          <Text style={tw`text-lg font-semibold mb-2`}>Select Address</Text>
+        <View style={tw`mb-6 bg-white rounded-lg p-4 shadow-md`}>
+          <Text style={tw`text-lg font-semibold mb-3`}>Select Address</Text>
           {(!addresses?.data || addresses?.data.length === 0) ? (
             <Text style={tw`text-center text-gray-500 mb-2`}>No addresses found</Text>
           ) : (
@@ -246,35 +258,37 @@ export default function Checkout() {
                 return (
                   <View
                     key={address.id}
-                    style={tw`p-4 mx-2 border rounded mb-2 flex-row items-center ${selectedAddress === address.id ? 'border-indigo-600 bg-indigo-50' : 'border-gray-300'}`}
+                    style={tw`p-3 mx-2 border rounded-lg mb-3 flex-row items-center ${selectedAddress === address.id ? 'border-pink-500 bg-pink-50' : 'border-gray-300'}`}
                   >
                     <Checkbox
                       checked={selectedAddress === address.id}
                       onPress={() => setSelectedAddress(address.id)}
                       style={tw`mr-3`}
                     />
-                    <Text style={tw`flex-1`}>{addressText}</Text>
+                    <Text style={tw`flex-1 text-base`}>{addressText}</Text>
                   </View>
                 );
               })}
             </ScrollView>
           )}
           <TouchableOpacity style={tw`mt-4`} onPress={() => setShowAddAddress(true)}>
-            <Text style={tw`text-indigo-600 underline text-center`}>Add New Address</Text>
+            <Text style={[tw`text-center font-medium`, { color: theme.colors.pink1 }]}>Add New Address</Text>
           </TouchableOpacity>
         </View>
 
         {/* Action Buttons */}
         <View style={tw`mt-6`}>
           <TouchableOpacity
-            style={tw`bg-gray-600 p-4 rounded-md mb-4 w-full items-center`}
+            style={tw`bg-gray-600 p-4 rounded-lg mb-4 w-full items-center`}
             onPress={handleCancel}
           >
             <Text style={tw`text-white text-lg font-bold`}>Cancel</Text>
           </TouchableOpacity>
 
            <TouchableOpacity
-             style={tw`bg-green-600 p-4 rounded-md mb-4 w-full items-center ${isAddressSelected ? 'opacity-100' : 'opacity-50'}`}
+             style={[tw`p-4 rounded-lg mb-4 w-full items-center`, {
+               backgroundColor: isAddressSelected ? theme.colors.pink1 : '#9ca3af'
+             }]}
              disabled={!isAddressSelected}
              onPress={handleOrderCOD}
            >
@@ -282,7 +296,9 @@ export default function Checkout() {
            </TouchableOpacity>
 
           <TouchableOpacity
-            style={tw`bg-blue-600 p-4 rounded-md w-full items-center opacity-50`}
+            style={[tw`p-4 rounded-lg w-full items-center`, {
+              backgroundColor: '#9ca3af' // Disabled state
+            }]}
             disabled={true}
             onPress={handleOrderOnline}
           >
@@ -294,7 +310,8 @@ export default function Checkout() {
           <AddressForm
             onSuccess={() => {
               setShowAddAddress(false);
-              queryClient.invalidateQueries({ queryKey: ['addresses'] });
+              // Invalidate tRPC query for addresses
+              queryClient.invalidateQueries();
             }}
           />
         </BottomDialog>
