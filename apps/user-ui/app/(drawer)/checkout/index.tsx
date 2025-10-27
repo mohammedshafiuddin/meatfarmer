@@ -52,40 +52,26 @@ export default function Checkout() {
     [selectedItems]
   );
 
-  // Extract product IDs from selected items
-  const selectedProductIds = useMemo(() =>
-    selectedItems.map(item => item.productId),
-    [selectedItems]
-  );
 
-  // Filter items eligible for discount if coupon is product-specific
-  const eligibleItems = useMemo(() =>
-    selectedCoupon?.productIds && selectedCoupon.productIds.length > 0
-      ? selectedItems.filter(item => selectedCoupon.productIds?.includes(item.productId))
-      : selectedItems,
-    [selectedItems]
-  );
-
-  // Calculate discount base (sum of eligible items' subtotals)
-  const discountBase = useMemo(() =>
-    eligibleItems.reduce((sum, item) => sum + item.subtotal, 0),
-    [eligibleItems]
-  );
 
   const { data: eligibleCouponsRaw } = trpc.user.coupon.getEligible.useQuery({
     orderAmount: totalAmount,
-    productIds: selectedProductIds,
   });
   const eligibleCoupons: EligibleCoupon[] = eligibleCouponsRaw?.data || [];
   //  const { data: eligibleCoupons } = useGetEligibleCoupons(totalAmount);
 
-   const dropdownData = useMemo(() =>
-     eligibleCoupons?.map(coupon => ({
-       label: `${coupon.code} - ${coupon.description}`,
-       value: coupon.id
-     })) || [],
-     [eligibleCoupons]
-   );
+    const dropdownData = useMemo(() =>
+      eligibleCoupons?.map(coupon => {
+        const discount = coupon.discountType === 'percentage'
+          ? Math.min((totalAmount * coupon.discountValue) / 100, coupon.maxValue || Infinity)
+          : Math.min(coupon.discountValue, coupon.maxValue || totalAmount);
+        return {
+          label: `${coupon.code} - ${coupon.description} (Save ₹${discount})`,
+          value: coupon.id
+        };
+      }) || [],
+      [eligibleCoupons, totalAmount]
+    );
 
     // Auto-select first coupon when data loads (only if no coupon is selected)
   useEffect(() => {
@@ -102,9 +88,9 @@ export default function Checkout() {
 
   const discountAmount = useMemo(() => selectedCoupon ?
     selectedCoupon.discountType === 'percentage'
-      ? Math.min((discountBase * selectedCoupon.discountValue) / 100, selectedCoupon.maxValue || Infinity)
-      : Math.min(selectedCoupon.discountValue, selectedCoupon.maxValue || discountBase)
-    : 0, [selectedCoupon, discountBase]);
+      ? Math.min((totalAmount * selectedCoupon.discountValue) / 100, selectedCoupon.maxValue || Infinity)
+      : Math.min(selectedCoupon.discountValue, selectedCoupon.maxValue || totalAmount)
+    : 0, [selectedCoupon, totalAmount]);
 
   const finalAmount = useMemo(() => totalAmount - discountAmount, [totalAmount, discountAmount]);
 
@@ -199,8 +185,8 @@ export default function Checkout() {
 
            {selectedCoupon && discountAmount > 0 && (
              <View style={tw`flex-row justify-between mt-2`}>
-               <Text style={tw`text-green-600 font-medium`}>Discount ({selectedCoupon.code})</Text>
-               <Text style={tw`text-green-600 font-medium`}>-₹{discountAmount}</Text>
+               <Text style={tw`text-pink1 font-medium`}>Discount ({selectedCoupon.code})</Text>
+               <Text style={tw`text-pink1 font-medium`}>-₹{discountAmount}</Text>
              </View>
            )}
 
@@ -230,8 +216,8 @@ export default function Checkout() {
             />
 
             {selectedCoupon && discountAmount > 0 && (
-              <View style={tw`mt-3 p-3 bg-green-50 border border-green-200 rounded`}>
-                <Text style={tw`text-green-800 text-sm font-medium`}>
+              <View style={tw`mt-3 p-3 bg-pink-50 border border-pink-200 rounded`}>
+                <Text style={tw`text-pink1 text-sm font-medium`}>
                   🎉 You save ₹{discountAmount} with {selectedCoupon.code}
                 </Text>
               </View>

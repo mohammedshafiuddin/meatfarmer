@@ -21,6 +21,11 @@ interface BottomDropdownProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  triggerComponent?: React.ComponentType<{
+    onPress: () => void;
+    disabled?: boolean;
+    displayText: string;
+  }>;
 }
 
 const BottomDropdown: React.FC<BottomDropdownProps> = ({
@@ -34,6 +39,7 @@ const BottomDropdown: React.FC<BottomDropdownProps> = ({
   placeholder,
   disabled,
   className,
+  triggerComponent,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -80,35 +86,43 @@ const BottomDropdown: React.FC<BottomDropdownProps> = ({
 
   return (
     <View style={[tw``, style]}>
-      <TouchableOpacity
-        style={[
-          tw`border rounded-md px-3 py-2 flex-row items-center justify-between`,
-          error ? tw`border-red-500` : tw`border-gray-300`,
-          disabled && tw`bg-gray-100 border-gray-200`,
-          tw`${className || ''}`,
-        ]}
-        onPress={() => !disabled && setIsOpen(true)}
-        disabled={disabled}
-      >
-        <Text
+      {triggerComponent ? (
+        React.createElement(triggerComponent, {
+          onPress: () => !disabled && setIsOpen(true),
+          disabled,
+          displayText: getDisplayText(),
+        })
+      ) : (
+        <TouchableOpacity
           style={[
-            tw`flex-1`,
-            (multiple ? (value as string[]).length > 0 : options.some(opt => opt.value === value))
-              ? tw`text-gray-900 font-medium`
-              : tw`text-gray-500`,
-            disabled && tw`text-gray-400`,
+            tw`border rounded-md px-3 py-2 flex-row items-center justify-between`,
+            error ? tw`border-red-500` : tw`border-gray-300`,
+            disabled && tw`bg-gray-100 border-gray-200`,
+            tw`${className || ''}`,
           ]}
-          numberOfLines={1}
+          onPress={() => !disabled && setIsOpen(true)}
+          disabled={disabled}
         >
-          {getDisplayText()}
-        </Text>
-        <Ionicons
-          name="chevron-down"
-          size={16}
-          color={disabled ? '#9ca3af' : '#6b7280'}
-          style={tw`ml-2`}
-        />
-      </TouchableOpacity>
+          <Text
+            style={[
+              tw`flex-1`,
+              (multiple ? (value as string[]).length > 0 : options.some(opt => opt.value === value))
+                ? tw`text-gray-900 font-medium`
+                : tw`text-gray-500`,
+              disabled && tw`text-gray-400`,
+            ]}
+            numberOfLines={1}
+          >
+            {getDisplayText()}
+          </Text>
+          <Ionicons
+            name="chevron-down"
+            size={16}
+            color={disabled ? '#9ca3af' : '#6b7280'}
+            style={tw`ml-2`}
+          />
+        </TouchableOpacity>
+      )}
 
       <BottomDialog open={isOpen} onClose={() => setIsOpen(false)}>
         <View style={tw`py-4`}>
@@ -126,14 +140,23 @@ const BottomDropdown: React.FC<BottomDropdownProps> = ({
                   onPress={() => handleSelect(option.value)}
                   disabled={disabled}
                 >
-                  <Text
-                    style={[
-                      selected ? tw`text-pink-800 font-semibold` : tw`text-gray-800`,
-                      disabled && tw`text-gray-400`,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
+                   <Text
+                     style={[
+                       selected ? tw`text-pink-800 font-semibold` : tw`text-gray-800`,
+                       disabled && tw`text-gray-400`,
+                     ]}
+                   >
+                     {(() => {
+                       const labelStr = option.label as string;
+                       const [code, rest] = labelStr.split(' - ', 2);
+                       return (
+                         <>
+                           <Text style={tw`font-bold`}>{code}</Text>
+                           {rest ? ` - ${rest}` : ''}
+                         </>
+                       );
+                     })()}
+                   </Text>
                   {selected && (
                     <Ionicons name="checkmark" size={20} color="#FA7189" />
                   )}

@@ -12,6 +12,7 @@ import { useTheme } from "common-ui";
 type MyTextInputProps = TextInputProps & {
   topLabel?: string;
   fullWidth?: boolean; // Optional prop to control width
+  shrunkPadding?: boolean; // Optional prop to reduce padding
 };
 
 
@@ -19,6 +20,7 @@ const MyTextInput: React.FC<MyTextInputProps> = ({
   topLabel,
   fullWidth = true,
   secureTextEntry,
+  shrunkPadding = false,
   ...props
 }) => {
   const { theme } = useTheme();
@@ -39,6 +41,7 @@ const MyTextInput: React.FC<MyTextInputProps> = ({
         {...props}
         secureTextEntry={isPassword && !showPassword}
         label={undefined}
+        dense={shrunkPadding}
         style={[
           {
             borderRadius: 4,

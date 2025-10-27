@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { tw } from 'common-ui';
 import { Checkbox } from 'common-ui';
+import { MyTextInput } from 'common-ui';
 import axios from 'common-ui/src/services/axios';
 
 interface AddressFormProps {
@@ -57,19 +58,19 @@ const AddressForm: React.FC<AddressFormProps> = ({ onSuccess }) => {
         }}
       >
         {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
-          <View>
-            <TextInput
-              style={tw`border border-gray-300 rounded p-2 mb-2`}
+          <View style={tw`flex-col gap-2`}>
+            <MyTextInput
               placeholder="Name"
+              shrunkPadding={true}
               onChangeText={handleChange('name')}
               onBlur={handleBlur('name')}
               value={values.name}
             />
             {touched.name && errors.name && <Text style={tw`text-red-500 mb-2`}>{errors.name}</Text>}
 
-            <TextInput
-              style={tw`border border-gray-300 rounded p-2 mb-2`}
+            <MyTextInput
               placeholder="Phone"
+              shrunkPadding={true}
               keyboardType="phone-pad"
               onChangeText={handleChange('phone')}
               onBlur={handleBlur('phone')}
@@ -77,44 +78,44 @@ const AddressForm: React.FC<AddressFormProps> = ({ onSuccess }) => {
             />
             {touched.phone && errors.phone && <Text style={tw`text-red-500 mb-2`}>{errors.phone}</Text>}
 
-            <TextInput
-              style={tw`border border-gray-300 rounded p-2 mb-2`}
+            <MyTextInput
               placeholder="Address Line 1"
+              shrunkPadding={true}
               onChangeText={handleChange('addressLine1')}
               onBlur={handleBlur('addressLine1')}
               value={values.addressLine1}
             />
             {touched.addressLine1 && errors.addressLine1 && <Text style={tw`text-red-500 mb-2`}>{errors.addressLine1}</Text>}
 
-            <TextInput
-              style={tw`border border-gray-300 rounded p-2 mb-2`}
+            <MyTextInput
               placeholder="Address Line 2 (Optional)"
+              shrunkPadding={true}
               onChangeText={handleChange('addressLine2')}
               onBlur={handleBlur('addressLine2')}
               value={values.addressLine2}
             />
 
-            <TextInput
-              style={tw`border border-gray-300 rounded p-2 mb-2`}
+            <MyTextInput
               placeholder="City"
+              shrunkPadding={true}
               onChangeText={handleChange('city')}
               onBlur={handleBlur('city')}
               value={values.city}
             />
             {touched.city && errors.city && <Text style={tw`text-red-500 mb-2`}>{errors.city}</Text>}
 
-            <TextInput
-              style={tw`border border-gray-300 rounded p-2 mb-2`}
+            <MyTextInput
               placeholder="State"
+              shrunkPadding={true}
               onChangeText={handleChange('state')}
               onBlur={handleBlur('state')}
               value={values.state}
             />
             {touched.state && errors.state && <Text style={tw`text-red-500 mb-2`}>{errors.state}</Text>}
 
-            <TextInput
-              style={tw`border border-gray-300 rounded p-2 mb-2`}
+            <MyTextInput
               placeholder="Pincode"
+              shrunkPadding={true}
               keyboardType="numeric"
               onChangeText={handleChange('pincode')}
               onBlur={handleBlur('pincode')}

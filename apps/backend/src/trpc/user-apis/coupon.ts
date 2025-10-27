@@ -12,8 +12,6 @@ export interface EligibleCoupon {
   maxValue?: number;
   minOrder?: number;
   description: string;
-  productIds: number[];
-  isTargetProductIncluded: boolean;
 }
 
 const generateCouponDescription = (coupon: any): string => {
@@ -40,12 +38,10 @@ export const userCouponRouter = router({
   getEligible: protectedProcedure
     .input(z.object({
       orderAmount: z.number().optional().default(0),
-      productIds: z.array(number()).optional(),
     }))
     .query(async ({ input, ctx }) => {
       const userId = ctx.user.userId;
       const orderAmount = input.orderAmount;
-      const productIds = input.productIds;
 
       // Get all active coupons that apply to this user
       const allCoupons = await db.query.coupons.findMany({
@@ -83,19 +79,6 @@ export const userCouponRouter = router({
           }
         }
 
-        // Check product-specific logic
-        if (coupon.productIds && Array.isArray(coupon.productIds) && coupon.productIds.length > 0) {
-          // If coupon is product-specific but no productId provided, exclude it
-          if (!input.productIds) {
-            return false;
-          }
-          // If coupon is for specific products and target product is not included, exclude it
-          // if (!coupon.productIds.includes(input.productId)) {
-          if((coupon.productIds.every(item => !productIds?.includes(item)))) {
-            return false;
-          }
-        }
-
         return true;
       });
 
@@ -108,8 +91,6 @@ export const userCouponRouter = router({
         maxValue: coupon.maxValue ? parseFloat(coupon.maxValue) : undefined,
         minOrder: coupon.minOrder ? parseFloat(coupon.minOrder) : undefined,
         description: generateCouponDescription(coupon),
-        productIds: Array.isArray(coupon.productIds) ? coupon.productIds : [],
-        isTargetProductIncluded: input.productIds ? (coupon.productIds as number[]).some((pid: number) => input.productIds!.includes(pid)) : false,
       }));
 
       return { success: true, data: formattedCoupons };

@@ -16,13 +16,13 @@ const Quantifier: React.FC<QuantifierProps> = ({
   return (
     <View style={tw`flex-row items-center`}>
       <TouchableOpacity
-        style={tw`bg-gray-200 p-2 rounded-l`}
+        style={tw`bg-gray2 w-8 h-8 flex-row rounded-full  justify-center items-center`}
         onPress={() => setValue(Math.max(0, value - step))}
       >
-        <Text style={tw`text-lg font-bold`}>-</Text>
+        <Text style={tw`text-lg font-bold text-black`}>-</Text>
       </TouchableOpacity>
       <TextInput
-        style={tw`border border-gray-300 px-3 py-2 text-center w-16`}
+        style={tw`underline py-2 text-center w-12`}
         value={value.toString()}
         onChangeText={(text) => {
           const num = parseInt(text);
@@ -33,7 +33,7 @@ const Quantifier: React.FC<QuantifierProps> = ({
         keyboardType="numeric"
       />
       <TouchableOpacity
-        style={tw`bg-gray-200 p-2 rounded-r`}
+        style={tw`bg-gray2 w-8 h-8 rounded-full ml-1 justify-center items-center`}
         onPress={() => setValue(value + step)}
       >
         <Text style={tw`text-lg font-bold`}>+</Text>
