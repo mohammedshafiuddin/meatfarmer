@@ -7,7 +7,7 @@ import { useCreateProduct, CreateProductPayload } from '../../../src/api-hooks/p
 export default function AddProduct() {
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
 
-  const handleSubmit = (values: any, images?: { uri?: string }[]) => {
+  const handleSubmit = (values: any, images?: { uri?: string, mimeType?: string }[]) => {
     const payload: CreateProductPayload = {
       name: values.name,
       shortDescription: values.shortDescription,
@@ -30,7 +30,8 @@ export default function AddProduct() {
           formData.append('images', {
             uri: image.uri,
             name: `image-${index}.jpg`,
-            type: 'image/jpeg',
+            // type: 'image/jpeg',
+            type: image.mimeType as any,
           } as any);
         }
       });

@@ -15,6 +15,18 @@ export const users = mf.table('users', {
   unq_email: unique('unique_email').on(t.email),
 }));
 
+export const userDetails = mf.table('user_details', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer('user_id').notNull().references(() => users.id).unique(),
+  bio: varchar('bio', { length: 500 }),
+  dateOfBirth: date('date_of_birth'),
+  gender: varchar('gender', { length: 20 }),
+  occupation: varchar('occupation', { length: 100 }),
+  profileImage: varchar('profile_image', { length: 500 }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 export const userCreds = mf.table('user_creds', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   userId: integer('user_id').notNull().references(() => users.id),
@@ -216,6 +228,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   userCreds: one(userCreds),
   coupons: many(coupons),
   couponUsages: many(couponUsage),
+  userDetails: one(userDetails),
 }));
 
 export const userCredsRelations = relations(userCreds, ({ one }) => ({
@@ -310,4 +323,8 @@ export const couponsRelations = relations(coupons, ({ one, many }) => ({
 export const couponUsageRelations = relations(couponUsage, ({ one }) => ({
   user: one(users, { fields: [couponUsage.userId], references: [users.id] }),
   coupon: one(coupons, { fields: [couponUsage.couponId], references: [coupons.id] }),
+}));
+
+export const userDetailsRelations = relations(userDetails, ({ one }) => ({
+  user: one(users, { fields: [userDetails.userId], references: [users.id] }),
 }));

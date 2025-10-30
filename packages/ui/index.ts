@@ -19,6 +19,7 @@ import ImageViewerURI from "./src/components/image-viewer";
 import ImageCarousel from "./src/components/ImageCarousel";
 import ImageGallery from "./src/components/ImageGallery";
 import ImageUploader from "./src/components/ImageUploader";
+import ProfileImage from "./src/components/profile-image";
 import Checkbox from "./src/components/checkbox";
 import AppContainer from "./src/components/app-container";
 import tw from "./src/lib/tailwind";
@@ -54,8 +55,9 @@ export {
   ImageViewerURI,
   ImageCarousel,
   ImageGallery,
-  ImageUploader,
-  Checkbox,
+   ImageUploader,
+   ProfileImage,
+   Checkbox,
   AppContainer,
   tw,
   SearchBar,

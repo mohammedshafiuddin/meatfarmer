@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { getAuthToken, saveAuthToken, deleteAuthToken, saveUserId, getUserId } from '../../hooks/useJWT';
 import { getCurrentUserId } from '@/utils/getCurrentUserId';
 import { useLogin, useRegister } from '@/src/api-hooks/auth.api';
-import { AuthState, AuthContextType, LoginCredentials, RegisterData, User } from '@/src/types/auth';
+import { AuthState, AuthContextType, LoginCredentials, RegisterData, User, UserDetails } from '@/src/types/auth';
 import { trpc } from '@/src/trpc-client';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -14,6 +14,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
+    userDetails: null,
     isAuthenticated: false,
     isLoading: true,
     token: null,
@@ -31,21 +32,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (token && userId) {
           // Use existing token, only fetch user data
-          setAuthState({
-            user: {
-              id: userId,
-              name: '', // Will be populated by useQuery
-              email: '',
-              mobile: '',
-              createdAt: '',
-            },
-            isAuthenticated: true,
-            isLoading: true, // Keep loading while fetching user data
-            token,
-          });
+            setAuthState({
+              user: {
+                id: userId,
+                name: '', // Will be populated by useQuery
+                email: '',
+                mobile: '',
+                profileImage: '',
+                createdAt: '',
+              },
+              userDetails: null,
+             isAuthenticated: true,
+             isLoading: true, // Keep loading while fetching user data
+             token,
+           });
         } else {
           setAuthState(prev => ({
             ...prev,
+            userDetails: null,
             isLoading: false,
           }));
         }
@@ -53,6 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Auth initialization error:', error);
         setAuthState(prev => ({
           ...prev,
+          userDetails: null,
           isLoading: false,
         }));
       }
@@ -62,9 +67,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Fetch user data using tRPC query
-  const { data: selfData, error: selfDataError } = trpc.user.user.getSelfData.useQuery(undefined, {
+  const { data: selfData, error: selfDataError, refetch: refetchSelfData } = trpc.user.user.getSelfData.useQuery(undefined, {
     enabled: !!(authState.token && authState.user?.id), // Only run if we have token and userId
     retry: false, // Don't retry on auth errors
+    refetchOnMount: true, // Refetch on every component mount (app startup)
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 0, // Consider data stale immediately
   });
 
   // Handle user data response
@@ -79,8 +87,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           name: user.name,
           email: user.email,
           mobile: user.mobile,
+          profileImage: user.profileImage,
           createdAt: '',
         },
+        userDetails: user,
         isLoading: false,
       }));
     } else if (selfDataError && authState.isAuthenticated) {
@@ -89,6 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // deleteAuthToken();
       setAuthState({
         user: null,
+        userDetails: null,
         isAuthenticated: false,
         isLoading: false,
         token: null,
@@ -103,24 +114,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await loginMutation.mutateAsync(credentials);
       // const response = loginMutation.mutate(credentials);
       const { token, user } = response;
-      console.log({token,user})
-      
+
       await saveAuthToken(token);
       await saveUserId(user.id.toString());
 
       setAuthState({
-        user,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          profileImage: user.profileImage,
+          createdAt: '',
+        },
+        userDetails: user,
         isAuthenticated: true,
         isLoading: false,
         token,
       });
+
+      // Refetch user details to ensure we have the latest data
+      refetchSelfData();
     } catch (error) {
       setAuthState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
-
-  const register = async (data: RegisterData): Promise<void> => {
+  console.log(authState.userDetails)
+  
+  const register = async (data: FormData): Promise<void> => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }));
 
@@ -131,11 +153,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await saveUserId(user.id.toString());
 
       setAuthState({
-        user,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          profileImage: user.profileImage,
+          createdAt: '',
+        },
+        userDetails: user,
         isAuthenticated: true,
         isLoading: false,
         token,
       });
+
+      // Refetch user details to ensure we have the latest data
+      refetchSelfData();
     } catch (error) {
       setAuthState(prev => ({ ...prev, isLoading: false }));
       throw error;
@@ -147,6 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await deleteAuthToken();
       setAuthState({
         user: null,
+        userDetails: null,
         isAuthenticated: false,
         isLoading: false,
         token: null,
@@ -156,6 +190,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Still clear local state even if deleteJWT fails
       setAuthState({
         user: null,
+        userDetails: null,
         isAuthenticated: false,
         isLoading: false,
         token: null,
@@ -170,12 +205,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }));
   };
 
+  const updateUserDetails = (userDetailsData: Partial<UserDetails>): void => {
+    setAuthState(prev => ({
+      ...prev,
+      userDetails: prev.userDetails ? { ...prev.userDetails, ...userDetailsData } : null,
+    }));
+  };
+
   const contextValue: AuthContextType = {
     ...authState,
     login,
     register,
     logout,
     updateUser,
+    updateUserDetails,
   };
 
   return (
@@ -191,4 +234,12 @@ export const useAuth = (): AuthContextType => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+export const useUserDetails = (): UserDetails | null => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useUserDetails must be used within an AuthProvider');
+  }
+  return context.userDetails;
 };

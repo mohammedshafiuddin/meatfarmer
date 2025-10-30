@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."user_details" ADD COLUMN "profile_image" varchar(500);

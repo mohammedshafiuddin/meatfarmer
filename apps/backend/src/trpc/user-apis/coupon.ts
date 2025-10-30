@@ -34,6 +34,21 @@ const generateCouponDescription = (coupon: any): string => {
   return desc;
 };
 
+export interface CouponDisplay {
+  id: number;
+  code: string;
+  discountType: 'percentage' | 'flat';
+  discountValue: number;
+  maxValue?: number;
+  minOrder?: number;
+  description: string;
+  validTill?: Date;
+  usageCount: number;
+  maxLimitForUser?: number;
+  isExpired: boolean;
+  isUsedUp: boolean;
+}
+
 export const userCouponRouter = router({
   getEligible: protectedProcedure
     .input(z.object({
@@ -94,5 +109,67 @@ export const userCouponRouter = router({
       }));
 
       return { success: true, data: formattedCoupons };
+    }),
+
+  getMyCoupons: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.user.userId;
+
+      // Get all active coupons that apply to this user
+      const allCoupons = await db.query.coupons.findMany({
+        where: and(
+          eq(coupons.isInvalidated, false),
+          or(
+            eq(coupons.isApplyForAll, true),
+            eq(coupons.targetUser, userId)
+          )
+        ),
+        with: {
+          usages: {
+            where: eq(couponUsage.userId, userId)
+          }
+        }
+      });
+
+      // Categorize coupons
+      const personalCoupons: CouponDisplay[] = [];
+      const generalCoupons: CouponDisplay[] = [];
+
+      allCoupons.forEach(coupon => {
+        const usageCount = coupon.usages.length;
+        const isExpired = Boolean(coupon.validTill && new Date(coupon.validTill) < new Date());
+        const isUsedUp = Boolean(coupon.maxLimitForUser && usageCount >= coupon.maxLimitForUser);
+
+        const couponDisplay: CouponDisplay = {
+          id: coupon.id,
+          code: coupon.couponCode,
+          discountType: coupon.discountPercent ? 'percentage' : 'flat',
+          discountValue: parseFloat(coupon.discountPercent || coupon.flatDiscount || '0'),
+          maxValue: coupon.maxValue ? parseFloat(coupon.maxValue) : undefined,
+          minOrder: coupon.minOrder ? parseFloat(coupon.minOrder) : undefined,
+          description: generateCouponDescription(coupon),
+          validTill: coupon.validTill ? new Date(coupon.validTill) : undefined,
+          usageCount,
+          maxLimitForUser: coupon.maxLimitForUser ? parseInt(coupon.maxLimitForUser.toString()) : undefined,
+          isExpired,
+          isUsedUp,
+        };
+
+        if (coupon.targetUser === userId && !coupon.isApplyForAll) {
+          // Personal coupon
+          personalCoupons.push(couponDisplay);
+        } else if (coupon.isApplyForAll) {
+          // General coupon
+          generalCoupons.push(couponDisplay);
+        }
+      });
+
+      return {
+        success: true,
+        data: {
+          personal: personalCoupons,
+          general: generalCoupons,
+        }
+      };
     }),
 });

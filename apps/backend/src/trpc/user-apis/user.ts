@@ -2,9 +2,10 @@ import { router, protectedProcedure } from '../trpc-index';
 import jwt from 'jsonwebtoken';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db/db_index';
-import { users } from '../../db/schema';
+import { users, userDetails } from '../../db/schema';
 import { ApiError } from '../../lib/api-error';
 import { jwtSecret } from 'src/lib/env-exporter';
+import { generateSignedUrlFromS3Url } from '../../lib/s3-client';
 
 interface AuthResponse {
   token: string;
@@ -13,6 +14,11 @@ interface AuthResponse {
     name: string;
     email: string | null;
     mobile: string | null;
+    profileImage?: string | null;
+    bio?: string | null;
+    dateOfBirth?: string | null;
+    gender?: string | null;
+    occupation?: string | null;
   };
 }
 
@@ -44,6 +50,17 @@ export const userRouter = router({
         throw new ApiError('User not found', 404);
       }
 
+      // Get user details for profile image
+      const [userDetail] = await db
+        .select()
+        .from(userDetails)
+        .where(eq(userDetails.userId, userId))
+        .limit(1);
+
+      // Generate signed URL for profile image if it exists
+      const profileImageSignedUrl = userDetail?.profileImage
+        ? await generateSignedUrlFromS3Url(userDetail.profileImage)
+        : null;
 
       const response: Omit<AuthResponse, 'token'> = {
         user: {
@@ -51,6 +68,11 @@ export const userRouter = router({
           name: user.name,
           email: user.email,
           mobile: user.mobile,
+          profileImage: profileImageSignedUrl,
+          bio: userDetail?.bio || null,
+          dateOfBirth: userDetail?.dateOfBirth || null,
+          gender: userDetail?.gender || null,
+          occupation: userDetail?.occupation || null,
         },
       };
 

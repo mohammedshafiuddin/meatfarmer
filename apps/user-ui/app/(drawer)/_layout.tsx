@@ -5,12 +5,13 @@
    import { TouchableOpacity, DeviceEventEmitter, View, ActivityIndicator, Image } from "react-native";
    import MaterialIcons from "@expo/vector-icons/MaterialIcons";
    import { REFRESH_EVENT } from "common-ui/src/lib/const-strs";
-   import { useAuth } from "@/src/contexts/AuthContext";
+   import { useAuth, useUserDetails } from "@/src/contexts/AuthContext";
    import { tw, MyText, theme } from "common-ui";
 
 function CustomDrawerContent() {
   const router = useRouter();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
+  const userDetails = useUserDetails();
 
   const handleLogout = async () => {
     await logout();
@@ -19,15 +20,27 @@ function CustomDrawerContent() {
 
   return (
     <DrawerContentScrollView>
-      {user && (
+      {userDetails && (
         <View style={tw`p-4 border-b border-gray-200`}>
-          <MaterialIcons name="person" size={40} color="#3B82F6" />
+          {userDetails.profileImage ? (
+            <Image
+              source={{ uri: userDetails.profileImage }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                resizeMode: 'cover'
+              }}
+            />
+          ) : (
+            <MaterialIcons name="person" size={40} color="#3B82F6" />
+          )}
           <View style={tw`mt-2`}>
             <MyText style={tw`text-lg font-semibold text-gray-800`}>
-              {user.name}
+              {userDetails.name}
             </MyText>
             <MyText style={tw`text-sm text-gray-600`}>
-              {user.mobile}
+              {userDetails.mobile}
             </MyText>
           </View>
         </View>
@@ -197,6 +210,12 @@ function CustomDrawerContent() {
           name="me"
           options={{
             title: "Me",
+          }}
+        />
+        <Drawer.Screen
+          name="coupons"
+          options={{
+            title: "Coupons",
           }}
         />
       </Drawer>
