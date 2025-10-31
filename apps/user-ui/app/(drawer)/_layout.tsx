@@ -218,6 +218,12 @@ function CustomDrawerContent() {
             title: "Coupons",
           }}
         />
+        <Drawer.Screen
+          name="addresses"
+          options={{
+            title: "Addresses",
+          }}
+        />
       </Drawer>
     );
   }

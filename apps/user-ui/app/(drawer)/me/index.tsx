@@ -27,6 +27,12 @@ export default function Me() {
       onPress: () => router.push('/(drawer)/coupons'),
     },
     {
+      title: 'Addresses',
+      icon: 'location-on',
+      color: 'bg-teal-500',
+      onPress: () => router.push('/(drawer)/addresses'),
+    },
+    {
       title: 'Profile',
       icon: 'person',
       color: 'bg-orange-500',
@@ -44,7 +50,7 @@ export default function Me() {
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={index}
-              style={tw`w-[48%] ${item.color} p-6 rounded-2xl mb-4 shadow-lg`}
+              style={tw`w-[48%] ${item.color} p-4 rounded-2xl mb-4 shadow-lg ${index === 4 ? 'self-center' : ''}`}
               onPress={item.onPress}
             >
               <View style={tw`items-center`}>

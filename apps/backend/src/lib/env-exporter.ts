@@ -16,6 +16,8 @@ export const s3Region = process.env.S3_REGION as string
 
 export const s3Url = process.env.S3_URL as string
 
+export const redisUrl = process.env.REDIS_URL as string
+
 
 export const expoAccessToken = process.env.EXPO_ACCESS_TOKEN as string;
 
