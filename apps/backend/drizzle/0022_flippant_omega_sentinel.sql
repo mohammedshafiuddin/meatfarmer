@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."orders" ADD COLUMN "is_refund_done" boolean DEFAULT false NOT NULL;

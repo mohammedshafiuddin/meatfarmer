@@ -1,4 +1,4 @@
-import { pgTable, pgSchema, integer, varchar, date, boolean, timestamp, numeric, jsonb, pgEnum, unique, real } from "drizzle-orm/pg-core";
+import { pgTable, pgSchema, integer, varchar, date, boolean, timestamp, numeric, jsonb, pgEnum, unique, real, text } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 const mf = pgSchema('mf');
@@ -72,6 +72,7 @@ export const productInfo = mf.table('product_info', {
   longDescription: varchar('long_description', { length: 1000 }),
   unitId: integer('unit_id').notNull().references(() => units.id),
   price: numeric({ precision: 10, scale: 2 }).notNull(),
+  marketPrice: numeric('market_price', { precision: 10, scale: 2 }),
   images: jsonb('images'),
   isOutOfStock: boolean('is_out_of_stock').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -110,6 +111,9 @@ export const orders = mf.table('orders', {
   paymentInfoId: integer('payment_info_id').references(() => paymentInfoTable.id),
   totalAmount: numeric('total_amount', { precision: 10, scale: 2 }).notNull(),
   readableId: integer('readable_id').notNull(),
+  cancellationReviewed: boolean('cancellation_reviewed').notNull().default(false),
+  isRefundDone: boolean('is_refund_done').notNull().default(false),
+  adminNotes: text('admin_notes'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

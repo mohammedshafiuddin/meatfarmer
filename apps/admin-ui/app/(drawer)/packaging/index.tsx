@@ -1,30 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, TouchableOpacity, Dimensions } from 'react-native';
 import dayjs from 'dayjs';
-import { TabViewWrapper, AppContainer, MyText, useManualRefresh } from 'common-ui';
+import { TabViewWrapper, AppContainer, MyText, useManualRefresh, tw, BottomDialog } from 'common-ui';
 import { Order, useUpdatePackaged } from '@/src/api-hooks/order.api';
 import { useGetSlots, useGetSlotOrders } from '@/src/api-hooks/slot.api';
 import { useLocalSearchParams } from 'expo-router';
+import { OrderMenu } from '@/components/OrderMenu';
 
-const OrderItem = ({ order, isPackagedTab, onTogglePackaged }: { order: Order; isPackagedTab: boolean; onTogglePackaged: (orderId: string, isPackaged: boolean) => void }) => {
+const OrderItem = ({
+  order,
+  isPackagedTab,
+  onTogglePackaged
+}: {
+  order: Order;
+  isPackagedTab: boolean;
+  onTogglePackaged: (orderId: string, isPackaged: boolean) => void;
+}) => {
   const displayedItems = order.items.slice(0, 2);
   const moreItems = order.items.length > 2 ? ` +${order.items.length - 2} more` : '';
 
   return (
-    <TouchableOpacity style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <MyText style={{ fontWeight: 'bold' }}>{order.customerName} - #{order.readableId}</MyText>
-        <TouchableOpacity onPress={() => onTogglePackaged(order.orderId, !isPackagedTab)}>
-          <MyText style={{ color: isPackagedTab ? 'red' : 'green' }}>
-            {isPackagedTab ? 'Mark not packaged' : 'Mark Packaged'}
-          </MyText>
-        </TouchableOpacity>
+    <View style={tw`bg-white p-4 mb-2 rounded-2xl shadow-lg`}>
+      <View style={tw`flex-row justify-between items-center mb-2`}>
+        <MyText style={tw`font-bold text-gray-800`}>{order.customerName} - #{order.readableId}</MyText>
+        <View style={tw`flex-row items-center gap-2`}>
+          <TouchableOpacity
+            onPress={() => onTogglePackaged(order.orderId, !isPackagedTab)}
+            style={tw`bg-blue-500 px-3 py-2 rounded-lg`}
+          >
+            <MyText style={tw`text-white text-sm font-semibold`}>
+              {isPackagedTab ? 'Mark not packaged' : 'Mark Packaged'}
+            </MyText>
+          </TouchableOpacity>
+          <OrderMenu
+            orderId={order.orderId}
+            variant="packaging"
+          />
+        </View>
       </View>
-      <MyText numberOfLines={1}>{order.address}</MyText>
-      <MyText>
+      <MyText style={tw`text-gray-600 mb-1`} numberOfLines={1}>{order.address}</MyText>
+      <MyText style={tw`text-gray-700`}>
         Items: {displayedItems.map(item => `${item.name} (${item.quantity}) - ₹${item.amount}`).join(', ')}{moreItems}
       </MyText>
-    </TouchableOpacity>
+    </View>
   );
 };
 
@@ -36,6 +54,9 @@ export default function Packaging() {
   const orders = ordersResponse?.data;
   const { data: slotsData } = useGetSlots();
   const updatePackagedMutation = useUpdatePackaged();
+
+
+
 
   useManualRefresh(() => refetch());
 
@@ -54,6 +75,8 @@ export default function Packaging() {
     updatePackagedMutation.mutate({ orderId, isPackaged });
   };
 
+
+
   const routes = [
     { key: 'not_packaged', title: `Not Packaged (${notPackagedCount})` },
     { key: 'packaged', title: `Packaged (${packagedCount})` },
@@ -62,7 +85,9 @@ export default function Packaging() {
   if (isLoading) {
     return (
       <AppContainer>
-        <MyText>Loading orders...</MyText>
+        <View style={tw`flex-1 justify-center items-center`}>
+          <MyText style={tw`text-gray-600`}>Loading orders...</MyText>
+        </View>
       </AppContainer>
     );
   }
@@ -70,7 +95,9 @@ export default function Packaging() {
   if (error) {
     return (
       <AppContainer>
-        <MyText>Error loading orders</MyText>
+        <View style={tw`flex-1 justify-center items-center`}>
+          <MyText style={tw`text-red-600`}>Error loading orders</MyText>
+        </View>
       </AppContainer>
     );
   }
@@ -81,11 +108,13 @@ export default function Packaging() {
       return route.key === 'not_packaged' ? !order.isPackaged : order.isPackaged;
     });
     return (
-      <View style={{ flex: 1, padding: 10 }}>
+      <View style={tw`flex-1 p-4`}>
         {filteredOrders.length === 0 ? (
-          <MyText>No orders</MyText>
+          <View style={tw`flex-1 justify-center items-center`}>
+            <MyText style={tw`text-gray-500`}>No orders</MyText>
+          </View>
         ) : (
-          <ScrollView style={{ flex: 1 }}>
+          <ScrollView style={tw`flex-1`} showsVerticalScrollIndicator={false}>
             {filteredOrders.map(order => <OrderItem key={order.readableId} order={order} isPackagedTab={isPackagedTab} onTogglePackaged={handleTogglePackaged} />)}
           </ScrollView>
         )}
@@ -101,6 +130,10 @@ export default function Packaging() {
         onIndexChange={setIndex}
         initialLayout={{ width: Dimensions.get('window').width }}
       />
+
+
+
+
     </AppContainer>
   );
 }

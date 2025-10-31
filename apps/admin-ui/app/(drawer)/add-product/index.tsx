@@ -14,6 +14,7 @@ export default function AddProduct() {
       longDescription: values.longDescription,
       unitId: parseInt(values.unitId),
       price: parseFloat(values.price),
+      marketPrice: values.marketPrice ? parseFloat(values.marketPrice) : undefined,
     };
 
     const formData = new FormData();
@@ -54,6 +55,7 @@ export default function AddProduct() {
     longDescription: '',
     unitId: 0,
     price: '',
+    marketPrice: '',
     deals: [{ quantity: '', price: '' }],
   };
 

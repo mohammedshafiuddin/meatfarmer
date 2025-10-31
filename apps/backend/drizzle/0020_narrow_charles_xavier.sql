@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."product_info" ADD COLUMN "market_price" numeric(10, 2);

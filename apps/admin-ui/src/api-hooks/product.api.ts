@@ -10,6 +10,7 @@ export interface CreateProductPayload {
   longDescription?: string;
   unitId: number;
   price: number;
+  marketPrice?: number;
   isOutOfStock?: boolean;
   deals?: {
     quantity: number;
@@ -24,6 +25,7 @@ export interface UpdateProductPayload {
   longDescription?: string;
   unitId: number;
   price: number;
+  marketPrice?: number;
   isOutOfStock?: boolean;
   deals?: {
     quantity: number;
@@ -39,6 +41,7 @@ export interface Product {
   longDescription?: string;
   unitId: number;
   price: number;
+  marketPrice?: number;
   isOutOfStock?: boolean;
   images?: string[];
   createdAt: string;

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const CACHE_FILE_PATH = path.join('.', 'assets');
+const CACHE_FILE_PATH = path.join('.', 'assets', 'signed-url-cache.json');
 
 // Interface for cache entries with TTL
 interface CacheEntry {
@@ -20,7 +20,13 @@ class SignedURLCache {
     // Create cache directory if it doesn't exist
     const cacheDir = path.dirname(CACHE_FILE_PATH);
     if (!fs.existsSync(cacheDir)) {
+      console.log('creating the directory')
+      
       fs.mkdirSync(cacheDir, { recursive: true });
+    }
+    else {
+      console.log('the directory is already present')
+      
     }
   }
 

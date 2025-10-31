@@ -3,7 +3,8 @@ import { db } from "../db/db_index";
 import { productInfo, units, specialDeals, productSlots } from "../db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { ApiError } from "../lib/api-error";
-import { imageUploadS3, generateSignedUrlsFromS3Urls } from "../lib/s3-client";
+import { imageUploadS3, generateSignedUrlsFromS3Urls, getOriginalUrlFromSignedUrl } from "../lib/s3-client";
+import { deleteS3Image } from "../lib/delete-image";
 import type { SpecialDeal } from "../db/types";
 
 type CreateDeal = {
@@ -16,7 +17,7 @@ type CreateDeal = {
  * Create a new product
  */
 export const createProduct = async (req: Request, res: Response) => {
-  const { name, shortDescription, longDescription, unitId, price, deals } = req.body;
+  const { name, shortDescription, longDescription, unitId, price, marketPrice, deals } = req.body;
   
   // Validate required fields
   if (!name || !unitId || !price) {
@@ -63,6 +64,7 @@ export const createProduct = async (req: Request, res: Response) => {
       longDescription,
       unitId,
       price,
+      marketPrice,
       images: uploadedImageUrls,
     })
     .returning();
@@ -159,9 +161,10 @@ export const getProductById = async (req: Request, res: Response) => {
  */
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, shortDescription, longDescription, unitId, price, deals:dealsRaw } = req.body;
+  const { name, shortDescription, longDescription, unitId, price, marketPrice, deals:dealsRaw, imagesToDelete:imagesToDeleteRaw } = req.body;
 
-  const deals = JSON.parse(dealsRaw)
+  const deals = dealsRaw ? JSON.parse(dealsRaw) : null;
+  const imagesToDelete = imagesToDeleteRaw ? JSON.parse(imagesToDeleteRaw) : [];
   
   if (!name || !unitId || !price) {
     throw new ApiError("Name, unitId, and price are required", 400);
@@ -176,7 +179,37 @@ export const updateProduct = async (req: Request, res: Response) => {
     throw new ApiError("Invalid unit ID", 400);
   }
 
-  // Extract images from req.files
+  // Get current product to handle image updates
+  const currentProduct = await db.query.productInfo.findFirst({
+    where: eq(productInfo.id, parseInt(id)),
+  });
+
+  if (!currentProduct) {
+    throw new ApiError("Product not found", 404);
+  }
+
+  // Handle image deletions
+  let currentImages = (currentProduct.images as string[]) || [];
+  if (imagesToDelete && imagesToDelete.length > 0) {
+    // Convert signed URLs to original S3 URLs for comparison
+    const originalUrlsToDelete = imagesToDelete
+      .map((signedUrl: string) => getOriginalUrlFromSignedUrl(signedUrl))
+      .filter(Boolean); // Remove nulls
+
+    // Find which stored images match the ones to delete
+    const imagesToRemoveFromDb = currentImages.filter(storedUrl =>
+      originalUrlsToDelete.includes(storedUrl)
+    );
+    
+    // Delete the matching images from S3
+    const deletePromises = imagesToRemoveFromDb.map(imageUrl => deleteS3Image(imageUrl));
+    await Promise.all(deletePromises);
+
+    // Remove deleted images from current images array
+    currentImages = currentImages.filter(img => !imagesToRemoveFromDb.includes(img));
+  }
+
+  // Extract new images from req.files
   const images = (req.files as Express.Multer.File[])?.filter(item => item.fieldname === 'images');
   let uploadedImageUrls: string[] = [];
 
@@ -189,6 +222,9 @@ export const updateProduct = async (req: Request, res: Response) => {
     uploadedImageUrls = await Promise.all(imageUploadPromises);
   }
 
+  // Combine remaining current images with new uploaded images
+  const finalImages = [...currentImages, ...uploadedImageUrls];
+
   const [updatedProduct] = await db
     .update(productInfo)
     .set({
@@ -197,7 +233,8 @@ export const updateProduct = async (req: Request, res: Response) => {
       longDescription,
       unitId,
       price,
-      images: uploadedImageUrls.length > 0 ? uploadedImageUrls : undefined,
+      marketPrice,
+      images: finalImages.length > 0 ? finalImages : undefined,
     })
     .where(eq(productInfo.id, parseInt(id)))
     .returning();

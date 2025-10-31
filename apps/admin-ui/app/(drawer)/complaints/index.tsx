@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, Alert } from "react-native";
-import { tw, ConfirmationDialog } from "common-ui";
+import { tw, ConfirmationDialog, MyText } from "common-ui";
 import {
   useGetComplaints,
   useResolveComplaint,
@@ -52,21 +52,25 @@ export default function Complaints() {
     );
   };
 
-  if (isLoading) {
-    return (
-      <AppContainer>
-        <Text>Loading complaints...</Text>
-      </AppContainer>
-    );
-  }
+   if (isLoading) {
+     return (
+       <AppContainer>
+         <View style={tw`flex-1 justify-center items-center`}>
+           <MyText style={tw`text-gray-600`}>Loading complaints...</MyText>
+         </View>
+       </AppContainer>
+     );
+   }
 
-  if (error) {
-    return (
-      <AppContainer>
-        <Text>Error loading complaints</Text>
-      </AppContainer>
-    );
-  }
+   if (error) {
+     return (
+       <AppContainer>
+         <View style={tw`flex-1 justify-center items-center`}>
+           <MyText style={tw`text-red-600`}>Error loading complaints</MyText>
+         </View>
+       </AppContainer>
+     );
+   }
 
   return (
     <AppContainer>
@@ -74,54 +78,54 @@ export default function Complaints() {
         data={complaints}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <View style={tw`bg-white p-4 mb-2 rounded-lg shadow`}>
-            <Text style={tw`text-lg font-bold mb-2`}>Complaint #{item.id}</Text>
-            <Text style={tw`text-base mb-2`}>{item.text}</Text>
-            <View style={tw`flex-row items-center mb-2`}>
-              <TouchableOpacity
-                onPress={() =>
-                  Alert.alert("User Page", "User page coming soon")
-                }
-              >
-                <Text style={tw`text-sm text-blue-600 underline`}>
-                  {item.userName}
-                </Text>
-              </TouchableOpacity>
-              <Text style={tw`text-sm text-gray-600 mx-2`}>|</Text>
-              {item.orderId && (
-                <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert("Order Page", "Order page coming soon")
-                  }
-                >
-                  <Text style={tw`text-sm text-blue-600 underline`}>
-                    Order #{item.orderId}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <Text
-              style={tw`text-sm ${
-                item.status === "resolved" ? "text-green-600" : "text-red-600"
-              }`}
-            >
-              Status: {item.status}
-            </Text>
-            {item.status === "pending" && (
-              <TouchableOpacity
-                onPress={() => handleMarkResolved(item.id)}
-                style={tw`mt-2 bg-blue-500 p-2 rounded`}
-              >
-                <Text style={tw`text-white text-center`}>Mark as Resolved</Text>
-              </TouchableOpacity>
-            )}
+           <View style={tw`bg-white p-4 mb-4 rounded-2xl shadow-lg`}>
+             <MyText style={tw`text-lg font-bold mb-2 text-gray-800`}>Complaint #{item.id}</MyText>
+             <MyText style={tw`text-base mb-2 text-gray-700`}>{item.text}</MyText>
+             <View style={tw`flex-row items-center mb-2`}>
+               <TouchableOpacity
+                 onPress={() =>
+                   Alert.alert("User Page", "User page coming soon")
+                 }
+               >
+                 <MyText style={tw`text-sm text-blue-600 underline`}>
+                   {item.userName}
+                 </MyText>
+               </TouchableOpacity>
+               <MyText style={tw`text-sm text-gray-600 mx-2`}>|</MyText>
+               {item.orderId && (
+                 <TouchableOpacity
+                   onPress={() =>
+                     Alert.alert("Order Page", "Order page coming soon")
+                   }
+                 >
+                   <MyText style={tw`text-sm text-blue-600 underline`}>
+                     Order #{item.orderId}
+                   </MyText>
+                 </TouchableOpacity>
+               )}
+             </View>
+             <MyText
+               style={tw`text-sm ${
+                 item.status === "resolved" ? "text-green-600" : "text-red-600"
+               }`}
+             >
+               Status: {item.status}
+             </MyText>
+             {item.status === "pending" && (
+               <TouchableOpacity
+                 onPress={() => handleMarkResolved(item.id)}
+                 style={tw`mt-2 bg-blue-500 p-3 rounded-lg shadow-md`}
+               >
+                 <MyText style={tw`text-white text-center font-semibold`}>Mark as Resolved</MyText>
+               </TouchableOpacity>
+             )}
           </View>
         )}
-        ListEmptyComponent={
-          <View style={tw`flex-1 justify-center items-center py-10`}>
-            <Text style={tw`text-gray-500`}>No complaints found</Text>
-          </View>
-        }
+         ListEmptyComponent={
+           <View style={tw`flex-1 justify-center items-center py-10`}>
+             <MyText style={tw`text-gray-500 text-center`}>No complaints found</MyText>
+           </View>
+         }
       />
       <PaginationComponent totalCount={totalCount} />
       <ConfirmationDialog

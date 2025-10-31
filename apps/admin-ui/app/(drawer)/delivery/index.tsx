@@ -1,24 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, TouchableOpacity, Dimensions } from 'react-native';
 import dayjs from 'dayjs';
-import { TabViewWrapper, AppContainer, MyText, useManualRefresh } from 'common-ui';
+import { TabViewWrapper, AppContainer, MyText, useManualRefresh, tw } from 'common-ui';
 import { Order, useUpdateDelivered } from '@/src/api-hooks/order.api';
 import { useGetSlots, useGetSlotOrders } from '@/src/api-hooks/slot.api';
 import { useLocalSearchParams } from 'expo-router';
+import { OrderMenu } from '@/components/OrderMenu';
 
 const DeliveryOrderItem = ({ order, isDeliveredTab, onToggleDelivered }: { order: Order; isDeliveredTab: boolean; onToggleDelivered: (orderId: string, isDelivered: boolean) => void }) => {
   return (
-    <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <MyText style={{ fontWeight: 'bold' }}>{order.customerName} - #{order.readableId}</MyText>
-        <TouchableOpacity onPress={() => onToggleDelivered(order.orderId, !isDeliveredTab)}>
-          <MyText style={{ color: isDeliveredTab ? 'red' : 'green' }}>
-            {isDeliveredTab ? 'Mark not delivered' : 'Mark Delivered'}
-          </MyText>
-        </TouchableOpacity>
+    <View style={tw`bg-white p-4 mb-2 rounded-2xl shadow-lg`}>
+      <View style={tw`flex-row justify-between items-center mb-2`}>
+        <MyText style={tw`font-bold text-gray-800`}>{order.customerName} - #{order.readableId}</MyText>
+        <View style={tw`flex-row items-center gap-2`}>
+          <TouchableOpacity
+            onPress={() => onToggleDelivered(order.orderId, !isDeliveredTab)}
+            style={tw`bg-blue-500 px-3 py-2 rounded-lg`}
+          >
+            <MyText style={tw`text-white text-sm font-semibold`}>
+              {isDeliveredTab ? 'Mark not delivered' : 'Mark Delivered'}
+            </MyText>
+          </TouchableOpacity>
+          <OrderMenu
+            orderId={order.orderId}
+            variant="delivery"
+          />
+        </View>
       </View>
-      <MyText numberOfLines={1}>{order.address}</MyText>
-      <MyText>₹{order.totalAmount}{order.isCod ? '' : ' (paid)'}</MyText>
+      <MyText style={tw`text-gray-600 mb-1`} numberOfLines={1}>{order.address}</MyText>
+      <MyText style={tw`text-gray-700`}>₹{order.totalAmount}{order.isCod ? '' : ' (paid)'}</MyText>
     </View>
   );
 };
@@ -49,7 +59,9 @@ export default function Delivery() {
   if (isLoading) {
     return (
       <AppContainer>
-        <MyText>Loading orders...</MyText>
+        <View style={tw`flex-1 justify-center items-center`}>
+          <MyText style={tw`text-gray-600`}>Loading orders...</MyText>
+        </View>
       </AppContainer>
     );
   }
@@ -57,7 +69,9 @@ export default function Delivery() {
   if (error) {
     return (
       <AppContainer>
-        <MyText>Error loading orders</MyText>
+        <View style={tw`flex-1 justify-center items-center`}>
+          <MyText style={tw`text-red-600`}>Error loading orders</MyText>
+        </View>
       </AppContainer>
     );
   }
@@ -68,11 +82,13 @@ export default function Delivery() {
       return route.key === 'not_delivered' ? !order.isDelivered : order.isDelivered;
     });
     return (
-      <View style={{ flex: 1, padding: 10 }}>
+      <View style={tw`flex-1 p-4`}>
         {filteredOrders.length === 0 ? (
-          <MyText>No orders</MyText>
+          <View style={tw`flex-1 justify-center items-center`}>
+            <MyText style={tw`text-gray-500`}>No orders</MyText>
+          </View>
         ) : (
-          <ScrollView style={{ flex: 1 }}>
+          <ScrollView style={tw`flex-1`} showsVerticalScrollIndicator={false}>
             {filteredOrders.map(order => <DeliveryOrderItem key={order.readableId} order={order} isDeliveredTab={isDeliveredTab} onToggleDelivered={handleToggleDelivered} />)}
           </ScrollView>
         )}

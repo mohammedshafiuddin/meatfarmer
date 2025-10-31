@@ -175,7 +175,8 @@ export default function DeliverySequences() {
   );
 
   return (
-    <View style={tw`flex-1`}>
+    <AppContainer>
+      <View style={tw`flex-1`}>
 
       {selectedSlotId && (
         <>
@@ -244,6 +245,7 @@ export default function DeliverySequences() {
           </View>
         </>
       )}
-    </View>
+      </View>
+    </AppContainer>
   );
 }

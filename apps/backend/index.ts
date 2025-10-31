@@ -9,11 +9,13 @@ import initFunc from './src/lib/init';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { appRouter } from './src/trpc/router';
 import jwt from 'jsonwebtoken'
+import signedUrlCache from 'src/lib/signed-url-cache';
 // import { seed } from 'src/db/seed';
 
 
 const app = express();
 
+signedUrlCache.loadFromDisk();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

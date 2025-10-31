@@ -18,6 +18,7 @@ import BottomDropdown from "./src/components/bottom-dropdown";
 import ImageViewerURI from "./src/components/image-viewer";
 import ImageCarousel from "./src/components/ImageCarousel";
 import ImageGallery from "./src/components/ImageGallery";
+import ImageGalleryWithDelete from "./src/components/ImageGalleryWithDelete";
 import ImageUploader from "./src/components/ImageUploader";
 import ProfileImage from "./src/components/profile-image";
 import Checkbox from "./src/components/checkbox";
@@ -30,7 +31,7 @@ import TabViewWrapper from './src/components/tab-view';
 import useFocusCallback from './hooks/useFocusCallback'
 import useManualRefresh from './hooks/useManualRefresh';
 
-const BASE_API_URL = 'http://192.168.100.95:4000';
+const BASE_API_URL = 'http://192.168.1.9:4000';
 export {
   RolesDropdown,
   StorageService,
@@ -53,9 +54,10 @@ export {
 
   BottomDropdown,
   ImageViewerURI,
-  ImageCarousel,
-  ImageGallery,
-   ImageUploader,
+   ImageCarousel,
+   ImageGallery,
+   ImageGalleryWithDelete,
+    ImageUploader,
    ProfileImage,
    Checkbox,
   AppContainer,

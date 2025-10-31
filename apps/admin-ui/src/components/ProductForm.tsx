@@ -1,9 +1,10 @@
- import React, { useState } from 'react';
- import { View, TouchableOpacity, Image } from 'react-native';
- import { Formik, FieldArray } from 'formik';
- import * as Yup from 'yup';
- import { MyTextInput, BottomDropdown, MyText as Text, ImageUploader, useTheme, DatePicker } from 'common-ui';
- import usePickImage from 'common-ui/src/components/use-pick-image';
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { View, TouchableOpacity, Image } from 'react-native';
+import { Formik, FieldArray } from 'formik';
+import * as Yup from 'yup';
+import { MyTextInput, BottomDropdown, MyText, ImageUploader, ImageGalleryWithDelete, useTheme, DatePicker, tw, useFocusCallback } from 'common-ui';
+import usePickImage from 'common-ui/src/components/use-pick-image';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 interface ProductFormData {
   name: string;
@@ -11,6 +12,7 @@ interface ProductFormData {
   longDescription: string;
   unitId: number;
   price: string;
+  marketPrice: string;
   deals: Deal[];
 }
 
@@ -20,10 +22,14 @@ interface Deal {
   validTill: Date | null;
 }
 
+export interface ProductFormRef {
+  clearImages: () => void;
+}
+
 interface ProductFormProps {
   mode: 'create' | 'edit';
   initialValues: ProductFormData;
-  onSubmit: (values: ProductFormData, images?: { uri?: string }[]) => void;
+  onSubmit: (values: ProductFormData, images?: { uri?: string }[], imagesToDelete?: string[]) => void;
   isLoading: boolean;
   existingImages?: string[];
 }
@@ -35,25 +41,46 @@ const unitOptions = [
   { label: 'Litre', value: 4 },
 ];
 
-const ProductForm: React.FC<ProductFormProps> = ({
+const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
   mode,
   initialValues,
   onSubmit,
   isLoading,
   existingImages = []
-}) => {
+}, ref) => {
   const { theme } = useTheme();
   const [images, setImages] = useState<{ uri?: string }[]>([]);
+  const [existingImagesState, setExistingImagesState] = useState<string[]>(existingImages);
+
+  // Initialize existing images state when existingImages prop changes
+  useEffect(() => {
+    setExistingImagesState(existingImages);
+  }, [existingImages]);
+
+  // Clear newly added images when screen comes into focus
+  const clearImages = useCallback(() => {
+    setImages([]);
+  }, []);
+
+  useFocusCallback(clearImages);
+
+  // Expose clearImages method via ref
+  useImperativeHandle(ref, () => ({
+    clearImages,
+  }), [clearImages]);
 
   const pickImage = usePickImage({
     setFile: (files) => setImages(prev => [...prev, ...files]),
     multiple: true,
   });
 
+  // Calculate which existing images were deleted
+  const deletedImages = existingImages.filter(img => !existingImagesState.includes(img));
+
   return (
     <Formik
       initialValues={initialValues}
-      onSubmit={(values) => onSubmit(values, images)}
+      onSubmit={(values) => onSubmit(values, images, deletedImages)}
     >
       {({ handleChange, handleSubmit, values }) => {
         const submit = () => handleSubmit();
@@ -94,24 +121,27 @@ const ProductForm: React.FC<ProductFormProps> = ({
               />
             )}
 
-            {mode === 'edit' && existingImages.length > 0 && (
+            {mode === 'edit' && existingImagesState.length > 0 && (
               <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>Current Images</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                  {existingImages.map((imageUrl, index) => (
-                    <Image
-                      key={index}
-                      source={{ uri: imageUrl }}
-                      style={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: 8,
-                        marginRight: 8,
-                        marginBottom: 8
-                      }}
-                    />
-                  ))}
-                </View>
+                <MyText style={tw`text-lg font-bold mb-2 text-gray-800`}>Current Images</MyText>
+                <ImageGalleryWithDelete
+                  imageUrls={existingImagesState}
+                  setImageUrls={setExistingImagesState}
+                  imageHeight={100}
+                  imageWidth={100}
+                  columns={3}
+                />
+              </View>
+            )}
+
+            {mode === 'edit' && (
+              <View style={{ marginBottom: 16 }}>
+                <MyText style={tw`text-lg font-bold mb-2 text-gray-800`}>Add New Images</MyText>
+                <ImageUploader
+                  images={images}
+                  onAddImage={pickImage}
+                  onRemoveImage={(uri) => setImages(prev => prev.filter(img => img.uri !== uri))}
+                />
               </View>
             )}
 
@@ -131,94 +161,112 @@ const ProductForm: React.FC<ProductFormProps> = ({
               onChangeText={handleChange('price')}
               style={{ marginBottom: 16 }}
             />
+            <MyTextInput
+              topLabel="Market Price (Optional)"
+              placeholder="Enter market price"
+              keyboardType="numeric"
+              value={values.marketPrice}
+              onChangeText={handleChange('marketPrice')}
+              style={{ marginBottom: 16 }}
+            />
 
             <FieldArray name="deals">
               {({ push, remove, form }) => (
                 <View style={{ marginBottom: 16 }}>
-                  <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>Special Package Deals (Optional)</Text>
+                  <View style={tw`flex-row items-center mb-4`}>
+                    <MaterialIcons name="local-offer" size={20} color="#3B82F6" />
+                    <MyText style={tw`text-lg font-bold text-gray-800 ml-2`}>
+                      Special Package Deals
+                    </MyText>
+                    <MyText style={tw`text-sm text-gray-500 ml-1`}>(Optional)</MyText>
+                  </View>
                   {(form.values.deals || []).map((deal: any, index: number) => (
-                     <View key={index} style={{ marginBottom: 16 }}>
-                       <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8 }}>
-                         <View style={{ flex: 1, marginRight: 8 }}>
-                           <MyTextInput
-                             topLabel="Quantity"
-                             placeholder="Enter quantity"
-                             keyboardType="numeric"
-                             value={deal.quantity || ''}
-                             onChangeText={form.handleChange(`deals.${index}.quantity`)}
-                             fullWidth={false}
-                           />
-                         </View>
-                         <View style={{ flex: 1, marginRight: 8 }}>
-                           <MyTextInput
-                             topLabel="Price"
-                             placeholder="Enter price"
-                             keyboardType="numeric"
-                             value={deal.price || ''}
-                             onChangeText={form.handleChange(`deals.${index}.price`)}
-                             fullWidth={false}
-                           />
-                         </View>
-                         <View style={{ flex: 1, marginRight: 8 }}>
-                           <DatePicker
-                             value={deal.validTill}
-                             setValue={(date) => form.setFieldValue(`deals.${index}.validTill`, date)}
-                             showLabel={true}
-                             placeholder="Valid Till"
-                           />
-                         </View>
-                         <TouchableOpacity
-                           onPress={() => remove(index)}
-                           style={{
-                             backgroundColor: '#dc3545',
-                             padding: 8,
-                             borderRadius: 4,
-                             justifyContent: 'center',
-                             alignItems: 'center',
-                             height: 40,
-                           }}
-                         >
-                           <Text style={{ color: 'white', fontSize: 12 }}>Remove</Text>
-                         </TouchableOpacity>
-                       </View>
+                      <View key={index} style={tw`bg-white p-4 rounded-2xl shadow-lg mb-4 border border-gray-100`}>
+                        <View style={tw`mb-3`}>
+                          <View style={tw`flex-row items-end gap-3 mb-3`}>
+                            <View style={tw`flex-1`}>
+                              <MyTextInput
+                                topLabel="Quantity"
+                                placeholder="Enter quantity"
+                                keyboardType="numeric"
+                                value={deal.quantity || ''}
+                                onChangeText={form.handleChange(`deals.${index}.quantity`)}
+                                fullWidth={false}
+                              />
+                            </View>
+                            <View style={tw`flex-1`}>
+                              <MyTextInput
+                                topLabel="Price"
+                                placeholder="Enter price"
+                                keyboardType="numeric"
+                                value={deal.price || ''}
+                                onChangeText={form.handleChange(`deals.${index}.price`)}
+                                fullWidth={false}
+                              />
+                            </View>
+                          </View>
+                          <View style={tw`flex-row items-end gap-3`}>
+                            <View style={tw`flex-1`}>
+                              <DatePicker
+                                value={deal.validTill}
+                                setValue={(date) => form.setFieldValue(`deals.${index}.validTill`, date)}
+                                showLabel={true}
+                                placeholder="Valid Till"
+                              />
+                            </View>
+                            <View style={tw`flex-1`}>
+                              <TouchableOpacity
+                                onPress={() => remove(index)}
+                                style={tw`bg-red-500 p-3 rounded-lg shadow-md flex-row items-center justify-center`}
+                              >
+                                <MaterialIcons name="delete" size={16} color="white" />
+                                <MyText style={tw`text-white font-semibold ml-1`}>Remove</MyText>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </View>
                      </View>
-                  ))}
+                   ))}
+
+                   {(form.values.deals || []).length === 0 && (
+                     <View style={tw`bg-gray-50 p-6 rounded-2xl border-2 border-dashed border-gray-300 items-center mb-4`}>
+                       <MaterialIcons name="local-offer" size={32} color="#9CA3AF" />
+                       <MyText style={tw`text-gray-500 text-center mt-2`}>
+                         No package deals added yet
+                       </MyText>
+                       <MyText style={tw`text-gray-400 text-sm text-center mt-1`}>
+                         Add special pricing for bulk purchases
+                       </MyText>
+                     </View>
+                   )}
+
                    <TouchableOpacity
-                     onPress={() => push({ quantity: '', price: '', validTill: null })}
-                     style={{
-                       backgroundColor: '#28a745',
-                       padding: 10,
-                       borderRadius: 4,
-                       alignItems: 'center',
-                       marginTop: 8,
-                     }}
-                   >
-                     <Text style={{ color: 'white', fontSize: 14 }}>Add Deal</Text>
-                   </TouchableOpacity>
+                      onPress={() => push({ quantity: '', price: '', validTill: null })}
+                      style={tw`bg-green-500 p-4 rounded-2xl shadow-lg flex-row items-center justify-center mt-4`}
+                    >
+                      <MaterialIcons name="add" size={20} color="white" />
+                      <MyText style={tw`text-white font-bold text-lg ml-2`}>Add Package Deal</MyText>
+                    </TouchableOpacity>
                 </View>
               )}
             </FieldArray>
 
-            <TouchableOpacity
-              onPress={submit}
-              disabled={isLoading}
-              style={{
-                backgroundColor: isLoading ? theme.colors.gray3 : theme.colors.blue1,
-                padding: 16,
-                borderRadius: 8,
-                alignItems: 'center',
-                marginTop: 16,
-              }}
-            >
-              <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
+             <TouchableOpacity
+               onPress={submit}
+               disabled={isLoading}
+               style={tw`p-4 rounded-2xl shadow-lg items-center mt-6 ${isLoading ? 'bg-gray-400' : 'bg-blue-500'}`}
+             >
+              <MyText style={tw`text-white text-lg font-bold`}>
                 {isLoading ? (mode === 'create' ? 'Creating...' : 'Updating...') : (mode === 'create' ? 'Create Product' : 'Update Product')}
-              </Text>
+              </MyText>
             </TouchableOpacity>
           </View>
         );
       }}
     </Formik>
   );
-};
+});
+
+ProductForm.displayName = 'ProductForm';
 
 export default ProductForm;
