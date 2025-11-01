@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, Alert } from 'react-native';
 import { Entypo } from '@expo/vector-icons';
 import { MyText, tw, BottomDialog } from 'common-ui';
 import { OrderNotesForm } from './OrderNotesForm';
 import { FullOrderView } from './FullOrderView';
+import { trpc } from '../src/trpc-client';
 
 export interface MenuOption {
   title: string;
@@ -30,6 +31,20 @@ export const OrderMenu: React.FC<OrderMenuProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [fullOrderDialogOpen, setFullOrderDialogOpen] = useState(false);
+  const [generateCouponDialogOpen, setGenerateCouponDialogOpen] = useState(false);
+
+  const generateCouponMutation = trpc.admin.coupon.generateCancellationCoupon.useMutation({
+    onSuccess: (coupon) => {
+      Alert.alert(
+        'Success',
+        `Coupon generated successfully!\n\nCode: ${coupon.couponCode}\nValue: ₹${coupon.flatDiscount}\nExpires: ${coupon.validTill ? new Date(coupon.validTill).toLocaleDateString() : 'N/A'}`
+      );
+      setGenerateCouponDialogOpen(false);
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Failed to generate coupon');
+    },
+  });
 
   const handleOpenMenu = () => {
     setIsOpen(true);
@@ -51,8 +66,17 @@ export const OrderMenu: React.FC<OrderMenuProps> = ({
 
   const handleViewDetails = () => {
     setIsOpen(false);
-    // TODO: Implement view details functionality
-    console.log('View details for order:', orderId);
+    setFullOrderDialogOpen(true);
+  };
+
+  const handleGenerateCoupon = () => {
+    setIsOpen(false);
+    setGenerateCouponDialogOpen(true);
+  };
+
+  const handleConfirmGenerateCoupon = () => {
+    const orderIdString = `ORD${orderId.toString().padStart(3, '0')}`;
+    generateCouponMutation.mutate({ orderId: orderIdString });
   };
 
   const getOptionsForVariant = (): MenuOption[] => {
@@ -66,6 +90,14 @@ export const OrderMenu: React.FC<OrderMenuProps> = ({
 
     switch (variant) {
       case 'packaging':
+        return [
+          ...baseOptions,
+          {
+            title: 'Show full Order',
+            icon: 'eye',
+            onPress: handleShowFullOrder,
+          },
+        ];
       case 'cancelled':
         return [
           ...baseOptions,
@@ -73,6 +105,11 @@ export const OrderMenu: React.FC<OrderMenuProps> = ({
             title: 'Show full Order',
             icon: 'eye',
             onPress: handleShowFullOrder,
+          },
+          {
+            title: 'Generate Coupon',
+            icon: 'ticket',
+            onPress: handleGenerateCoupon,
           },
         ];
       case 'delivery':
@@ -145,6 +182,37 @@ export const OrderMenu: React.FC<OrderMenuProps> = ({
       {/* Full Order Dialog */}
       <BottomDialog open={fullOrderDialogOpen} onClose={() => setFullOrderDialogOpen(false)}>
         <FullOrderView orderId={Number(orderId)} />
+      </BottomDialog>
+
+      {/* Generate Coupon Dialog */}
+      <BottomDialog open={generateCouponDialogOpen} onClose={() => setGenerateCouponDialogOpen(false)}>
+        <View style={tw`p-6`}>
+          <MyText style={tw`text-xl font-bold text-gray-800 mb-4`}>Generate Cancellation Coupon</MyText>
+          <MyText style={tw`text-gray-600 mb-6`}>
+            This will create a refund coupon for the customer equal to the order amount.
+            The coupon will be valid for 30 days and can only be used once.
+          </MyText>
+          <MyText style={tw`text-sm text-amber-600 mb-6`}>
+            Note: This only works for online payment orders. COD orders cannot generate refund coupons.
+          </MyText>
+          <View style={tw`flex-row space-x-4`}>
+            <TouchableOpacity
+              style={tw`flex-1 bg-gray-500 p-3 rounded-lg items-center`}
+              onPress={() => setGenerateCouponDialogOpen(false)}
+            >
+              <MyText style={tw`text-white font-medium`}>Cancel</MyText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={tw`flex-1 bg-green-500 p-3 rounded-lg items-center`}
+              onPress={handleConfirmGenerateCoupon}
+              disabled={generateCouponMutation.isPending}
+            >
+              <MyText style={tw`text-white font-medium`}>
+                {generateCouponMutation.isPending ? 'Generating...' : 'Generate Coupon'}
+              </MyText>
+            </TouchableOpacity>
+          </View>
+        </View>
       </BottomDialog>
     </>
   );

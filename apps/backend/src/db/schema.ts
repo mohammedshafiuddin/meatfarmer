@@ -114,6 +114,7 @@ export const orders = mf.table('orders', {
   cancellationReviewed: boolean('cancellation_reviewed').notNull().default(false),
   isRefundDone: boolean('is_refund_done').notNull().default(false),
   adminNotes: text('admin_notes'),
+  userNotes: text('user_notes'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

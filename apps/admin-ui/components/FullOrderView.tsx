@@ -167,6 +167,14 @@ export const FullOrderView: React.FC<FullOrderViewProps> = ({ orderId }) => {
           </View>
         )}
 
+        {/* User Notes */}
+        {order.userNotes && (
+          <View style={tw`bg-blue-50 rounded-xl p-4 mb-4`}>
+            <MyText style={tw`text-lg font-semibold text-gray-800 mb-2`}>Customer Notes</MyText>
+            <MyText style={tw`text-gray-700`}>{order.userNotes}</MyText>
+          </View>
+        )}
+
         {/* Admin Notes */}
         {order.adminNotes && (
           <View style={tw`bg-yellow-50 rounded-xl p-4 mb-4`}>

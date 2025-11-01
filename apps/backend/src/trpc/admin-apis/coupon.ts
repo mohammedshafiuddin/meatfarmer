@@ -1,7 +1,7 @@
 import { router, publicProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { coupons, users, staffUsers } from '../../db/schema';
+import { coupons, users, staffUsers, orders } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
 
 const createCouponBodySchema = z.object({
@@ -266,15 +266,103 @@ export const couponRouter = router({
         discountAmount = maxValueLimit;
       }
 
-      return {
-        valid: true,
-        discountAmount,
-        coupon: {
-          id: coupon.id,
-          discountPercent: coupon.discountPercent,
-          flatDiscount: coupon.flatDiscount,
-          maxValue: coupon.maxValue,
-        }
-      };
-    }),
-});
+       return {
+         valid: true,
+         discountAmount,
+         coupon: {
+           id: coupon.id,
+           discountPercent: coupon.discountPercent,
+           flatDiscount: coupon.flatDiscount,
+           maxValue: coupon.maxValue,
+         }
+       };
+     }),
+
+     generateCancellationCoupon: publicProcedure
+       .input(
+         z.object({
+           orderId: z.string().regex(/^ORD\d+$/, "Invalid order ID format"),
+         })
+       )
+       .mutation(async ({ input, ctx }) => {
+         const { orderId } = input;
+
+         // Get staff user ID from auth middleware
+         const staffUserId = ctx.staffUser?.id;
+         if (!staffUserId) {
+           throw new Error("Unauthorized");
+         }
+
+         // Extract readable ID from orderId (e.g., ORD001 -> 1)
+         const readableIdMatch = orderId.match(/^ORD(\d+)$/);
+         if (!readableIdMatch) {
+           throw new Error("Invalid order ID format");
+         }
+         const readableId = parseInt(readableIdMatch[1]);
+
+         // Find the order with user and order status information
+         const order = await db.query.orders.findFirst({
+           where: eq(orders.readableId, readableId),
+           with: {
+             user: true,
+             orderStatus: true,
+           },
+         });
+
+         if (!order) {
+           throw new Error("Order not found");
+         }
+
+         // Check if order is cancelled (check if any status entry has isCancelled: true)
+         const isOrderCancelled = order.orderStatus?.some(status => status.isCancelled) || false;
+         if (!isOrderCancelled) {
+           throw new Error("Order is not cancelled");
+         }
+
+         // Check if payment method is COD
+         if (order.isCod) {
+           throw new Error("Can't generate refund coupon for CoD Order");
+         }
+
+         // Verify user exists
+         if (!order.user) {
+           throw new Error("User not found for this order");
+         }
+
+         // Generate coupon code: first 3 letters of user name + orderId
+         const userNamePrefix = order.user.name.substring(0, 3).toUpperCase();
+         const couponCode = `${userNamePrefix}${orderId}`;
+
+         // Check if coupon code already exists
+         const existingCoupon = await db.query.coupons.findFirst({
+           where: eq(coupons.couponCode, couponCode),
+         });
+
+         if (existingCoupon) {
+           throw new Error("Coupon code already exists");
+         }
+
+         // Get order total amount
+         const orderAmount = parseFloat(order.totalAmount);
+
+         // Calculate expiry date (30 days from now)
+         const expiryDate = new Date();
+         expiryDate.setDate(expiryDate.getDate() + 30);
+
+         // Create the coupon
+         const result = await db.insert(coupons).values({
+           couponCode,
+           isUserBased: true,
+           flatDiscount: orderAmount.toString(),
+           minOrder: "0",
+           targetUser: order.userId,
+           maxValue: orderAmount.toString(),
+           validTill: expiryDate,
+           maxLimitForUser: 1,
+           createdBy: staffUserId,
+           isApplyForAll: false,
+         }).returning();
+
+         return result[0];
+       }),
+ });

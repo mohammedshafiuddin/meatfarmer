@@ -32,6 +32,7 @@ export default function Checkout() {
   const [slotId, setSlotId] = useState<number | null>(null);
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [selectedCouponId, setSelectedCouponId] = useState<number | null>(null);
+  const [userNotes, setUserNotes] = useState('');
 
   const isAddressSelected = !!selectedAddress;
 
@@ -123,6 +124,7 @@ export default function Checkout() {
       slotId,
       paymentMethod: 'cod' as const,
       couponId: selectedCouponId,
+      userNotes: userNotes,
     };
     placeOrderMutation.mutate(orderData);
   };
@@ -161,6 +163,7 @@ export default function Checkout() {
       slotId: Number(slotId!),
       paymentMethod: 'online' as const,
       couponId: selectedCouponId,
+      userNotes: userNotes,
     };
     placeOrderMutation.mutate(orderData);
   };
@@ -260,9 +263,23 @@ export default function Checkout() {
           <TouchableOpacity style={tw`mt-4`} onPress={() => setShowAddAddress(true)}>
             <Text style={[tw`text-center font-medium`, { color: theme.colors.pink1 }]}>Add New Address</Text>
           </TouchableOpacity>
-        </View>
+         </View>
 
-        {/* Action Buttons */}
+         {/* Special Instructions */}
+         <View style={tw`mb-6 bg-white rounded-lg p-4 shadow-md`}>
+           <Text style={tw`text-lg font-semibold mb-3`}>Special Instructions (Optional)</Text>
+           <TextInput
+             style={tw`border border-gray-300 rounded-lg p-3 min-h-20 text-base`}
+             value={userNotes}
+             onChangeText={setUserNotes}
+             placeholder="Any special delivery instructions, preferences, or notes..."
+             multiline
+             numberOfLines={3}
+             textAlignVertical="top"
+           />
+         </View>
+
+         {/* Action Buttons */}
         <View style={tw`mt-6`}>
           <TouchableOpacity
             style={tw`bg-gray-600 p-4 rounded-lg mb-4 w-full items-center`}

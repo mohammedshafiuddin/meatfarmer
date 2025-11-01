@@ -31,11 +31,12 @@ export const orderRouter = router({
         paymentMethod: z.enum(["online", "cod"]),
         couponId: z.number().int().positive().optional().nullable(),
         slotId: z.number().int().positive(),
+        userNotes: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.user.userId;
-      const { selectedItems, addressId, slotId, paymentMethod, couponId } =
+      const { selectedItems, addressId, slotId, paymentMethod, couponId, userNotes } =
         input;
 
       // Validate address belongs to user
@@ -177,6 +178,7 @@ export const orderRouter = router({
             paymentInfoId,
             totalAmount: finalAmount.toString(),
             readableId: currentReadableId,
+            userNotes: userNotes || null,
           })
           .returning();
 
@@ -264,6 +266,7 @@ export const orderRouter = router({
           cancelReason: status?.cancelReason || null,
           paymentMode,
           isRefundDone: status?.isRefundDone || false,
+          userNotes: order.userNotes || null,
           items,
         };
       })
@@ -340,7 +343,79 @@ export const orderRouter = router({
         })
         .where(eq(orderStatus.id, status.id));
 
-      console.log("Order cancelled successfully:", id);
-      return { success: true, message: "Order cancelled successfully" };
-    }),
-});
+       console.log("Order cancelled successfully:", id);
+       return { success: true, message: "Order cancelled successfully" };
+     }),
+
+     updateUserNotes: protectedProcedure
+       .input(
+         z.object({
+           id: z.string().regex(/^ORD\d+$/, "Invalid order ID format"),
+           userNotes: z.string(),
+         })
+       )
+       .mutation(async ({ input, ctx }) => {
+         const userId = ctx.user.userId;
+         const { id, userNotes } = input;
+
+         console.log("Update user notes request:", { userId, orderId: id });
+
+         // Extract readable ID from orderId (e.g., ORD001 -> 1)
+         const readableIdMatch = id.match(/^ORD(\d+)$/);
+         if (!readableIdMatch) {
+           console.error("Invalid order ID format:", id);
+           throw new ApiError("Invalid order ID format", 400);
+         }
+         const readableId = parseInt(readableIdMatch[1]);
+
+         // Check if order exists and belongs to user
+         const order = await db.query.orders.findFirst({
+           where: eq(orders.readableId, readableId),
+           with: {
+             orderStatus: true,
+           },
+         });
+
+         if (!order) {
+           console.error("Order not found:", id);
+           throw new ApiError("Order not found", 404);
+         }
+
+         if (order.userId !== userId) {
+           console.error("Order does not belong to user:", {
+             orderId: id,
+             orderUserId: order.userId,
+             requestUserId: userId,
+           });
+           throw new ApiError("Order not found", 404);
+         }
+
+         const status = order.orderStatus[0];
+         if (!status) {
+           console.error("Order status not found for order:", id);
+           throw new ApiError("Order status not found", 400);
+         }
+
+         // Only allow updating notes for orders that are not delivered or cancelled
+         if (status.isDelivered) {
+           console.error("Cannot update notes for delivered order:", id);
+           throw new ApiError("Cannot update notes for delivered order", 400);
+         }
+
+         if (status.isCancelled) {
+           console.error("Cannot update notes for cancelled order:", id);
+           throw new ApiError("Cannot update notes for cancelled order", 400);
+         }
+
+         // Update user notes
+         await db
+           .update(orders)
+           .set({
+             userNotes: userNotes || null,
+           })
+           .where(eq(orders.id, order.id));
+
+         console.log("User notes updated successfully:", id);
+         return { success: true, message: "Notes updated successfully" };
+       }),
+ });

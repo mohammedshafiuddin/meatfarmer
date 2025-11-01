@@ -19,6 +19,7 @@ export interface Order {
   cancelReason: string | null;
   paymentMode: string;
   isRefundDone: boolean;
+  userNotes: string | null;
   items: OrderItem[];
 }
 

@@ -7,10 +7,21 @@ import { useGetUserOrders, useCancelOrder, useRaiseComplaint } from '../../../sr
 import { trpc } from '@/src/trpc-client';
 
 export default function MyOrders() {
-  const { data: ordersData, isLoading, error, refetch } = useGetUserOrders();
+  const { data: ordersData, isLoading, error, refetch } = trpc.user.order.getOrders.useQuery();
   const cancelOrderMutation = useCancelOrder();
   // const raiseComplaintMutation = useRaiseComplaint();
   const raiseComplaintMutation = trpc.user.complaint.raise.useMutation();
+  const updateNotesMutation = trpc.user.order.updateUserNotes.useMutation({
+    onSuccess: () => {
+      refetch();
+      Alert.alert('Success', 'Notes updated successfully');
+      setEditNotesDialogOpen(false);
+      setEditNotes('');
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Failed to update notes');
+    },
+  });
   const orders = ordersData?.data || [];
 
   useManualRefresh(() => refetch());
@@ -25,6 +36,9 @@ export default function MyOrders() {
   const [cancelOrderId, setCancelOrderId] = useState<string>('');
   const [cancelReason, setCancelReason] = useState<string>('');
   const [complaintBody, setComplaintBody] = useState<string>('');
+  const [editNotesDialogOpen, setEditNotesDialogOpen] = useState(false);
+  const [editNotesOrderId, setEditNotesOrderId] = useState<string>('');
+  const [editNotes, setEditNotes] = useState<string>('');
 
   const openDialog = useCallback((items: typeof orders[0]['items']) => {
     setDialogItems(items);
@@ -100,6 +114,14 @@ export default function MyOrders() {
             </MyText>
           </View>
         </View>
+
+        {/* User Notes */}
+        {item.userNotes && (
+          <View style={tw`bg-blue-50 p-3 rounded-lg mb-4`}>
+            <MyText style={tw`text-sm text-blue-700 font-medium`}>Special Instructions:</MyText>
+            <MyText style={tw`text-sm text-blue-600 mt-1`}>{item.userNotes}</MyText>
+          </View>
+        )}
 
         {/* Cancel/Refund Info */}
         {item.cancelReason && (
@@ -190,8 +212,20 @@ export default function MyOrders() {
       setMenuDialogOpen(false);
     } catch (error) {
       console.log(error)
-      
+
       Alert.alert('Error', 'Failed to raise complaint');
+    }
+  };
+
+  const handleEditNotes = async () => {
+    try {
+      await updateNotesMutation.mutateAsync({
+        id: editNotesOrderId,
+        userNotes: editNotes.trim()
+      });
+      setMenuDialogOpen(false);
+    } catch (error) {
+      // Error handling is done in the mutation onError
     }
   };
 
@@ -249,6 +283,149 @@ export default function MyOrders() {
             </View>
           }
         />
+
+        {/* Menu Dialog */}
+        <BottomDialog open={menuDialogOpen} onClose={() => setMenuDialogOpen(false)}>
+          <View style={tw`p-6`}>
+            <MyText style={tw`text-xl font-bold text-gray-800 mb-6`}>Order Options</MyText>
+            <View style={tw`space-y-4`}>
+              <TouchableOpacity
+                style={tw`bg-blue-50 p-4 rounded-lg`}
+                onPress={() => {
+                  const order = orders.find(o => o.orderId === menuOrderId);
+                  if (order) {
+                    setEditNotes(order.userNotes || '');
+                    setEditNotesOrderId(menuOrderId);
+                    setEditNotesDialogOpen(true);
+                  }
+                }}
+              >
+                <MyText style={tw`text-blue-700 font-medium`}>Edit Notes</MyText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tw`bg-yellow-50 p-4 rounded-lg`}
+                onPress={() => {
+                  setComplaintOrderId(menuOrderId);
+                  setComplaintDialogOpen(true);
+                }}
+              >
+                <MyText style={tw`text-yellow-700 font-medium`}>Raise Complaint</MyText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tw`bg-red-50 p-4 rounded-lg`}
+                onPress={() => {
+                  setCancelOrderId(menuOrderId);
+                  setCancelDialogOpen(true);
+                }}
+              >
+                <MyText style={tw`text-red-700 font-medium`}>Cancel Order</MyText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </BottomDialog>
+
+        {/* Edit Notes Dialog */}
+        <BottomDialog open={editNotesDialogOpen} onClose={() => setEditNotesDialogOpen(false)}>
+          <View style={tw`p-6`}>
+            <MyText style={tw`text-xl font-bold text-gray-800 mb-4`}>Edit Special Instructions</MyText>
+            <TextInput
+              style={tw`border border-gray-300 rounded-lg p-3 min-h-20 text-base mb-4`}
+              value={editNotes}
+              onChangeText={setEditNotes}
+              placeholder="Any special delivery instructions..."
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            <View style={tw`flex-row space-x-4`}>
+              <TouchableOpacity
+                style={tw`flex-1 bg-gray-500 p-3 rounded-lg items-center`}
+                onPress={() => setEditNotesDialogOpen(false)}
+              >
+                <MyText style={tw`text-white font-medium`}>Cancel</MyText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={tw`flex-1 bg-blue-500 p-3 rounded-lg items-center`}
+                onPress={handleEditNotes}
+                disabled={updateNotesMutation.isLoading}
+              >
+                <MyText style={tw`text-white font-medium`}>
+                  {updateNotesMutation.isLoading ? 'Saving...' : 'Save'}
+                </MyText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </BottomDialog>
+
+        {/* Cancel Order Dialog */}
+        <BottomDialog open={cancelDialogOpen} onClose={() => setCancelDialogOpen(false)}>
+          <View style={tw`p-6`}>
+            <MyText style={tw`text-xl font-bold text-gray-800 mb-4`}>Cancel Order</MyText>
+            <MyText style={tw`text-gray-600 mb-4`}>Please provide a reason for cancellation:</MyText>
+            <TextInput
+              style={tw`border border-gray-300 rounded-lg p-3 min-h-20 text-base mb-4`}
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              placeholder="Reason for cancellation..."
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+            <View style={tw`flex-row space-x-4`}>
+              <TouchableOpacity
+                style={tw`flex-1 bg-gray-500 p-3 rounded-lg items-center`}
+                onPress={() => setCancelDialogOpen(false)}
+              >
+                <MyText style={tw`text-white font-medium`}>Cancel</MyText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={tw`flex-1 bg-red-500 p-3 rounded-lg items-center`}
+                onPress={handleCancelOrder}
+                disabled={cancelOrderMutation.isLoading}
+              >
+                <MyText style={tw`text-white font-medium`}>
+                  {cancelOrderMutation.isLoading ? 'Cancelling...' : 'Confirm Cancel'}
+                </MyText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </BottomDialog>
+
+        {/* Raise Complaint Dialog */}
+        <BottomDialog open={complaintDialogOpen} onClose={() => setComplaintDialogOpen(false)}>
+          <View style={tw`p-6`}>
+            <MyText style={tw`text-xl font-bold text-gray-800 mb-4`}>Raise Complaint</MyText>
+            <MyText style={tw`text-gray-600 mb-4`}>Please describe your complaint:</MyText>
+            <TextInput
+              style={tw`border border-gray-300 rounded-lg p-3 min-h-20 text-base mb-4`}
+              value={complaintBody}
+              onChangeText={setComplaintBody}
+              placeholder="Describe your complaint..."
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            <View style={tw`flex-row space-x-4`}>
+              <TouchableOpacity
+                style={tw`flex-1 bg-gray-500 p-3 rounded-lg items-center`}
+                onPress={() => setComplaintDialogOpen(false)}
+              >
+                <MyText style={tw`text-white font-medium`}>Cancel</MyText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={tw`flex-1 bg-yellow-500 p-3 rounded-lg items-center`}
+                onPress={handleRaiseComplaint}
+                disabled={raiseComplaintMutation.isLoading}
+              >
+                <MyText style={tw`text-white font-medium`}>
+                  {raiseComplaintMutation.isLoading ? 'Submitting...' : 'Submit Complaint'}
+                </MyText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </BottomDialog>
       </View>
     </AppContainer>
   );

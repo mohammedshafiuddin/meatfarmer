@@ -84,6 +84,7 @@ export const orderRouter = router({
         isOnlinePayment: orderData.isOnlinePayment,
         totalAmount: orderData.totalAmount,
         adminNotes: orderData.adminNotes,
+        userNotes: orderData.userNotes,
         createdAt: orderData.createdAt,
         items: orderData.orderItems.map(item => ({
           id: item.id,
