@@ -61,10 +61,11 @@
 ## Files Modified
 
 ### Backend
-- `apps/backend/src/db/schema.ts` - Added user_details table and relations
+- `apps/backend/src/db/schema.ts` - Added user_details table, vendor_snippets table, and relations definitions
 - `apps/backend/src/uv-apis/auth.controller.ts` - Enhanced auth APIs with userDetails and signed URLs
 - `apps/backend/src/uv-apis/auth.router.ts` - Added update profile route
 - `apps/backend/src/trpc/user-apis/user.ts` - Updated getSelfData with userDetails
+- `apps/backend/src/trpc/admin-apis/vendor-snippets.ts` - Complete CRUD API for vendor snippets management
 
 ### Frontend
 - `apps/user-ui/src/types/auth.ts` - Added UserDetails interface and updated AuthState
@@ -75,8 +76,17 @@
 - `apps/user-ui/app/(drawer)/_layout.tsx` - Updated drawer with profile image
 - `apps/user-ui/app/(drawer)/me/index.tsx` - Redesigned with 2x2 grid and icons
 
+### Admin UI (New Vendor Snippets Feature)
+- `apps/admin-ui/app/(drawer)/vendor-snippets/index.tsx` - Main vendor snippets management page
+- `apps/admin-ui/app/(drawer)/_layout.tsx` - Added vendor snippets to drawer navigation
+- `apps/admin-ui/components/VendorSnippetForm.tsx` - Create/edit form with validation
+- `apps/admin-ui/components/SnippetOrdersView.tsx` - Orders viewing component with matching highlights
+- `apps/admin-ui/src/api-hooks/vendor-snippets.api.ts` - tRPC hooks for vendor snippets operations
+- `apps/admin-ui/src/trpc-client.ts` - Updated imports for tRPC client usage
+
 ## Key Features Implemented
 
+### User UI Features
 ✅ **Complete user profile system** with detailed information storage
 ✅ **Secure image handling** with signed URLs and S3 integration
 ✅ **Edit profile functionality** with pre-populated forms and validation
@@ -85,14 +95,79 @@
 ✅ **Transaction-safe updates** with proper error handling
 ✅ **Responsive grid layouts** optimized for mobile experience
 
-## Admin UI Changes (Previous)
+### Admin UI Features (Vendor Snippets)
+✅ **Complete vendor snippets management system** with full CRUD operations
+✅ **Advanced order matching logic** that finds orders by slot and product criteria
+✅ **Interactive forms** with slot/product selection and validation
+✅ **Orders viewing interface** with product matching highlights and statistics
+✅ **Automatic data refresh** using focus callbacks for fresh data
+✅ **Proper relations handling** in Drizzle ORM with foreign key relationships
+✅ **Error handling and loading states** throughout the user journey
+✅ **Navigation integration** with drawer menu and proper routing
 
-### Slot Selection Centralization
+## Admin UI Changes
+
+### Vendor Snippets Management System
+
+#### Database Schema Updates
+- **Added `vendor_snippets` table** with fields: id, snippetCode, slotId, productIds, validTill, createdAt
+- **Established foreign key relationship** between vendorSnippets and deliverySlotInfo tables
+- **Added relations definition** (`vendorSnippetsRelations`) for proper Drizzle ORM queries
+- **Array field support** for storing multiple product IDs per snippet
+
+#### Backend API Implementation
+- **Complete CRUD operations** for vendor snippets:
+  - `create`: Validates slot/product existence, prevents duplicate codes
+  - `getAll`: Returns snippets with slot relations, ordered by creation date
+  - `getById`: Fetches individual snippet with slot details
+  - `update`: Partial updates with validation and uniqueness checks
+  - `delete`: Soft delete by setting expiry to current time
+- **`getOrdersBySnippet` API**: Advanced order matching logic that:
+  - Finds orders with matching delivery slots
+  - Filters orders containing at least one snippet product
+  - Returns formatted order data with product matching highlights
+  - Includes customer details, pricing, and delivery information
+
+#### Admin UI Implementation
+- **Vendor Snippets List Page**: Complete management interface with:
+  - Snippet cards showing code, slot info, product count, expiry dates
+  - Action buttons for View Orders, Edit, and Delete operations
+  - Empty state with call-to-action for first snippet creation
+  - Loading states and error handling
+- **Create/Edit Forms**: Comprehensive form components using:
+  - BottomDropdown for slot selection (replacing custom dropdowns)
+  - MultiSelectDropdown for product selection with search
+  - DatePicker for expiry date management
+  - Form validation with real-time error feedback
+  - Auto-generated snippet codes for new entries
+
+#### Orders Viewing System
+- **SnippetOrdersView Component**: Dedicated screen for viewing matched orders:
+  - Order cards with customer details, amounts, and delivery slots
+  - Product lists with matching highlights (⭐ indicators)
+  - Summary statistics (total orders, revenue)
+  - Responsive design with proper spacing and typography
+
+#### Navigation & UX Enhancements
+- **Drawer Integration**: Added "Vendor Snippets" to admin navigation menu
+- **Focus-based Refetching**: Implemented `useFocusCallback` for automatic data refresh when returning to the screen
+- **Error Handling**: Fixed tRPC client vs hooks usage (`trpcClient` for direct queries)
+- **Loading States**: Proper loading indicators and user feedback throughout the flow
+
+#### Technical Improvements
+- **Relations Fix**: Resolved Drizzle ORM error by adding missing relations definition
+- **API Client Usage**: Corrected tRPC usage patterns (hooks vs direct client)
+- **Type Safety**: Proper TypeScript interfaces and error handling
+- **Performance**: Efficient queries with proper indexing and filtering
+
+### Previous Admin UI Changes
+
+#### Slot Selection Centralization
 - **Moved slot dropdown** from individual pages to Manage Orders hub page
 - **Updated navigation** with slotId query parameters
 - **Streamlined child pages** with URL param reading
 
-### UI Cleanup & Improvements
+#### UI Cleanup & Improvements
 - **Removed redundant elements** from drawer navigation
 - **Compacted order displays** for better space utilization
 - **Enhanced delivery sequences** layout
@@ -103,3 +178,6 @@
 - Schema changes should be committed and migrations generated manually
 - **Signed URLs** are used for secure image access with 3-day expiration
 - **React Query** handles all API state management with proper loading/error states
+- **Vendor Snippets**: Relations definitions are critical for Drizzle ORM queries - always define relations for foreign key relationships
+- **tRPC Usage**: Use `trpc` for React hooks and `trpcClient` for direct API calls outside components
+- **Focus Callbacks**: Implemented for automatic data refresh when screens regain focus

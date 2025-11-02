@@ -86,6 +86,19 @@ export const deliverySlotInfo = mf.table('delivery_slot_info', {
   deliverySequence: jsonb('delivery_sequence').$defaultFn(() => []),
 });
 
+export const vendorSnippets = mf.table('vendor_snippets', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  snippetCode: varchar('snippet_code', { length: 255 }).notNull().unique(),
+  slotId: integer('slot_id').notNull().references(() => deliverySlotInfo.id),
+  productIds: integer('product_ids').array().notNull(),
+  validTill: timestamp('valid_till'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const vendorSnippetsRelations = relations(vendorSnippets, ({ one }) => ({
+  slot: one(deliverySlotInfo, { fields: [vendorSnippets.slotId], references: [deliverySlotInfo.id] }),
+}));
+
 export const productSlots = mf.table('product_slots', {
   productId: integer('product_id').notNull().references(() => productInfo.id),
   slotId: integer('slot_id').notNull().references(() => deliverySlotInfo.id),

@@ -1,4 +1,5 @@
 
+export const appUrl = process.env.APP_URL as string;
 
 export const jwtSecret: string = process.env.JWT_SECRET as string
 

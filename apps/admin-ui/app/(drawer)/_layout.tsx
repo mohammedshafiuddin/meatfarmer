@@ -79,20 +79,27 @@ function CustomDrawerContent() {
           <MaterialIcons name="shopping-bag" size={size} color={color} />
         )}
       />
-      <DrawerItem
-        label="Coupons"
-        onPress={() => router.push("coupons" as any)}
-        icon={({ color, size }) => (
-          <MaterialIcons name="local-offer" size={size} color={color} />
-        )}
-      />
-      <DrawerItem
-        label="Logout"
-        onPress={() => logout()}
-        icon={({ color, size }) => (
-          <MaterialIcons name="logout" size={size} color={color} />
-        )}
-      />
+       <DrawerItem
+         label="Coupons"
+         onPress={() => router.push("coupons" as any)}
+         icon={({ color, size }) => (
+           <MaterialIcons name="local-offer" size={size} color={color} />
+         )}
+       />
+       <DrawerItem
+         label="Vendor Snippets"
+         onPress={() => router.push("vendor-snippets" as any)}
+         icon={({ color, size }) => (
+           <MaterialIcons name="code" size={size} color={color} />
+         )}
+       />
+       <DrawerItem
+         label="Logout"
+         onPress={() => logout()}
+         icon={({ color, size }) => (
+           <MaterialIcons name="logout" size={size} color={color} />
+         )}
+       />
     </DrawerContentScrollView>
   );
 }
@@ -171,8 +178,9 @@ export default function Layout() {
         name="manage-orders"
         options={{ title: "Manage Orders" }}
       />
-      <Drawer.Screen name="complaints" options={{ title: "Complaints" }} />
-      <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
+       <Drawer.Screen name="complaints" options={{ title: "Complaints" }} />
+       <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
+       <Drawer.Screen name="vendor-snippets" options={{ title: "Vendor Snippets" }} />
     </Drawer>
   );
 }

@@ -3,6 +3,8 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { db } from './src/db/db_index';
 import mainRouter from './src/main-router';
 import initFunc from './src/lib/init';
@@ -26,6 +28,32 @@ app.use((req, res, next) => {
   console.log(`[${timestamp}] ${req.method} ${req.url}`);
   next();
 });
+
+//cors middleware
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, etc.)
+    if (!origin) return callback(null, true);
+
+    // Allow all localhost origins
+    if (origin.match(/^https?:\/\/localhost(:\d+)?$/)) {
+      return callback(null, true);
+    }
+
+    // In production, check against allowed domains
+    if (process.env.NODE_ENV === 'production') {
+      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-trpc-source']
+}));
 
 
 app.use('/api/trpc', createExpressMiddleware({
@@ -69,6 +97,33 @@ app.use('/api/trpc', createExpressMiddleware({
 }));
 
 app.use('/api', mainRouter)
+
+const fallbackUiDirCandidates = [
+  path.resolve(__dirname, '../fallback-ui/dist'),
+  path.resolve(__dirname, '../../fallback-ui/dist'),
+  path.resolve(process.cwd(), '../fallback-ui/dist'),
+  path.resolve(process.cwd(), './apps/fallback-ui/dist')
+]
+
+const fallbackUiDir =
+  fallbackUiDirCandidates.find((candidate) => fs.existsSync(candidate)) ??
+  fallbackUiDirCandidates[0]
+
+const fallbackUiIndex = path.join(fallbackUiDir, 'index.html')
+const fallbackUiMountPath = '/admin-web'
+
+if (fs.existsSync(fallbackUiIndex)) {
+  app.use(fallbackUiMountPath, express.static(fallbackUiDir))
+  const fallbackUiRegex = new RegExp(
+    `^${fallbackUiMountPath.replace(/\//g, '\\/')}(?:\\/.*)?$`
+  )
+  app.get([fallbackUiMountPath, fallbackUiRegex], (req, res) => {
+    res.sendFile(fallbackUiIndex)
+  })
+} else {
+  console.warn(`Fallback UI build not found at ${fallbackUiIndex}`)
+}
+
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err);

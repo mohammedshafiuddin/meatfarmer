@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."orders" ADD COLUMN "user_notes" text;
