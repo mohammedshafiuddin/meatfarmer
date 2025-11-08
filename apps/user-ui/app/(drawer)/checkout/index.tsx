@@ -8,6 +8,7 @@ import { BottomDropdown } from 'common-ui';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import AddressForm from '@/src/components/AddressForm';
+import RazorpayCheckout from 'react-native-razorpay';
 import { useGetEligibleCoupons, EligibleCoupon } from '@/src/api-hooks/coupon.api';
 import { trpc } from '@/src/trpc-client';
 
@@ -96,10 +97,31 @@ export default function Checkout() {
 
   const placeOrderMutation = trpc.user.order.placeOrder.useMutation({
     onSuccess: (data) => {
-      router.replace(`/order-success?orderId=${data.data.id}`);
+      // For online payment, proceed to payment instead of navigating
+      if (data.data) {
+        createRazorpayOrderMutation.mutate({ orderId: data.data.id.toString() });
+      }
     },
     onError: (error: any) => {
       Alert.alert('Error', error.message || 'Failed to place order');
+    },
+  });
+
+  const createRazorpayOrderMutation = trpc.user.payment.createRazorpayOrder.useMutation({
+    onSuccess: (paymentData) => {
+      initiateRazorpayPayment(paymentData.razorpayOrderId, paymentData.key, finalAmount);
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Failed to create payment order');
+    },
+  });
+
+  const verifyPaymentMutation = trpc.user.payment.verifyPayment.useMutation({
+    onSuccess: () => {
+      router.replace(`/order-success?orderId=${placeOrderMutation.data?.data.id}`);
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Payment verification failed');
     },
   });
 
@@ -133,7 +155,11 @@ export default function Checkout() {
       Alert.alert('Error', 'Please select an address');
       return;
     }
-    // For now, just mutate, later integrate payment
+    if (!slotId) {
+      Alert.alert('Error', 'Please select a delivery slot');
+      return;
+    }
+
     const orderData = {
       selectedItems: selectedItems.map(item => ({ productId: item.productId, quantity: item.quantity })),
       addressId: selectedAddress,
@@ -143,6 +169,33 @@ export default function Checkout() {
       userNotes: userNotes,
     };
     placeOrderMutation.mutate(orderData);
+  };
+
+  const initiateRazorpayPayment = (razorpayOrderId: string, key: string, amount: number) => {
+    const options = {
+      key,
+      amount: amount * 100, // in paisa
+      currency: 'INR',
+      order_id: razorpayOrderId,
+      name: 'Meat Farmer',
+      description: 'Order Payment',
+      prefill: {
+        // Add user details if available
+      },
+    };
+
+    RazorpayCheckout.open(options)
+      .then((data: any) => {
+        // Payment success
+        verifyPaymentMutation.mutate({
+          razorpay_payment_id: data.razorpay_payment_id,
+          razorpay_order_id: data.razorpay_order_id,
+          razorpay_signature: data.razorpay_signature,
+        });
+      })
+      .catch((error: any) => {
+        Alert.alert('Payment Failed', error.description || 'Payment was cancelled or failed');
+      });
   };
 
   return (
@@ -276,9 +329,9 @@ export default function Checkout() {
 
            <TouchableOpacity
              style={[tw`p-4 rounded-lg mb-4 w-full items-center`, {
-               backgroundColor: '#9ca3af' // Disabled state
+               backgroundColor: isAddressSelected ? theme.colors.pink1 : '#9ca3af'
              }]}
-             disabled={true}
+             disabled={!isAddressSelected}
              onPress={handleOrderOnline}
            >
              <Text style={tw`text-white text-lg font-bold`}>Pay Online and Order</Text>

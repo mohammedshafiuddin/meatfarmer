@@ -5,6 +5,7 @@ import { cancelledOrdersRouter } from './cancelled-orders';
 import { orderRouter } from './order';
 import { vendorSnippetsRouter } from './vendor-snippets';
 import { slotsRouter } from './slots';
+import { productRouter } from './product';
 
 export const adminRouter = router({
   complaint: complaintRouter,
@@ -13,6 +14,7 @@ export const adminRouter = router({
   order: orderRouter,
   vendorSnippets: vendorSnippetsRouter,
   slots: slotsRouter,
+  product: productRouter,
 });
 
 export type AdminRouter = typeof adminRouter;

@@ -11,6 +11,7 @@ import {
   keyValStore,
   coupons,
   couponUsage,
+  payments,
   cartItems,
 } from "../../db/schema";
 import { eq, and, inArray } from "drizzle-orm";
@@ -190,11 +191,19 @@ export const orderRouter = router({
           });
         }
 
-        await tx.insert(orderStatus).values({
-          userId,
-          orderId: order.id,
-          // no payment fields here
-        });
+        try {
+
+          await tx.insert(orderStatus).values({
+            userId,
+            orderId: order.id,
+            paymentStatus: paymentMethod === 'cod' ? 'cod' : 'pending',
+            // no payment fields here
+          });
+        }
+        catch(e) {
+          console.log(e)
+          
+        }
 
         // Remove ordered items from cart
         await tx.delete(cartItems).where(
@@ -247,6 +256,7 @@ export const orderRouter = router({
           : "pending";
         const orderStatus = status?.isCancelled ? "cancelled" : "success";
         const paymentMode = order.isCod ? "CoD" : "Online";
+        const paymentStatus = status?.paymentStatus || "pending";
 
         const items = await Promise.all(
           order.orderItems.map(async (item) => {
@@ -267,6 +277,7 @@ export const orderRouter = router({
         );
 
         return {
+          id: order.id,
           orderId: `ORD${order.readableId.toString().padStart(3, "0")}`,
           orderDate: order.createdAt.toISOString(),
           deliveryStatus,
@@ -274,6 +285,7 @@ export const orderRouter = router({
           orderStatus,
           cancelReason: status?.cancelReason || null,
           paymentMode,
+          paymentStatus,
           isRefundDone: status?.isRefundDone || false,
           userNotes: order.userNotes || null,
           items,

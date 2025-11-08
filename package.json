@@ -10,7 +10,9 @@
     "test": "turbo run test",
     "docker:build": "docker buildx build --platform linux/amd64 -t mohdshafiuddin54/meat_farmer .",
     "docker:push": "docker push mohdshafiuddin54/meat_farmer",
-    "docker:deploy": "docker buildx build --platform linux/amd64 -t mohdshafiuddin54/meat_farmer . && docker push mohdshafiuddin54/meat_farmer"
+    "docker:deploy": "docker buildx build --platform linux/amd64 -t mohdshafiuddin54/meat_farmer . && docker push mohdshafiuddin54/meat_farmer",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "workspaces": [
     "apps/*",
@@ -29,6 +31,9 @@
     "expo-auth-session": "~6.2.1",
     "expo-crypto": "~14.1.5",
     "expo-web-browser": "~14.2.0",
-    "user-ui": "^1.0.0"
+    "user-ui": "^1.0.0",
+    "expo": "~53.0.22",
+    "react": "19.0.0",
+    "react-native": "0.79.6"
   }
 }

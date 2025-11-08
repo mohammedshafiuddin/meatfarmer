@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity, Image, Alert, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { AppContainer, MyText, tw, MyButton, useManualRefresh } from 'common-ui';
-import { useGetProducts, useToggleOutOfStock, Product } from '../../../src/api-hooks/product.api';
+import { AppContainer, MyText, tw, MyButton, useManualRefresh, MyTextInput, SearchBar } from 'common-ui';
+
+import { trpc } from '@/src/trpc-client';
+import { Product } from '@/src/api-hooks/product.api';
 
 type FilterType = 'all' | 'in-stock' | 'out-of-stock';
 
@@ -13,8 +15,9 @@ export default function Products() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: productsData, isLoading, error, refetch } = useGetProducts();
-  const toggleOutOfStock = useToggleOutOfStock();
+  const { data: productsData, isLoading, error, refetch } = trpc.admin.product.getProducts.useQuery();
+
+  const toggleOutOfStockMutation = trpc.admin.product.toggleOutOfStock.useMutation();
 
   useManualRefresh(refetch);
 
@@ -45,7 +48,8 @@ export default function Products() {
 
 
 
-  const handleToggleStock = (product: Product) => {
+  //   const handleToggleStock = (product: any) => {
+  const handleToggleStock = (product: Pick<Product, 'id' | 'name' | 'isOutOfStock'>) => {
     const action = product.isOutOfStock ? 'mark as in stock' : 'mark as out of stock';
     Alert.alert(
       'Update Stock Status',
@@ -55,10 +59,10 @@ export default function Products() {
         {
           text: 'Confirm',
           onPress: () => {
-            toggleOutOfStock.mutate(product.id, {
-              onSuccess: () => {
-                const status = product.isOutOfStock ? 'in stock' : 'out of stock';
-                Alert.alert('Success', `Product marked as ${status}`);
+            toggleOutOfStockMutation.mutate({ id: product.id.toString() }, {
+              onSuccess: (data) => {
+                Alert.alert('Success', data.message);
+                refetch(); // Refresh the list
               },
               onError: (error: any) => {
                 Alert.alert('Error', error.message || 'Failed to update stock status');
@@ -127,21 +131,14 @@ export default function Products() {
 
         {/* Search Bar */}
         <View style={tw`mb-4`}>
-          <View style={tw`flex-row items-center bg-gray-100 rounded-lg px-4 py-3`}>
-            <MaterialIcons name="search" size={20} color="#6B7280" />
-            <MyText
-              style={tw`flex-1 ml-2 text-gray-700`}
-              editable
-              placeholder="Search products..."
-              value={searchTerm}
-              onChangeText={setSearchTerm}
-            />
-            {searchTerm ? (
-              <TouchableOpacity onPress={() => setSearchTerm('')}>
-                <MaterialIcons name="clear" size={20} color="#6B7280" />
-              </TouchableOpacity>
-            ) : null}
-          </View>
+          <SearchBar
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+            onSearch={() => {}}
+            placeholder="Search products..."
+            containerStyle={tw`mb-0`}
+          />
+        </View>
         </View>
 
         {/* Filter Tabs */}
@@ -228,16 +225,6 @@ export default function Products() {
                           </MyText>
                         )}
                       </View>
-                      <View style={tw`items-end`}>
-                        <MyText style={tw`text-sm text-gray-500`}>
-                          {product.unit?.shortNotation || 'Unit'}
-                        </MyText>
-                        {product.deals && product.deals.length > 0 && (
-                          <MyText style={tw`text-xs text-blue-600 font-semibold`}>
-                            {product.deals.length} deal{product.deals.length > 1 ? 's' : ''}
-                          </MyText>
-                        )}
-                      </View>
                     </View>
 
                      {/* Action Buttons */}
@@ -274,7 +261,6 @@ export default function Products() {
             </View>
           )}
         </ScrollView>
-      </View>
     </AppContainer>
   );
 }

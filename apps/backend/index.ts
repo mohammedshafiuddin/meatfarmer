@@ -61,11 +61,12 @@ app.use('/api/trpc', createExpressMiddleware({
     let user = null;
     let staffUser = null;
     const authHeader = req.headers.authorization;
+    
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
-
+        
         // Check if this is a staff token (has staffId)
         if (decoded.staffId) {
           // This is a staff token, verify staff exists
@@ -78,6 +79,7 @@ app.use('/api/trpc', createExpressMiddleware({
           });
 
           if (staff) {
+            user=staffUser
             staffUser = {
               id: staff.id,
               name: staff.name,

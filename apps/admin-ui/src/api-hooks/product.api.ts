@@ -37,7 +37,7 @@ export interface UpdateProductPayload {
 export interface Product {
   id: number;
   name: string;
-  shortDescription?: string;
+  shortDescription?: string | null;
   longDescription?: string;
   unitId: number;
   price: number;

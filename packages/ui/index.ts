@@ -1,3 +1,5 @@
+import Constants from 'expo-constants';
+import {Platform} from 'react-native';
 import RolesDropdown from "./src/roles-dropdown";
 import { StorageService } from "./src/services/StorageService";
 import {
@@ -31,8 +33,22 @@ import TabViewWrapper from './src/components/tab-view';
 import useFocusCallback from './hooks/useFocusCallback'
 import useManualRefresh from './hooks/useManualRefresh';
 
+const localhost =
+  Platform.OS === "android"
+    ? "http://10.0.2.2:4000" // Android emulator
+    : "http://localhost:4000"; // iOS simulator / web dev
+
+const production = "https://technocracy.ovh/mf";
+// const production = "http://10.0.2.2:4000";
+// const production = "http://192.168.1.3:4000";
+
+const API_URL =
+  Constants.executionEnvironment === "standalone" ? production : localhost;
+
+
+const BASE_API_URL = API_URL;
 // const BASE_API_URL = 'http://10.0.2.2:4000';
-const BASE_API_URL = 'https://technocracy.ovh/mf';
+// const BASE_API_URL = 'https://technocracy.ovh/mf';
 export {
   RolesDropdown,
   StorageService,

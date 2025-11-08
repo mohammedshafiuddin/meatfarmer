@@ -55,7 +55,12 @@ export const getSlotOrders = async (req: Request, res: Response) => {
       },
     });
 
-    const formattedOrders = slotOrders.map(order => {
+    const filteredOrders = slotOrders.filter(order => {
+      const statusRecord = order.orderStatus[0];
+      return order.isCod || (statusRecord && statusRecord.paymentStatus === 'success');
+    });
+
+    const formattedOrders = filteredOrders.map(order => {
       const statusRecord = order.orderStatus[0]; // assuming one status per order
       const status: 'pending' | 'delivered' | 'cancelled' = statusRecord?.isCancelled
         ? 'cancelled'
@@ -83,6 +88,8 @@ export const getSlotOrders = async (req: Request, res: Response) => {
         isPackaged: statusRecord?.isPackaged || false,
         isDelivered: statusRecord?.isDelivered || false,
         isCod: order.isCod,
+        paymentMode: order.isCod ? 'COD' : 'Online',
+        paymentStatus: statusRecord?.paymentStatus || 'pending',
         slotId: order.slotId,
       };
     });
@@ -124,7 +131,12 @@ export const getTodaysOrders = async (req: Request, res: Response) => {
       },
     });
 
-    const formattedOrders = todaysOrders.map(order => {
+    const filteredOrders = todaysOrders.filter(order => {
+      const statusRecord = order.orderStatus[0];
+      return order.isCod || (statusRecord && statusRecord.paymentStatus === 'success');
+    });
+
+    const formattedOrders = filteredOrders.map(order => {
       const statusRecord = order.orderStatus[0]; // assuming one status per order
       const status: 'pending' | 'delivered' | 'cancelled' = statusRecord?.isCancelled
         ? 'cancelled'
@@ -152,6 +164,8 @@ export const getTodaysOrders = async (req: Request, res: Response) => {
         isPackaged: statusRecord?.isPackaged || false,
         isDelivered: statusRecord?.isDelivered || false,
         isCod: order.isCod,
+        paymentMode: order.isCod ? 'COD' : 'Online',
+        paymentStatus: statusRecord?.paymentStatus || 'pending',
         slotId: order.slotId,
       };
     });

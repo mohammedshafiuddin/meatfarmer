@@ -189,7 +189,7 @@ function Login() {
           {isLoading ? "Signing in..." : "Sign In"}
         </MyButton>
       </View>
-      <GoogleSignInPKCE />
+      {/* <GoogleSignInPKCE /> */}
 
       <View style={tw`flex-row justify-center mt-2 mb-8`}>
         <MyText style={tw`text-base text-gray-600`}>Don't have an account? </MyText>

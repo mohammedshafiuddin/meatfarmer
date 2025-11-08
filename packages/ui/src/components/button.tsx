@@ -1,7 +1,7 @@
 import React from "react";
 import { Button as PaperButton, ButtonProps } from "react-native-paper";
 // import { useTheme } from "../hooks/theme-context";
-import { useTheme } from "common-ui";
+import { theme, useTheme } from "common-ui";
 import { TouchableOpacity } from "react-native";
 import MyText from "./text"; // Updated import path
 
@@ -30,7 +30,7 @@ function MyButton({
   const { colors } = useTheme().theme;
   let backgroundColor = colors.blue1;
   if (variant === "red") backgroundColor = colors.red1;
-  if (variant === "green") backgroundColor = colors.green1;
+  if (variant === "green") backgroundColor = theme.colors.pink1
   if (fillColor && colors[fillColor]) backgroundColor = colors[fillColor];
   
   let finalTextColor = "#fff";

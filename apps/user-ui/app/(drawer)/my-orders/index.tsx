@@ -5,10 +5,13 @@ import { tw, useManualRefresh, MyText, AppContainer } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 import { useGetUserOrders, useCancelOrder, useRaiseComplaint } from '../../../src/api-hooks/order.api';
 import { trpc } from '@/src/trpc-client';
+import RazorpayCheckout from 'react-native-razorpay';
 
 export default function MyOrders() {
   const { data: ordersData, isLoading, error, refetch } = trpc.user.order.getOrders.useQuery();
-  const cancelOrderMutation = useCancelOrder();
+  
+  // const cancelOrderMutation = useCancelOrder();
+  const cancelOrderMutation = trpc.user.order.cancelOrder.useMutation();
   // const raiseComplaintMutation = useRaiseComplaint();
   const raiseComplaintMutation = trpc.user.complaint.raise.useMutation();
   const updateNotesMutation = trpc.user.order.updateUserNotes.useMutation({
@@ -20,6 +23,30 @@ export default function MyOrders() {
     },
     onError: (error: any) => {
       Alert.alert('Error', error.message || 'Failed to update notes');
+    },
+  });
+
+  const retryPaymentMutation = trpc.user.payment.retryPayment.useMutation({
+    onSuccess: (paymentData) => {
+      const order = orders.find(o => o.id === retryOrderId);
+      if (order) {
+        const totalAmount = order.items.reduce((sum, p) => sum + p.amount, 0);
+        initiateRazorpayPayment(paymentData.razorpayOrderId, paymentData.key, totalAmount);
+      }
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Failed to retry payment');
+    },
+  });
+
+  const verifyPaymentMutation = trpc.user.payment.verifyPayment.useMutation({
+    onSuccess: () => {
+      refetch();
+      Alert.alert('Success', 'Payment completed successfully');
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Payment verification failed');
+      refetch();
     },
   });
   const orders = ordersData?.data || [];
@@ -39,6 +66,7 @@ export default function MyOrders() {
   const [editNotesDialogOpen, setEditNotesDialogOpen] = useState(false);
   const [editNotesOrderId, setEditNotesOrderId] = useState<string>('');
   const [editNotes, setEditNotes] = useState<string>('');
+  const [retryOrderId, setRetryOrderId] = useState<number>(0);
 
   const openDialog = useCallback((items: typeof orders[0]['items']) => {
     setDialogItems(items);
@@ -55,6 +83,10 @@ export default function MyOrders() {
         return { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'schedule', color: '#D97706' };
       case 'processing':
         return { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'hourglass-empty', color: '#2563EB' };
+      case 'success':
+        return { bg: 'bg-green-100', text: 'text-green-800', icon: 'check-circle', color: '#16A34A' };
+      case 'failed':
+        return { bg: 'bg-red-100', text: 'text-red-800', icon: 'error', color: '#DC2626' };
       default:
         return { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'info', color: '#6B7280' };
     }
@@ -81,39 +113,66 @@ export default function MyOrders() {
             </MyText>
           </View>
 
-          <View style={tw`flex-row items-center`}>
-            <View style={tw`flex-row items-center ${statusConfig.bg} px-3 py-1 rounded-full mr-3`}>
-              <MaterialIcons name={statusConfig.icon as any} size={14} color={statusConfig.color} />
-              <MyText style={tw`text-xs font-semibold ${statusConfig.text} ml-1 capitalize`}>
-                {item.orderStatus}
-              </MyText>
+           <View style={tw`flex-row items-center`}>
+             {item.orderStatus === 'cancelled' && (
+               <View style={tw`flex-row items-center ${statusConfig.bg} px-3 py-1 rounded-full mr-3`}>
+                 <MaterialIcons name={statusConfig.icon as any} size={14} color={statusConfig.color} />
+                 <MyText style={tw`text-xs font-semibold ${statusConfig.text} ml-1 capitalize`}>
+                   {item.orderStatus}
+                 </MyText>
+               </View>
+             )}
+
+             <TouchableOpacity
+               onPress={() => { setMenuOrderId(item.orderId); setMenuDialogOpen(true); }}
+               style={tw`p-2 rounded-full bg-gray-50`}
+             >
+               <Entypo name="dots-three-vertical" size={16} color="#6B7280" />
+             </TouchableOpacity>
+           </View>
+        </View>
+
+         {/* Status Details */}
+         <View style={tw`flex-row justify-between mb-4`}>
+           <View style={tw`flex-row items-center`}>
+             <MaterialIcons name="local-shipping" size={16} color="#6B7280" />
+             <MyText style={tw`text-sm text-gray-600 ml-2 capitalize`}>
+               {item.deliveryStatus}
+             </MyText>
+           </View>
+
+           {item.paymentMode !== 'COD' && (
+             <View style={tw`flex-row items-center`}>
+               <MaterialIcons name="payment" size={16} color="#6B7280" />
+               <MyText style={tw`text-sm text-gray-600 ml-2 capitalize`}>
+                 {item.paymentMode}
+               </MyText>
+             </View>
+           )}
+         </View>
+
+        {/* Payment Status */}
+        {item.paymentMode === 'Online' && (
+          <View style={tw`flex-row items-center justify-between mb-4`}>
+            <View style={tw`flex-row items-center`}>
+              <MaterialIcons name="credit-card" size={16} color="#6B7280" />
+              <MyText style={tw`text-sm text-gray-600 ml-2`}>Payment: </MyText>
+              <View style={tw`flex-row items-center ml-1 ${getStatusColor(item.paymentStatus).bg} px-2 py-1 rounded-full`}>
+                <MaterialIcons name={getStatusColor(item.paymentStatus).icon as any} size={12} color={getStatusColor(item.paymentStatus).color} />
+                <MyText style={tw`text-xs font-semibold ${getStatusColor(item.paymentStatus).text} ml-1 capitalize`}>
+                  {item.paymentStatus}
+                </MyText>
+              </View>
             </View>
-
-            <TouchableOpacity
-              onPress={() => { setMenuOrderId(item.orderId); setMenuDialogOpen(true); }}
-              style={tw`p-2 rounded-full bg-gray-50`}
-            >
-              <Entypo name="dots-three-vertical" size={16} color="#6B7280" />
-            </TouchableOpacity>
+            {(item.paymentStatus === 'pending' || item.paymentStatus === 'failed') && (
+              <TouchableOpacity onPress={() => handleRetryPayment(item.id)} disabled={retryPaymentMutation.isPending}>
+                <MyText style={tw`text-pink1 font-medium ${retryPaymentMutation.isPending ? 'opacity-50' : ''}`}>
+                  {retryPaymentMutation.isPending ? 'Retrying...' : 'Retry'}
+                </MyText>
+              </TouchableOpacity>
+            )}
           </View>
-        </View>
-
-        {/* Status Details */}
-        <View style={tw`flex-row justify-between mb-4`}>
-          <View style={tw`flex-row items-center`}>
-            <MaterialIcons name="local-shipping" size={16} color="#6B7280" />
-            <MyText style={tw`text-sm text-gray-600 ml-2 capitalize`}>
-              {item.deliveryStatus}
-            </MyText>
-          </View>
-
-          <View style={tw`flex-row items-center`}>
-            <MaterialIcons name="payment" size={16} color="#6B7280" />
-            <MyText style={tw`text-sm text-gray-600 ml-2 capitalize`}>
-              {item.paymentMode}
-            </MyText>
-          </View>
-        </View>
+        )}
 
         {/* User Notes */}
         {item.userNotes && (
@@ -189,7 +248,7 @@ export default function MyOrders() {
       return;
     }
     try {
-      await cancelOrderMutation.mutateAsync({ orderId: cancelOrderId, reason: cancelReason });
+      await cancelOrderMutation.mutateAsync({ id: cancelOrderId, reason: cancelReason });
       Alert.alert('Success', 'Order cancelled successfully');
       setCancelDialogOpen(false);
       setCancelReason('');
@@ -229,6 +288,39 @@ export default function MyOrders() {
     }
   };
 
+  const handleRetryPayment = (orderId: number) => {
+    setRetryOrderId(orderId);
+    retryPaymentMutation.mutate({ orderId });
+  };
+
+  const initiateRazorpayPayment = (razorpayOrderId: string, key: string, amount: number) => {
+    const options = {
+      key,
+      amount: amount * 100, // in paisa
+      currency: 'INR',
+      order_id: razorpayOrderId,
+      name: 'Meat Farmer',
+      description: 'Order Payment Retry',
+      prefill: {
+        // Add user details if available
+      },
+    };
+
+    RazorpayCheckout.open(options)
+      .then((data: any) => {
+        // Payment success
+        verifyPaymentMutation.mutate({
+          razorpay_payment_id: data.razorpay_payment_id,
+          razorpay_order_id: data.razorpay_order_id,
+          razorpay_signature: data.razorpay_signature,
+        });
+      })
+      .catch((error: any) => {
+        Alert.alert('Payment Failed', error.description || 'Payment was cancelled or failed');
+        refetch();
+      });
+  };
+
   if (isLoading) {
     return (
       <AppContainer>
@@ -263,14 +355,10 @@ export default function MyOrders() {
   return (
     <AppContainer>
       <View style={tw`flex-1`}>
-        <View style={tw`px-6 py-4`}>
-          <MyText style={tw`text-2xl font-bold text-gray-800`}>My Orders</MyText>
-          <MyText style={tw`text-gray-600 mt-1`}>Track your order history</MyText>
-        </View>
 
         <FlatList
           style={tw`flex-1`}
-          contentContainerStyle={tw`px-6 pb-6`}
+          contentContainerStyle={tw` pb-6`}
           data={orders}
           renderItem={({ item }) => renderOrder({ item })}
           keyExtractor={(item) => item.orderId}
@@ -349,10 +437,10 @@ export default function MyOrders() {
               <TouchableOpacity
                 style={tw`flex-1 bg-blue-500 p-3 rounded-lg items-center`}
                 onPress={handleEditNotes}
-                disabled={updateNotesMutation.isLoading}
+                disabled={updateNotesMutation.isPending}
               >
                 <MyText style={tw`text-white font-medium`}>
-                  {updateNotesMutation.isLoading ? 'Saving...' : 'Save'}
+                  {updateNotesMutation.isPending ? 'Saving...' : 'Save'}
                 </MyText>
               </TouchableOpacity>
             </View>
@@ -383,10 +471,10 @@ export default function MyOrders() {
               <TouchableOpacity
                 style={tw`flex-1 bg-red-500 p-3 rounded-lg items-center`}
                 onPress={handleCancelOrder}
-                disabled={cancelOrderMutation.isLoading}
+                disabled={cancelOrderMutation.isPending}
               >
                 <MyText style={tw`text-white font-medium`}>
-                  {cancelOrderMutation.isLoading ? 'Cancelling...' : 'Confirm Cancel'}
+                  {cancelOrderMutation.isPending ? 'Cancelling...' : 'Confirm Cancel'}
                 </MyText>
               </TouchableOpacity>
             </View>
@@ -417,10 +505,10 @@ export default function MyOrders() {
               <TouchableOpacity
                 style={tw`flex-1 bg-yellow-500 p-3 rounded-lg items-center`}
                 onPress={handleRaiseComplaint}
-                disabled={raiseComplaintMutation.isLoading}
+                disabled={raiseComplaintMutation.isPending}
               >
                 <MyText style={tw`text-white font-medium`}>
-                  {raiseComplaintMutation.isLoading ? 'Submitting...' : 'Submit Complaint'}
+                  {raiseComplaintMutation.isPending ? 'Submitting...' : 'Submit Complaint'}
                 </MyText>
               </TouchableOpacity>
             </View>

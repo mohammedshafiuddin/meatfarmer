@@ -41,7 +41,11 @@ export const cancelledOrdersRouter = router({
         orderBy: [desc(orderStatus.orderTime)],
       });
 
-      return cancelledOrderStatuses.map(status => ({
+      const filteredStatuses = cancelledOrderStatuses.filter(status => {
+        return status.order.isCod || status.paymentStatus === 'success';
+      });
+
+      return filteredStatuses.map(status => ({
         id: status.order.id,
         readableId: status.order.readableId,
         customerName: `${status.order.user.name}`,
@@ -51,6 +55,8 @@ export const cancelledOrdersRouter = router({
         isRefundDone: status.order.isRefundDone,
         adminNotes: status.order.adminNotes,
         cancelReason: status.cancelReason,
+        paymentMode: status.order.isCod ? 'COD' : 'Online',
+        paymentStatus: status.paymentStatus || 'pending',
         items: status.order.orderItems.map(item => ({
           name: item.product.name,
           quantity: item.quantity,

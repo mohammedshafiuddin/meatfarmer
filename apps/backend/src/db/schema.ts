@@ -139,6 +139,8 @@ export const orderItems = mf.table('order_items', {
   price: numeric({ precision: 10, scale: 2 }).notNull(),
 });
 
+export const paymentStatusEnum = pgEnum('payment_status', ['pending', 'success', 'cod', 'failed']);
+
 export const orderStatus = mf.table('order_status', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   orderTime: timestamp('order_time').notNull().defaultNow(),
@@ -149,6 +151,7 @@ export const orderStatus = mf.table('order_status', {
   isCancelled: boolean('is_cancelled').notNull().default(false),
   cancelReason: varchar('cancel_reason', { length: 255 }),
   isRefundDone: boolean('is_refund_done').notNull().default(false),
+  paymentStatus: paymentStatusEnum('payment_state').notNull().default('pending'),
 });
 
 export const paymentInfoTable = mf.table('payment_info', {
