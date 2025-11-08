@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Dimensions,
@@ -14,6 +14,8 @@ import { useRouter } from "expo-router";
    import dayjs from "dayjs";
    import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAddToCart } from "@/src/api-hooks/cart.api";
+import SearchBar from "common-ui/src/components/search-bar";
+import { trpc } from "@/src/trpc-client";
 
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -109,11 +111,16 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
   );
 };
 
-   export default function Dashboard() {
-     const router = useRouter();
-     const { data: productsData, isLoading, error, refetch } = useGetAllProductsSummary();
-     const products = productsData?.products || [];
-     const addToCart = useAddToCart();
+     export default function Dashboard() {
+       const router = useRouter();
+       // const { data: productsData, isLoading, error, refetch } = useGetAllProductsSummary();
+       const [inputQuery, setInputQuery] = useState('');
+       const [searchQuery, setSearchQuery] = useState('');
+       const { data: productsData, isLoading, error, refetch } = trpc.common.product.getAllProductsSummary.useQuery({ searchQuery });
+       console.log({error})
+       
+       const products = productsData?.products || [];
+       const addToCart = useAddToCart();
     
      useManualRefresh(() => {
        refetch();
@@ -159,20 +166,32 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
 
   return (
     <View style={tw`flex-1 bg-gray1`}>
-      {/* <View style={tw`items-center mb-5`}>
-        <ImageCarousel
-          urls={demoImages}
-          imageWidth={imageWidth}
-          imageHeight={imageHeight}
+       {/* <View style={tw`items-center mb-5`}>
+         <ImageCarousel
+           urls={demoImages}
+           imageWidth={imageWidth}
+           imageHeight={imageHeight}
+         />
+       </View> */}
+         <View style={tw`px-5 pt-5 pb-3`}>
+           <SearchBar
+             value={inputQuery}
+             onChangeText={setInputQuery}
+             onSearch={() => setSearchQuery(inputQuery)}
+             placeholder="Search products..."
+             containerStyle={tw`mb-3`}
+           />
+           {searchQuery ? (
+             <Text style={tw`text-lg font-semibold mb-2`}>Results for "{searchQuery}"</Text>
+           ) : null}
+         </View>
+        <FlatList
+          data={products}
+          numColumns={2}
+            renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}
+          keyExtractor={(item, index) => index.toString()}
+          contentContainerStyle={tw`px-5`}
         />
-      </View> */}
-       <FlatList
-         data={products}
-         numColumns={2}
-           renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}
-         keyExtractor={(item, index) => index.toString()}
-         contentContainerStyle={tw`px-5 pt-5`}
-       />
     </View>
   );
 }

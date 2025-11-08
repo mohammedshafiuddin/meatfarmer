@@ -38,7 +38,7 @@ axios.interceptors.response.use(
 
     const status = error?.status;
     const msg = error.response?.data?.error;
-
+    
     if (status === 401 && msg.startsWith('Access denied')) {
       // Handle unauthorized access
       DeviceEventEmitter.emit(FORCE_LOGOUT_EVENT);

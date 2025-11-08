@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { tw, theme } from 'common-ui';
+import { tw, theme, MyTextInput } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 import { Checkbox } from 'common-ui';
 import { BottomDropdown } from 'common-ui';
@@ -19,11 +19,10 @@ export default function Checkout() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
-  // const { data: cartData } = useGetCart();
+
   const { data: cartData } = trpc.user.cart.getCart.useQuery();
   const { data: addresses } = trpc.user.address.getUserAddresses.useQuery();
   const { data: slotsData } = trpc.user.slots.getSlots.useQuery();
-  // const { data: slotsData } = useGetSlots();
 
   
   
@@ -128,28 +127,6 @@ export default function Checkout() {
     };
     placeOrderMutation.mutate(orderData);
   };
-
-  // const handleOrderOnline = () => {
-  //   if (!selectedAddress) {
-  //     Alert.alert('Error', 'Please select an address');
-  //     return;
-  //   }
-  //   if (!slotId) {
-  //     Alert.alert('Error', 'Please select a delivery slot');
-  //     return;
-  //   }
-  //   // For now, just mutate, later integrate payment
-  //   const orderData = {
-  //     selectedItems: selectedItems.map(item => ({ productId: item.productId, quantity: item.quantity })),
-  //     addressId: selectedAddress,
-  //     slotId,
-  //     paymentMethod: 'online' as const,
-  //     couponId: selectedCouponId,
-  //   };
-  //   placeOrderMutation.mutate(orderData);
-  // };
-  //   placeOrderMutation.mutate(orderData);
-  // };
 
   const handleOrderOnline = () => {
     if (!selectedAddress) {
@@ -268,7 +245,7 @@ export default function Checkout() {
          {/* Special Instructions */}
          <View style={tw`mb-6 bg-white rounded-lg p-4 shadow-md`}>
            <Text style={tw`text-lg font-semibold mb-3`}>Special Instructions (Optional)</Text>
-           <TextInput
+           <MyTextInput
              style={tw`border border-gray-300 rounded-lg p-3 min-h-20 text-base`}
              value={userNotes}
              onChangeText={setUserNotes}
@@ -277,37 +254,43 @@ export default function Checkout() {
              numberOfLines={3}
              textAlignVertical="top"
            />
-         </View>
+          </View>
 
-         {/* Action Buttons */}
-        <View style={tw`mt-6`}>
-          <TouchableOpacity
-            style={tw`bg-gray-600 p-4 rounded-lg mb-4 w-full items-center`}
-            onPress={handleCancel}
-          >
-            <Text style={tw`text-white text-lg font-bold`}>Cancel</Text>
-          </TouchableOpacity>
+          {!isAddressSelected && (
+            <View style={tw`mb-4 p-3 bg-red-50 border border-red-200 rounded-lg`}>
+              <Text style={tw`text-red-600 text-sm font-medium`}>Please select address to proceed</Text>
+            </View>
+          )}
+
+          {/* Action Buttons */}
+         <View style={tw`mt-6`}>
+            <TouchableOpacity
+              style={[tw`p-4 rounded-lg mb-4 w-full items-center`, {
+                backgroundColor: isAddressSelected ? theme.colors.pink1 : '#9ca3af'
+              }]}
+              disabled={!isAddressSelected}
+              onPress={handleOrderCOD}
+            >
+              <Text style={tw`text-white text-lg font-bold`}>Order with Cash On Delivery</Text>
+            </TouchableOpacity>
 
            <TouchableOpacity
              style={[tw`p-4 rounded-lg mb-4 w-full items-center`, {
-               backgroundColor: isAddressSelected ? theme.colors.pink1 : '#9ca3af'
+               backgroundColor: '#9ca3af' // Disabled state
              }]}
-             disabled={!isAddressSelected}
-             onPress={handleOrderCOD}
+             disabled={true}
+             onPress={handleOrderOnline}
            >
-             <Text style={tw`text-white text-lg font-bold`}>Order with Cash On Delivery</Text>
+             <Text style={tw`text-white text-lg font-bold`}>Pay Online and Order</Text>
            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[tw`p-4 rounded-lg w-full items-center`, {
-              backgroundColor: '#9ca3af' // Disabled state
-            }]}
-            disabled={true}
-            onPress={handleOrderOnline}
-          >
-            <Text style={tw`text-white text-lg font-bold`}>Pay Online and Order</Text>
-          </TouchableOpacity>
-        </View>
+           <TouchableOpacity
+             style={tw`bg-gray-600 p-4 rounded-lg w-full items-center`}
+             onPress={handleCancel}
+           >
+             <Text style={tw`text-white text-lg font-bold`}>Cancel</Text>
+           </TouchableOpacity>
+         </View>
 
         <BottomDialog open={showAddAddress} onClose={() => setShowAddAddress(false)}>
           <AddressForm

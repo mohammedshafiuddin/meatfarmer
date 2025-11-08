@@ -2,16 +2,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { AppContainer, useFocusCallback, useManualRefresh } from 'common-ui';
 import dayjs from 'dayjs';
-import { useGetSlots } from '../../../src/api-hooks/slot.api';
-import { useGetSlotsProductIds } from 'common-ui/src/common-api-hooks/product.api';
-import { useGetAllProductsSummary, useUpdateSlotProducts } from '../../../src/api-hooks/product.api';
+import { trpc } from '../../../src/trpc-client';
 import BottomDropdown, { DropdownOption } from 'common-ui/src/components/bottom-dropdown';
 
 export default function AvailabilityTab() {
   // Fetch data
-  const { data: slotsData, isFetching: slotsLoading, refetch: refetchSlots } = useGetSlots();
-  const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = useGetAllProductsSummary();
-
+  const { data: slotsData, isFetching: slotsLoading, refetch: refetchSlots } = trpc.admin.slots.getAll.useQuery();
+  const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = trpc.common.product.getAllProductsSummary.useQuery();
+  
   useManualRefresh(() => { refetchSlots(); refetchProducts(); });
 
   const slots = slotsData?.slots || [];
@@ -22,8 +20,10 @@ export default function AvailabilityTab() {
   );
   const slotIds = useMemo(() => sortedSlots.map(slot => slot.id), [sortedSlots]);
 
-  const { data: associationsData, isFetching: associationsLoading, refetch: refetchSlotProducts } = useGetSlotsProductIds(slotIds);
-  console.log({associationsData})
+  const { data: associationsData, isFetching: associationsLoading, refetch: refetchSlotProducts } = trpc.admin.slots.getSlotsProductIds.useQuery({ slotIds }, {
+    enabled: slotIds.length > 0,
+  });
+  
   
   useFocusCallback(refetchSlotProducts)
 
@@ -56,7 +56,13 @@ export default function AvailabilityTab() {
   }, [products]);
 
   // Update slot products mutation
-  const { mutate: updateSlotProducts, isPending: isUpdatingSlotProducts } = useUpdateSlotProducts();
+  const utils = trpc.useUtils();
+  const { mutate: updateSlotProducts, isPending: isUpdatingSlotProducts } = trpc.admin.slots.updateSlotProducts.useMutation({
+    onSuccess: () => {
+      utils.admin.slots.getSlotsProductIds.invalidate();
+      utils.admin.slots.getAll.invalidate();
+    },
+  });
 
   const handleSaveSlot = (slotId: number) => {
     const productIds = selectedProducts[slotId]?.map(id => parseInt(id)) || [];

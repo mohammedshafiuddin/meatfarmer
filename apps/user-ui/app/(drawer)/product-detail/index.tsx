@@ -5,10 +5,9 @@ import { ImageCarousel, tw, BottomDialog, useManualRefresh } from 'common-ui';
 import { theme } from 'common-ui/src/theme';
 import dayjs from 'dayjs';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-  import { useGetProductDetails } from '@/src/api-hooks/product.api';
-  import { useAddToCart } from '@/src/api-hooks/cart.api';
-  import CustomHeader from '@/components/CustomHeader';
-  //  import { useGetProductDetails } from '../../src/api-hooks/product.api';
+import { useAddToCart } from '@/src/api-hooks/cart.api';
+import CustomHeader from '@/components/CustomHeader';
+import { trpc } from '@/src/trpc-client';
 
   const { width: screenWidth } = Dimensions.get("window");
   const carouselWidth = screenWidth * 0.85;
@@ -18,7 +17,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
     const router = useRouter();
     const { id } = useLocalSearchParams();
     const [showAllSlots, setShowAllSlots] = useState(false);
-    const { data: productDetail, isFetching:isLoading, error, refetch } = useGetProductDetails(Number(id));
+    const { data: productDetail, isLoading, error, refetch } = trpc.user.product.getProductDetails.useQuery({ id: id.toString() });
     const addToCart = useAddToCart();
    
 
@@ -85,7 +84,9 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
         <Text style={tw`text-base text-black mb-4 pl-2`}>{productDetail.shortDescription}</Text>
 
         <View style={tw`flex-row items-center mb-2 pl-2`}>
-          <Text style={tw`text-lg text-gray-500 line-through mr-2`}>₹1000</Text>
+          {productDetail.marketPrice && (
+            <Text style={tw`text-lg text-gray-500 line-through mr-2`}>₹{productDetail.marketPrice}</Text>
+          )}
           <Text style={tw`text-lg font-medium`}>₹{productDetail.price} per {productDetail.unit}</Text>
         </View>
 

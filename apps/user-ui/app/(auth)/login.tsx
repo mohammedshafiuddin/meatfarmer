@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 
 import { MyButton, MyText, MyTextInput, tw } from "common-ui";
 import { useAuth } from "@/src/contexts/AuthContext";
+import GoogleSignInPKCE from "@/src/components/google-sign-in";
 
 interface LoginFormInputs {
   mobile: string;
@@ -15,6 +16,8 @@ function Login() {
   const router = useRouter();
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+
 
   const {
     control,
@@ -186,6 +189,7 @@ function Login() {
           {isLoading ? "Signing in..." : "Sign In"}
         </MyButton>
       </View>
+      <GoogleSignInPKCE />
 
       <View style={tw`flex-row justify-center mt-2 mb-8`}>
         <MyText style={tw`text-base text-gray-600`}>Don't have an account? </MyText>

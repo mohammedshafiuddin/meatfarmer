@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Locality",
+    "name": "Farm2Door",
     "slug": "locality",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,6 +13,11 @@
       "bundleIdentifier": "com.mohammedshafiudin54.locality-user-ui",
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
+          "ppemerchantsdkv1",
+          "ppemerchantsdkv2",
+          "ppemerchantsdkv3",
+          "paytmmp",
+          "gpay",
           "ppemerchantsdkv1",
           "ppemerchantsdkv2",
           "ppemerchantsdkv3",
@@ -55,6 +60,12 @@
       "eas": {
         "projectId": "fd509174-c857-4f98-a53c-9cd4f07d6dea"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/fd509174-c857-4f98-a53c-9cd4f07d6dea"
     }
   }
 }

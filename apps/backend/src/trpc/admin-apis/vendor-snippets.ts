@@ -1,4 +1,4 @@
-import { router, publicProcedure } from '../trpc-index';
+import { router, publicProcedure, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { vendorSnippets, deliverySlotInfo, productInfo, orders, orderItems, users } from '../../db/schema';
@@ -21,7 +21,7 @@ const updateSnippetSchema = z.object({
 });
 
 export const vendorSnippetsRouter = router({
-  create: publicProcedure
+  create: protectedProcedure
     .input(createSnippetSchema)
     .mutation(async ({ input, ctx }) => {
       const { snippetCode, slotId, productIds, validTill } = input;
@@ -80,7 +80,7 @@ export const vendorSnippetsRouter = router({
         });
         return result.map(snippet => ({
           ...snippet,
-          accessUrl: `${appUrl}/admin-web/vendor-order-list?id=${snippet.snippetCode}`
+          accessUrl: `${appUrl}/mf/admin-web/vendor-order-list?id=${snippet.snippetCode}`
         }));
       }
       catch(e) {

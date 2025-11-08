@@ -24,7 +24,7 @@ const verifyStaffToken = (token: string) => {
   try {
     return jwt.verify(token, process.env.JWT_SECRET || 'default-secret');
   } catch (error) {
-    throw new ApiError('Invalid staff token', 401);
+    throw new ApiError('Access denied. Invalid auth credentials', 401);
   }
 };
 

@@ -80,6 +80,8 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const subscription = DeviceEventEmitter.addListener(FORCE_LOGOUT_EVENT, () => {
+      console.log('force logout event received');
+      
       logout();
     });
 

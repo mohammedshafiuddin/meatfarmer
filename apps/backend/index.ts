@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import multer from "multer";
@@ -30,30 +30,29 @@ app.use((req, res, next) => {
 });
 
 //cors middleware
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, etc.)
-    if (!origin) return callback(null, true);
+export function corsMiddleware(req: Request, res: Response, next: NextFunction) {
+  // Allow requests from any origin (for production, replace * with your domain)
+  res.header('Access-Control-Allow-Origin', '*');
 
-    // Allow all localhost origins
-    if (origin.match(/^https?:\/\/localhost(:\d+)?$/)) {
-      return callback(null, true);
-    }
+  // Allow specific headers clients can send
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+  );
 
-    // In production, check against allowed domains
-    if (process.env.NODE_ENV === 'production') {
-      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-    }
+  // Allow specific HTTP methods
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
 
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-trpc-source']
-}));
+  // Allow credentials if needed (optional)
+  // res.header('Access-Control-Allow-Credentials', 'true');
+
+  // Handle preflight (OPTIONS) requests quickly
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  next();
+}
 
 
 app.use('/api/trpc', createExpressMiddleware({

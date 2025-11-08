@@ -3,6 +3,7 @@ import { db } from '../../db/db_index';
 import { productInfo, units, productSlots, deliverySlotInfo } from '../../db/schema';
 import { eq, gt, and, sql } from 'drizzle-orm';
 import { generateSignedUrlsFromS3Urls } from '../../lib/s3-client';
+import { z } from 'zod';
 
 const getNextDeliveryDate = async (productId: number): Promise<Date | null> => {
   const result = await db
@@ -25,7 +26,9 @@ const getNextDeliveryDate = async (productId: number): Promise<Date | null> => {
 
 export const commonRouter = router({
   getAllProductsSummary: publicProcedure
-    .query(async () => {
+    .input(z.object({ searchQuery: z.string().optional() }))
+    .query(async ({ input }) => {
+      const { searchQuery } = input;
       const productsWithUnits = await db
         .select({
           id: productInfo.id,
@@ -37,7 +40,8 @@ export const commonRouter = router({
           unitShortNotation: units.shortNotation,
         })
         .from(productInfo)
-        .innerJoin(units, eq(productInfo.unitId, units.id));
+        .innerJoin(units, eq(productInfo.unitId, units.id))
+        .where(searchQuery ? sql`LOWER(${productInfo.name}) LIKE LOWER(${ '%' + searchQuery + '%' })` : undefined);
 
       // Generate signed URLs for product images
       const formattedProducts = await Promise.all(

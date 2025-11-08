@@ -11,8 +11,9 @@ import {
   keyValStore,
   coupons,
   couponUsage,
+  cartItems,
 } from "../../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { READABLE_ORDER_ID_KEY } from "../../lib/const-strings";
 import { generateSignedUrlsFromS3Urls } from "../../lib/s3-client";
 import { ApiError } from "../../lib/api-error";
@@ -194,6 +195,14 @@ export const orderRouter = router({
           orderId: order.id,
           // no payment fields here
         });
+
+        // Remove ordered items from cart
+        await tx.delete(cartItems).where(
+          and(
+            eq(cartItems.userId, userId),
+            inArray(cartItems.productId, selectedItems.map(item => item.productId))
+          )
+        );
 
         return order;
       });

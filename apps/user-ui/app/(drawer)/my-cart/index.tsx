@@ -14,7 +14,6 @@ export default function MyCart() {
   const [checkedProducts, setCheckedProducts] = useState<Record<number, boolean>>({});
   const { data: cartData, isLoading, error, refetch } = useGetCart();
   const { data: slotsData, refetch: refetchSlots } = useGetCartSlots();
-  console.log({slotsData})
   
   const updateCartItem = useUpdateCartItem();
   const removeFromCart = useRemoveFromCart();
@@ -236,9 +235,12 @@ export default function MyCart() {
           >
             <Text style={tw`text-white text-base font-bold`}>Checkout</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={tw`bg-pink2 p-3 rounded-md flex-1 ml-2 items-center`}>
-            <Text style={tw` text-base font-bold`}>Continue Shopping</Text>
-          </TouchableOpacity>
+           <TouchableOpacity
+             style={tw`bg-pink2 p-3 rounded-md flex-1 ml-2 items-center`}
+             onPress={() => router.push('/(drawer)/dashboard')}
+           >
+             <Text style={tw` text-base font-bold`}>Continue Shopping</Text>
+           </TouchableOpacity>
         </View>
           </>
         )}

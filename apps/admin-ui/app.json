@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Locality-admin",
+    "name": "Farm2Door-admin",
     "slug": "health-petal",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,6 +13,11 @@
       "bundleIdentifier": "com.mohammedshafiudin54.locality-admin-ui",
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
+          "ppemerchantsdkv1",
+          "ppemerchantsdkv2",
+          "ppemerchantsdkv3",
+          "paytmmp",
+          "gpay",
           "ppemerchantsdkv1",
           "ppemerchantsdkv2",
           "ppemerchantsdkv3",
@@ -55,6 +60,12 @@
       "eas": {
         "projectId": "c61a345f-ddd5-4b10-94f3-304a83edd9d7"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c61a345f-ddd5-4b10-94f3-304a83edd9d7"
     }
   }
 }

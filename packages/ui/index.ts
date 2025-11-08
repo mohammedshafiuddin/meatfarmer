@@ -31,7 +31,8 @@ import TabViewWrapper from './src/components/tab-view';
 import useFocusCallback from './hooks/useFocusCallback'
 import useManualRefresh from './hooks/useManualRefresh';
 
-const BASE_API_URL = 'http://192.168.1.9:4000';
+// const BASE_API_URL = 'http://10.0.2.2:4000';
+const BASE_API_URL = 'https://technocracy.ovh/mf';
 export {
   RolesDropdown,
   StorageService,

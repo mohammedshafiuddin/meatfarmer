@@ -15,10 +15,12 @@ const t = initTRPC.context<Context>().create();
 
 export const middleware = t.middleware;
 export const router = t.router;
+export { TRPCError };
 
 export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(
   middleware(async ({ ctx, next }) => {
+
     if (!ctx.user) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }

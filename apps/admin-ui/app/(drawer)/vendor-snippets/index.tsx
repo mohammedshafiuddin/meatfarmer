@@ -3,7 +3,7 @@ import { View, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-nat
 import { TabViewWrapper, AppContainer, MyText, tw, useManualRefresh } from 'common-ui';
 import { trpc, trpcClient } from '../../../src/trpc-client';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useVendorSnippets, useCreateVendorSnippet, useUpdateVendorSnippet, useDeleteVendorSnippet } from '../../../src/api-hooks/vendor-snippets.api';
+
 import VendorSnippetForm from '../../../components/VendorSnippetForm';
 import SnippetOrdersView from '../../../components/SnippetOrdersView';
 import { SnippetMenu } from '../../../components/SnippetMenu';
@@ -84,9 +84,12 @@ export default function VendorSnippets() {
   // const { data: snippets, isLoading, error, refetch } = useVendorSnippets();
   const { data: snippets, isLoading, error, refetch } = trpc.admin.vendorSnippets.getAll.useQuery();
   
-  const createSnippet = useCreateVendorSnippet();
-  const updateSnippet = useUpdateVendorSnippet();
-  const deleteSnippet = useDeleteVendorSnippet();
+  const createSnippet = trpc.admin.vendorSnippets.create.useMutation();
+  const updateSnippet = trpc.admin.vendorSnippets.update.useMutation();
+  const deleteSnippet = trpc.admin.vendorSnippets.delete.useMutation();
+  // const createSnippet = useCreateVendorSnippet();
+  // const updateSnippet = useUpdateVendorSnippet();
+  // const deleteSnippet = useDeleteVendorSnippet();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingSnippet, setEditingSnippet] = useState<VendorSnippet | null>(null);

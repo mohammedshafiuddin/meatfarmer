@@ -9,19 +9,26 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "docker:build": "docker buildx build --platform linux/amd64 -t mohdshafiuddin54/meat_farmer .",
-    "docker:push": "docker push mohdshafiuddin54/meat_farmer"
+    "docker:push": "docker push mohdshafiuddin54/meat_farmer",
+    "docker:deploy": "docker buildx build --platform linux/amd64 -t mohdshafiuddin54/meat_farmer . && docker push mohdshafiuddin54/meat_farmer"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "devDependencies": {
-    "turbo": "^2.0.0",
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
     "@types/react-native-razorpay": "^2.2.6",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
+    "turbo": "^2.0.0",
     "typescript": "~5.8.3"
+  },
+  "dependencies": {
+    "expo-auth-session": "~6.2.1",
+    "expo-crypto": "~14.1.5",
+    "expo-web-browser": "~14.2.0",
+    "user-ui": "^1.0.0"
   }
 }

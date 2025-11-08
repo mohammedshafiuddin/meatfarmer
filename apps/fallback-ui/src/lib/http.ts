@@ -1,7 +1,8 @@
+import webUiConstants from '@/constants'
 import axios from 'axios'
 
 export const httpClient = axios.create({
-  baseURL: 'http://localhost:4000/api',
+  baseURL: webUiConstants.baseUrl+'api',
   withCredentials: true
 })
 

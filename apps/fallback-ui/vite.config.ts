@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import path from 'path'
 
-const base = '/admin-web/'
+const base = '/mf/admin-web'
 
 export default defineConfig({
   base,

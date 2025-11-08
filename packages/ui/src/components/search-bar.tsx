@@ -27,7 +27,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         onChangeText={onChangeText}
       />
       <TouchableOpacity
-        style={tw`bg-blue-600 px-4 justify-center rounded-r-lg`}
+        style={tw`bg-pink1 px-4 justify-center rounded-r-lg`}
         onPress={onSearch}
       >
         <MyText style={tw`text-white font-bold`}>Search</MyText>
