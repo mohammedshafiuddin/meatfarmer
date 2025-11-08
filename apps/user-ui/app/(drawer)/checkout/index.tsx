@@ -200,7 +200,7 @@ export default function Checkout() {
 
   return (
     <AppContainer>
-      <View style={tw`px-5 py-4`}>
+      <View style={tw` py-4`}>
 
         {/* Order Summary */}
         <View style={tw`mb-6 bg-white rounded-lg p-4 shadow-md`}>
