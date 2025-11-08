@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Dimensions } from 'react-native';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
-import { useTheme } from 'common-ui';
+import { useTheme, AppContainer } from 'common-ui';
 import AddRemoveTab from './AddRemoveTab';
 import AvailabilityTab from './AvailabilityTab';
 
@@ -33,7 +33,8 @@ export default function SlotsPage() {
   );
 
   return (
-    <View style={{ flex: 1 }}>
+    <AppContainer>
+      <View style={{ flex: 1 }}>
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}
@@ -42,5 +43,6 @@ export default function SlotsPage() {
         renderTabBar={renderTabBar}
       />
     </View>
-  );
+  </AppContainer>
+);
 }

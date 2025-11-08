@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { tw, useManualRefresh } from 'common-ui';
+import { tw, useManualRefresh, AppContainer } from 'common-ui';
 import { BottomDropdown, Checkbox } from 'common-ui';
 import { Quantifier } from 'common-ui';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -111,8 +111,7 @@ export default function MyCart() {
   }
 
   return (
-    <ScrollView style={tw`flex-1 bg-white`}>
-      <View style={tw`p-4`}>
+    <AppContainer>
         <View style={tw`mb-4`}>
           <Text style={tw`text-lg font-semibold mb-2`}>Select Delivery Slot</Text>
           <BottomDropdown
@@ -244,7 +243,6 @@ export default function MyCart() {
         </View>
           </>
         )}
-      </View>
-    </ScrollView>
+    </AppContainer>
   );
 }

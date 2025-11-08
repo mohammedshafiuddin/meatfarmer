@@ -60,34 +60,36 @@ const generateToken = (userId: number): string => {
 
 export const login = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { identifier, password }: LoginRequest = req.body;
-
+  
+  console.log({identifier, password})
   if (!identifier || !password) {
     throw new ApiError('Email/mobile and password are required', 400);
   }
+  
 
   // Find user by email or mobile
   const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.email, identifier))
+    .where(eq(users.mobile, identifier))
     .limit(1);
 
   let foundUser = user;
-
+  
   if (!foundUser) {
     // Try mobile if email didn't work
     const [userByMobile] = await db
-      .select()
-      .from(users)
-      .where(eq(users.mobile, identifier))
-      .limit(1);
+    .select()
+    .from(users)
+    .where(eq(users.mobile, identifier))
+    .limit(1);
     foundUser = userByMobile;
   }
-
+  
   if (!foundUser) {
     throw new ApiError('Invalid credentials', 401);
   }
-
+  
   // Get user details for profile image
   const [userDetail] = await db
     .select()

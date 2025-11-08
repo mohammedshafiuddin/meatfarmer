@@ -4,6 +4,7 @@ import { orders, orderItems, orderStatus, addresses, productInfo, paymentInfoTab
 import { eq, and } from 'drizzle-orm';
 import { READABLE_ORDER_ID_KEY } from '../lib/const-strings';
 import { generateSignedUrlsFromS3Urls } from '../lib/s3-client';
+import { sendOrderPlacedNotification, sendOrderCancelledNotification } from '../lib/notif-job';
 
 interface PlaceOrderRequest {
   selectedItems: { productId: number; quantity: number }[];
@@ -168,6 +169,8 @@ export const placeOrder = async (req: Request, res: Response) => {
       });
     }
 
+    await sendOrderPlacedNotification(userId, newOrder.id.toString());
+
     res.status(201).json({ success: true, data: newOrder });
   } catch (error) {
     console.error('Place order error:', error);
@@ -288,6 +291,8 @@ export const cancelOrder = async (req: Request, res: Response) => {
         cancelReason: reason,
       })
       .where(eq(orderStatus.id, status.id));
+
+    await sendOrderCancelledNotification(userId, order.id.toString());
 
     console.log('Order cancelled successfully:', id);
     res.status(200).json({ success: true, message: 'Order cancelled successfully' });

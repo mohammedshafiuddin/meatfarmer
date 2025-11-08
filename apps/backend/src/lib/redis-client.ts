@@ -86,6 +86,16 @@ class RedisClient {
     }
   }
 
+  async lPush(key: string, value: string): Promise<number> {
+    try {
+      await this.ensureConnection();
+      return await this.client.lPush(key, value);
+    } catch (error) {
+      console.error('Redis LPUSH error:', error);
+      throw error;
+    }
+  }
+
   disconnect(): void {
     if (this.isConnected) {
       this.client.disconnect();

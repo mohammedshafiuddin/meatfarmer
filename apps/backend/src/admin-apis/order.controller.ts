@@ -3,6 +3,7 @@ import { db } from '../db/db_index';
 import { orders, orderItems, orderStatus, addresses, users, productInfo, deliverySlotInfo } from '../db/schema';
 import { and, gte, lt, eq } from 'drizzle-orm';
 import dayjs from 'dayjs';
+import { sendOrderPackagedNotification, sendOrderDeliveredNotification } from '../lib/notif-job';
 
 export const updatePackaged = async (req: Request, res: Response) => {
   try {
@@ -10,6 +11,9 @@ export const updatePackaged = async (req: Request, res: Response) => {
     const { isPackaged } = req.body;
 
     await db.update(orderStatus).set({ isPackaged }).where(eq(orderStatus.orderId, parseInt(orderId)));
+
+    const order = await db.query.orders.findFirst({ where: eq(orders.id, parseInt(orderId)) });
+    if (order) await sendOrderPackagedNotification(order.userId, orderId);
 
     res.json({ success: true });
   } catch (error) {
@@ -24,6 +28,9 @@ export const updateDelivered = async (req: Request, res: Response) => {
     const { isDelivered } = req.body;
 
     await db.update(orderStatus).set({ isDelivered }).where(eq(orderStatus.orderId, parseInt(orderId)));
+
+    const order = await db.query.orders.findFirst({ where: eq(orders.id, parseInt(orderId)) });
+    if (order) await sendOrderDeliveredNotification(order.userId, orderId);
 
     res.json({ success: true });
   } catch (error) {

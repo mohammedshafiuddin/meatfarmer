@@ -240,6 +240,14 @@ export const couponUsage = mf.table('coupon_usage', {
   usedAt: timestamp('used_at').notNull().defaultNow(),
 });
 
+export const notifCreds = mf.table('notif_creds', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  token: varchar({ length: 500 }).notNull().unique(),
+  addedAt: timestamp('added_at').notNull().defaultNow(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  lastVerified: timestamp('last_verified'),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   addresses: many(addresses),
@@ -250,6 +258,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   coupons: many(coupons),
   couponUsages: many(couponUsage),
   userDetails: one(userDetails),
+  notifCreds: many(notifCreds),
 }));
 
 export const userCredsRelations = relations(userCreds, ({ one }) => ({
@@ -348,4 +357,8 @@ export const couponUsageRelations = relations(couponUsage, ({ one }) => ({
 
 export const userDetailsRelations = relations(userDetails, ({ one }) => ({
   user: one(users, { fields: [userDetails.userId], references: [users.id] }),
+}));
+
+export const notifCredsRelations = relations(notifCreds, ({ one }) => ({
+  user: one(users, { fields: [notifCreds.userId], references: [users.id] }),
 }));

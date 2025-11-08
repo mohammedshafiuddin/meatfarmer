@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
- import { ImageCarousel, theme, tw, useManualRefresh } from "common-ui";
+  import { ImageCarousel, theme, tw, useManualRefresh, AppContainer } from "common-ui";
     import { useGetAllProductsSummary } from "common-ui/src/common-api-hooks/product.api";
    import dayjs from "dayjs";
    import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -164,7 +164,8 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
   }
 
   return (
-    <View style={tw`flex-1 bg-gray1`}>
+    <AppContainer>
+      <View style={tw`flex-1 bg-gray1`}>
        {/* <View style={tw`items-center mb-5`}>
          <ImageCarousel
            urls={demoImages}
@@ -191,6 +192,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
           keyExtractor={(item, index) => index.toString()}
           contentContainerStyle={tw`px-5`}
         />
-    </View>
+      </View>
+    </AppContainer>
   );
 }

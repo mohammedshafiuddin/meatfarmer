@@ -1,4 +1,5 @@
 import roleManager from './roles-manager';
+import './notif-job';
 
 /**
  * Initialize all application services
@@ -13,8 +14,9 @@ export const initFunc = async (): Promise<void> => {
     // Initialize role manager
     await roleManager.fetchRoles();
     console.log('Role manager initialized successfully');
-    
-    // Add other initialization tasks here as needed
+
+    // Notification queue and worker are initialized via import
+    console.log('Notification queue and worker initialized');
     
     console.log('Application initialization completed successfully');
   } catch (error) {

@@ -18,6 +18,7 @@ import { eq, and, inArray } from "drizzle-orm";
 import { READABLE_ORDER_ID_KEY } from "../../lib/const-strings";
 import { generateSignedUrlsFromS3Urls } from "../../lib/s3-client";
 import { ApiError } from "../../lib/api-error";
+import { sendOrderPlacedNotification, sendOrderCancelledNotification } from "../../lib/notif-job";
 
 export const orderRouter = router({
   placeOrder: protectedProcedure
@@ -225,6 +226,8 @@ export const orderRouter = router({
         });
       }
 
+      await sendOrderPlacedNotification(userId, newOrder.id.toString());
+
       return { success: true, data: newOrder };
     }),
 
@@ -362,7 +365,9 @@ export const orderRouter = router({
         })
         .where(eq(orderStatus.id, status.id));
 
-       return { success: true, message: "Order cancelled successfully" };
+      await sendOrderCancelledNotification(userId, order.id.toString());
+
+      return { success: true, message: "Order cancelled successfully" };
      }),
 
      updateUserNotes: protectedProcedure
