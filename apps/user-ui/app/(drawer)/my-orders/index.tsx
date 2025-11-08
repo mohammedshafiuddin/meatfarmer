@@ -270,7 +270,6 @@ export default function MyOrders() {
       setComplaintBody('');
       setMenuDialogOpen(false);
     } catch (error) {
-      console.log(error)
 
       Alert.alert('Error', 'Failed to raise complaint');
     }

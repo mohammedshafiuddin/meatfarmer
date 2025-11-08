@@ -32,7 +32,6 @@ export default function GoogleSignInPKCE() {
     discovery
   );
 
-  console.log({response})
   
   React.useEffect(() => {
     if (response?.type === 'success' && response.params.code) {
@@ -47,7 +46,6 @@ export default function GoogleSignInPKCE() {
           discovery
         );
 
-        console.log('Token Response:', tokenResponse);
       })();
     }
   }, [response]);

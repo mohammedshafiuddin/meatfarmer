@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 
-import { MyButton, MyText, MyTextInput, ProfileImage, tw } from "common-ui";
+import { MyButton, MyText, MyTextInput, ProfileImage, tw, BottomDialog } from "common-ui";
+import { trpc } from "@/src/trpc-client";
 
 interface RegisterFormInputs {
   name: string;
@@ -24,6 +25,10 @@ interface RegistrationFormProps {
 function RegistrationForm({ onSubmit, isLoading = false, initialValues, isEdit = false }: RegistrationFormProps) {
   const [profileImageUri, setProfileImageUri] = useState<string | undefined>();
   const [profileImageFile, setProfileImageFile] = useState<any>();
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const updatePasswordMutation = trpc.user.auth.updatePassword.useMutation();
 
   // Set initial profile image URI for edit mode
   React.useEffect(() => {
@@ -168,7 +173,6 @@ function RegistrationForm({ onSubmit, isLoading = false, initialValues, isEdit =
     }
 
     if (profileImageFile) {
-      console.log({profileImageFile: JSON.stringify(profileImageFile)});
       
       formData.append('profileImage', {
         uri: profileImageFile.uri,
@@ -180,8 +184,30 @@ function RegistrationForm({ onSubmit, isLoading = false, initialValues, isEdit =
     await onSubmit(formData);
   };
 
+  const handleUpdatePassword = async () => {
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      await updatePasswordMutation.mutateAsync({ password });
+      Alert.alert('Success', 'Password updated successfully');
+      setIsPasswordDialogOpen(false);
+      setPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to update password');
+    }
+  };
+
   return (
-    <View style={tw`bg-white rounded-xl p-6 shadow-md mb-6`}>
+    <>
+      <View style={tw`bg-white rounded-xl p-6 shadow-md mb-6`}>
       <View style={tw`items-center mb-6`}>
         <ProfileImage
           imageUri={profileImageUri}
@@ -376,17 +402,83 @@ function RegistrationForm({ onSubmit, isLoading = false, initialValues, isEdit =
          </>
        )}
 
-       <MyButton
-         onPress={handleSubmit(handleFormSubmit)}
-         fillColor="blue1"
-         textColor="white1"
-         fullWidth
-         disabled={isLoading}
-         style={tw`py-3 rounded-lg`}
-       >
-         {isLoading ? (isEdit ? "Updating..." : "Creating Account...") : (isEdit ? "Update Profile" : "Create Account")}
-       </MyButton>
-    </View>
+        <MyButton
+          onPress={handleSubmit(handleFormSubmit)}
+          fillColor="blue1"
+          textColor="white1"
+          fullWidth
+          disabled={isLoading}
+          style={tw` rounded-lg`}
+        >
+          {isLoading ? (isEdit ? "Updating..." : "Creating Account...") : (isEdit ? "Update Profile" : "Create Account")}
+        </MyButton>
+
+        {isEdit && (
+          <View style={tw`mt-4`}>
+            <MyButton
+              textContent="Update Password"
+              onPress={() => setIsPasswordDialogOpen(true)}
+              fillColor="blue1"
+              textColor="white1"
+              fullWidth
+            />
+          </View>
+        )}
+      </View>
+
+      {isEdit && (
+        <BottomDialog open={isPasswordDialogOpen} onClose={() => setIsPasswordDialogOpen(false)}>
+          <View style={{ padding: 20 }}>
+            <MyText style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>
+              Update Password
+            </MyText>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 8,
+                padding: 10,
+                marginBottom: 12,
+                fontSize: 16,
+              }}
+              placeholder="New Password"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 8,
+                padding: 10,
+                marginBottom: 20,
+                fontSize: 16,
+              }}
+              placeholder="Confirm Password"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <MyButton
+                textContent="Cancel"
+                onPress={() => setIsPasswordDialogOpen(false)}
+                fillColor="gray1"
+                textColor="white1"
+              />
+              <MyButton
+                textContent="Update"
+                onPress={handleUpdatePassword}
+                fillColor="blue1"
+                textColor="white1"
+                disabled={updatePasswordMutation.isPending}
+              />
+            </View>
+          </View>
+        </BottomDialog>
+      )}
+    </>
   );
 }
 

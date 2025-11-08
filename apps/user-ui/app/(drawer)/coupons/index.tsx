@@ -131,7 +131,6 @@ export default function Coupons() {
   }
 
   if (error) {
-    console.log(error)
     return (
       <AppContainer>
         <View style={tw`flex-1 justify-center items-center p-4`}>

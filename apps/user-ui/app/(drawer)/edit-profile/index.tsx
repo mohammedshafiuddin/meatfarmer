@@ -1,6 +1,6 @@
 import React from "react";
 import { View, ScrollView } from "react-native";
-import { MyText, tw } from "common-ui";
+import { AppContainer, MyText, tw } from "common-ui";
 import RegistrationForm from "@/components/registration-form";
 import { useUserDetails, useAuth } from "@/src/contexts/AuthContext";
 import { useUpdateProfile } from "@/src/api-hooks/auth.api";
@@ -38,7 +38,7 @@ function EditProfile() {
   } : undefined;
 
   return (
-    <ScrollView style={tw`flex-1 bg-white`} showsVerticalScrollIndicator={false}>
+    <AppContainer>
       <View style={tw`flex-1 justify-center px-4 py-8`}>
         <View style={tw`mb-8 mt-4`}>
           <MyText
@@ -59,7 +59,7 @@ function EditProfile() {
           isLoading={updateProfileMutation.isPending}
         />
       </View>
-    </ScrollView>
+      </AppContainer>
   );
 }
 

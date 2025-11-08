@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { tw, theme, MyTextInput } from 'common-ui';
+import { tw, theme, MyTextInput, AppContainer } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 import { Checkbox } from 'common-ui';
 import { BottomDropdown } from 'common-ui';
@@ -199,7 +199,7 @@ export default function Checkout() {
   };
 
   return (
-    <ScrollView style={tw`flex-1 bg-gray1`}>
+    <AppContainer>
       <View style={tw`px-5 py-4`}>
 
         {/* Order Summary */}
@@ -318,7 +318,7 @@ export default function Checkout() {
           {/* Action Buttons */}
          <View style={tw`mt-6`}>
             <TouchableOpacity
-              style={[tw`p-4 rounded-lg mb-4 w-full items-center`, {
+              style={[tw`p-2 rounded-lg mb-4 w-full items-center`, {
                 backgroundColor: isAddressSelected ? theme.colors.pink1 : '#9ca3af'
               }]}
               disabled={!isAddressSelected}
@@ -328,7 +328,7 @@ export default function Checkout() {
             </TouchableOpacity>
 
            <TouchableOpacity
-             style={[tw`p-4 rounded-lg mb-4 w-full items-center`, {
+             style={[tw`p-2 rounded-lg mb-4 w-full items-center`, {
                backgroundColor: isAddressSelected ? theme.colors.pink1 : '#9ca3af'
              }]}
              disabled={!isAddressSelected}
@@ -338,7 +338,7 @@ export default function Checkout() {
            </TouchableOpacity>
 
            <TouchableOpacity
-             style={tw`bg-gray-600 p-4 rounded-lg w-full items-center`}
+             style={tw`bg-gray-600 p-2 rounded-lg w-full items-center`}
              onPress={handleCancel}
            >
              <Text style={tw`text-white text-lg font-bold`}>Cancel</Text>
@@ -355,6 +355,6 @@ export default function Checkout() {
           />
         </BottomDialog>
       </View>
-    </ScrollView>
+    </AppContainer>
   );
 }

@@ -27,6 +27,7 @@
       }
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/farm2door-logo.png",
         "backgroundColor": "#fff0f6"

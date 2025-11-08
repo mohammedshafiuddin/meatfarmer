@@ -219,7 +219,7 @@ export default function MyCart() {
 
         <View style={tw`flex-row justify-between mt-4`}>
           <TouchableOpacity
-            style={tw`bg-pink1 p-3 rounded-md flex-1 mr-2 items-center`}
+            style={tw`bg-pink1 p-2 rounded-md flex-1 mr-2 items-center`}
             onPress={() => {
               const selectedItems = Object.keys(checkedProducts).filter(id => checkedProducts[Number(id)]);
               if (selectedItems.length === 0) {
@@ -236,7 +236,7 @@ export default function MyCart() {
             <Text style={tw`text-white text-base font-bold`}>Checkout</Text>
           </TouchableOpacity>
            <TouchableOpacity
-             style={tw`bg-pink2 p-3 rounded-md flex-1 ml-2 items-center`}
+             style={tw`bg-pink2 p-2 rounded-md flex-1 ml-2 items-center`}
              onPress={() => router.push('/(drawer)/dashboard')}
            >
              <Text style={tw` text-base font-bold`}>Continue Shopping</Text>

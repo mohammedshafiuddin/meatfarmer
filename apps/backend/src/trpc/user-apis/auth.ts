@@ -8,6 +8,7 @@ import { users, userCreds } from '../../db/schema';
 import { ApiError } from '../../lib/api-error';
 import catchAsync from '../../lib/catch-async';
 import { jwtSecret } from 'src/lib/env-exporter';
+import { sendOtp, verifyOtpUtil, getOtpCreds } from '../../lib/otp-utils';
 
 interface LoginRequest {
   identifier: string; // email or mobile
@@ -28,6 +29,8 @@ interface AuthResponse {
     name: string;
     email: string | null;
     mobile: string | null;
+    createdAt: string;
+    profileImage: string | null;
   };
 }
 
@@ -102,6 +105,8 @@ export const authRouter = router({
           name: foundUser.name,
           email: foundUser.email,
           mobile: foundUser.mobile,
+          createdAt: foundUser.createdAt.toISOString(),
+          profileImage: null,
         },
       };
 
@@ -194,6 +199,8 @@ export const authRouter = router({
           name: newUser.name,
           email: newUser.email,
           mobile: newUser.mobile,
+          createdAt: newUser.createdAt.toISOString(),
+          profileImage: null,
         },
       };
 
@@ -201,6 +208,75 @@ export const authRouter = router({
         success: true,
         data: response,
       };
+    }),
+
+  sendOtp: publicProcedure
+    .input(z.object({
+      mobile: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      return await sendOtp(input.mobile);
+    }),
+
+  verifyOtp: publicProcedure
+    .input(z.object({
+      mobile: z.string(),
+      otp: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const verificationId = getOtpCreds(input.mobile);
+      if (!verificationId) {
+        throw new ApiError("OTP not sent or expired", 400);
+      }
+      const isVerified = await verifyOtpUtil(input.mobile, input.otp, verificationId);
+
+      if (!isVerified) {
+        throw new ApiError("Invalid OTP", 400);
+      }
+
+      // Find user
+      const user = await db.query.users.findFirst({
+        where: eq(users.mobile, input.mobile),
+      });
+
+      if (!user) {
+        throw new ApiError("User not found", 404);
+      }
+
+      // Generate JWT
+      const token = generateToken(user.id);
+
+      return {
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          createdAt: user.createdAt.toISOString(),
+          profileImage: null,
+        },
+      };
+    }),
+
+  updatePassword: protectedProcedure
+    .input(z.object({
+      password: z.string().min(6, 'Password must be at least 6 characters'),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.user.userId;
+      if (!userId) {
+        throw new ApiError('User not authenticated', 401);
+      }
+
+      const hashedPassword = await bcrypt.hash(input.password, 10);
+
+      await db.update(userCreds).set({
+        userPassword: hashedPassword,
+      }).where(eq(userCreds.userId, userId));
+
+      return { success: true, message: 'Password updated successfully' };
     }),
 
   getProfile: protectedProcedure

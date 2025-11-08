@@ -251,7 +251,6 @@ export const getCartSlots = async (req: Request, res: Response) => {
         freezeTime: slot.freezeTime,
       });
     });
-    console.log({result})
     
     res.status(200).json(result);
   } catch (error) {

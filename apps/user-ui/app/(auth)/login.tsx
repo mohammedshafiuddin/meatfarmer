@@ -1,21 +1,50 @@
 import React, { useState } from "react";
-import { View, Text, Alert, TouchableOpacity } from "react-native";
+import { View, Text, Alert, TouchableOpacity, Image } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "expo-router";
 
-import { MyButton, MyText, MyTextInput, tw } from "common-ui";
+import { AppContainer, MyButton, MyText, MyTextInput, tw } from "common-ui";
 import { useAuth } from "@/src/contexts/AuthContext";
 import GoogleSignInPKCE from "@/src/components/google-sign-in";
+import { trpc } from '@/src/trpc-client';
 
 interface LoginFormInputs {
   mobile: string;
-  password: string;
+  otp?: string;
 }
 
 function Login() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { loginWithToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+
+  const sendOtpMutation = trpc.user.auth.sendOtp.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        setOtpSent(true);
+        Alert.alert('Success', data.message);
+      } else {
+        Alert.alert('Error', data.message);
+      }
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Failed to send OTP');
+    },
+  });
+
+  const verifyOtpMutation = trpc.user.auth.verifyOtp.useMutation({
+    onSuccess: (data) => {
+      if (data.success && data.token && data.user) {
+        loginWithToken(data.token, data.user);
+      } else {
+        Alert.alert('Error', 'Verification failed');
+      }
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Invalid OTP');
+    },
+  });
 
 
 
@@ -25,8 +54,9 @@ function Login() {
     formState: { errors },
     setError,
     clearErrors,
+    setValue,
   } = useForm<LoginFormInputs>({
-    defaultValues: { mobile: "", password: "" },
+    defaultValues: { mobile: "" },
   });
 
   const validateMobile = (mobile: string): boolean => {
@@ -56,44 +86,42 @@ function Login() {
       return;
     }
 
-    // Validate password
-    if (!data.password) {
-      setError("password", {
-        type: "manual",
-        message: "Password is required",
-      });
-      return;
-    }
+    const cleanMobile = data.mobile.replace(/\D/g, '');
 
-    if (data.password.length < 6) {
-      setError("password", {
-        type: "manual",
-        message: "Password must be at least 6 characters",
-      });
-      return;
-    }
+    if (!otpSent) {
+      // Send OTP
+      sendOtpMutation.mutate({ mobile: cleanMobile });
+    } else {
+      // Verify OTP
+      if (!data.otp || data.otp.length < 4) {
+        setError("otp", {
+          type: "manual",
+          message: "Please enter a valid OTP",
+        });
+        return;
+      }
 
-    setIsLoading(true);
-    try {
-      await login({
-        identifier: data.mobile.replace(/\D/g, ''), // Clean mobile number
-        password: data.password,
+      verifyOtpMutation.mutate({
+        mobile: cleanMobile,
+        otp: data.otp,
       });
-      // Auth context will handle navigation on successful login
-    } catch (error: any) {
-      console.error('Login error:', error);
-      Alert.alert(
-        'Login Failed',
-        error.message || 'Invalid mobile number or password. Please try again.'
-      );
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <View style={tw`flex-1 justify-center px-4 bg-white`}>
-      <View style={tw`mb-8 mt-4`}>
+    <AppContainer>
+      <View style={tw`flex-1 justify-center`}>
+      <View style={tw``}>
+        <Image
+          source={require('@/assets/images/farm2door-logo.png')}
+          style={{
+            width: 240,
+            height: 240,
+            alignSelf: 'center',
+            marginBottom: 20,
+            resizeMode: 'contain',
+          }}
+        />
         <MyText
           weight="bold"
           style={tw`text-3xl mb-2 text-center text-gray-800`}
@@ -140,66 +168,69 @@ function Login() {
           </Text>
         )}
 
-        <Controller
-          control={control}
-          name="password"
-          rules={{ required: "Password is required" }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <View style={tw`mb-4`}>
-              <MyTextInput
-                topLabel="Password"
-                placeholder="Enter your password"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                secureTextEntry
-                style={tw`bg-gray-50`}
-                error={!!errors.password}
-              />
-            </View>
-          )}
-        />
-        {errors.password && (
+        {otpSent && (
+          <Controller
+            control={control}
+            name="otp"
+            rules={{ required: "OTP is required" }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <View style={tw`mb-4`}>
+                <MyTextInput
+                  topLabel="OTP"
+                  placeholder="Enter 6-digit OTP"
+                  value={value}
+                  onChangeText={(text) => {
+                    if (text.length <= 6) {
+                      onChange(text);
+                    }
+                  }}
+                  onBlur={onBlur}
+                  keyboardType="numeric"
+                  maxLength={6}
+                  style={tw`bg-gray-50`}
+                  error={!!errors.otp}
+                />
+              </View>
+            )}
+          />
+        )}
+        {errors.otp && (
           <Text style={tw`text-red-500 text-sm mb-4 text-center`}>
-            {errors.password.message}
+            {errors.otp.message}
           </Text>
         )}
 
-        <View style={tw`flex-row justify-end mb-6`}>
-          <TouchableOpacity
-            onPress={() => {
-              // TODO: Implement forgot password
-              Alert.alert('Coming Soon', 'Forgot password feature will be available soon.');
-            }}
-          >
-            <MyText weight="semibold" style={tw`text-blue-600`}>
-              Forgot Password?
-            </MyText>
-          </TouchableOpacity>
-        </View>
+        {otpSent && (
+          <View style={tw`flex-row justify-end mb-6`}>
+            <TouchableOpacity
+              onPress={() => {
+                setOtpSent(false);
+                setValue('otp', '');
+                clearErrors();
+              }}
+            >
+              <MyText weight="semibold" style={tw`text-blue-600`}>
+                Change Number
+              </MyText>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <MyButton
           onPress={handleSubmit(onSubmit)}
           fillColor="blue1"
           textColor="white1"
           fullWidth
-          disabled={isLoading}
-          style={tw`py-3 rounded-lg`}
+          disabled={isLoading || sendOtpMutation.isPending || verifyOtpMutation.isPending}
+          style={tw` rounded-lg`}
         >
-          {isLoading ? "Signing in..." : "Sign In"}
+          {isLoading || sendOtpMutation.isPending || verifyOtpMutation.isPending
+            ? (otpSent ? "Verifying..." : "Processing...")
+            : (otpSent ? "Verify OTP" : "Next")}
         </MyButton>
       </View>
-      {/* <GoogleSignInPKCE /> */}
-
-      <View style={tw`flex-row justify-center mt-2 mb-8`}>
-        <MyText style={tw`text-base text-gray-600`}>Don't have an account? </MyText>
-        <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-          <MyText weight="semibold" style={tw`text-blue-600`}>
-            Sign up
-          </MyText>
-        </TouchableOpacity>
       </View>
-    </View>
+    </AppContainer>
   );
 }
 

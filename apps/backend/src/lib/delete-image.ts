@@ -32,7 +32,7 @@ export async function deleteS3Image(imageUrl: string) {
     
     const key = extractS3Key(originalUrl || "");
     
-    console.log({originalUrl, key})
+
     if (!key) {
       throw new Error("Invalid image URL format");
     }

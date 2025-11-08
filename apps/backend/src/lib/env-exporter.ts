@@ -36,4 +36,4 @@ export const razorpayId = process.env.RAZORPAY_KEY as string;
 
 export const razorpaySecret = process.env.RAZORPAY_SECRET as string;
 
-// export const otpSenderAuthToken = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJDLTM5OENEMkJDRTM0MjQ4OCIsImlhdCI6MTc0Nzg0MTEwMywiZXhwIjoxOTA1NTIxMTAzfQ.IV64ofVKjcwveIanxu_P2XlACtPeA9sJQ74uM53osDeyUXsFv0rwkCl6NNBIX93s_wnh4MKITLbcF_ClwmFQ0A'
+export const otpSenderAuthToken = process.env.OTP_SENDER_AUTH_TOKEN as string;

@@ -19,14 +19,6 @@ export default function AuthLayout() {
   }
 
   return (
-    <View style={tw`flex-1 bg-white`}>
-      {/* App Logo/Branding */}
-      <View style={tw`items-center mt-20 mb-10`}>
-        {/* TODO: Add app logo/branding here */}
-      </View>
-
-      {/* Screen Content */}
       <Stack screenOptions={{ headerShown: false }} />
-    </View>
   );
 }

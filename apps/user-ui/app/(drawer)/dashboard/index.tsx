@@ -117,7 +117,6 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
        const [inputQuery, setInputQuery] = useState('');
        const [searchQuery, setSearchQuery] = useState('');
        const { data: productsData, isLoading, error, refetch } = trpc.common.product.getAllProductsSummary.useQuery({ searchQuery });
-       console.log({error})
        
        const products = productsData?.products || [];
        const addToCart = useAddToCart();

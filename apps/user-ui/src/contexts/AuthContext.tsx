@@ -107,6 +107,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [selfData, selfDataError, authState.isAuthenticated]);
 
+  const loginWithToken = async (token: string, user: User): Promise<void> => {
+    try {
+      setAuthState(prev => ({ ...prev, isLoading: true }));
+
+      await saveAuthToken(token);
+      await saveUserId(user.id.toString());
+
+      setAuthState({
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          profileImage: user.profileImage,
+          createdAt: '',
+        },
+        userDetails: user,
+        isAuthenticated: true,
+        isLoading: false,
+        token,
+      });
+    } catch (error) {
+      console.error('Login with token error:', error);
+      setAuthState(prev => ({ ...prev, isLoading: false }));
+      throw error;
+    }
+  };
+
   const login = async (credentials: LoginCredentials): Promise<void> => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }));
@@ -215,6 +243,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const contextValue: AuthContextType = {
     ...authState,
     login,
+    loginWithToken,
     register,
     logout,
     updateUser,

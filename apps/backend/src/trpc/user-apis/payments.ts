@@ -7,13 +7,13 @@ import { orders, payments, orderStatus } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { ApiError } from '../../lib/api-error';
 import crypto from 'crypto';
+import { DiskPersistedSet } from "src/lib/disk-persisted-set";
 
 const razorpayInstance = new Razorpay({
     key_id: razorpayId,
     key_secret: razorpaySecret
 });
 
-const pendingTransactions = new Set<string>();
 
 export const paymentRouter = router({
   createRazorpayOrder: protectedProcedure
@@ -56,9 +56,6 @@ export const paymentRouter = router({
         merchantOrderId: razorpayOrder.id,
         payload: razorpayOrder,
       });
-
-      // Add to pending transactions
-      pendingTransactions.add(razorpayOrder.id);
 
       return {
         razorpayOrderId: razorpayOrder.id,
@@ -142,9 +139,6 @@ export const paymentRouter = router({
           paymentStatus: 'pending',
         })
         .where(eq(orderStatus.orderId, orderId));
-
-      // Add to pending transactions
-      pendingTransactions.add(razorpayOrder.id);
 
       return {
         razorpayOrderId: razorpayOrder.id,

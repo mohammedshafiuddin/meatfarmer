@@ -307,8 +307,6 @@ export const orderRouter = router({
       const userId = ctx.user.userId;
       const { id, reason } = input;
 
-      console.log("Cancel order request:", { userId, orderId: id, reason });
-
       // Extract readable ID from orderId (e.g., ORD001 -> 1)
       const readableIdMatch = id.match(/^ORD(\d+)$/);
       if (!readableIdMatch) {
@@ -364,7 +362,6 @@ export const orderRouter = router({
         })
         .where(eq(orderStatus.id, status.id));
 
-       console.log("Order cancelled successfully:", id);
        return { success: true, message: "Order cancelled successfully" };
      }),
 
@@ -379,7 +376,6 @@ export const orderRouter = router({
          const userId = ctx.user.userId;
          const { id, userNotes } = input;
 
-         console.log("Update user notes request:", { userId, orderId: id });
 
          // Extract readable ID from orderId (e.g., ORD001 -> 1)
          const readableIdMatch = id.match(/^ORD(\d+)$/);
@@ -436,7 +432,6 @@ export const orderRouter = router({
            })
            .where(eq(orders.id, order.id));
 
-         console.log("User notes updated successfully:", id);
          return { success: true, message: "Notes updated successfully" };
        }),
  });

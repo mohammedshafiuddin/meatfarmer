@@ -42,7 +42,6 @@ export const createAddress = async (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, data: newAddress });
   } catch (error) {
-    console.log(error)
     
     res.status(500).json({ error: 'Failed to create address' });
   }

@@ -42,6 +42,7 @@ export interface RegisterData {
 
 export interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
+  loginWithToken: (token: string, user: User) => Promise<void>;
   register: (data: FormData) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
