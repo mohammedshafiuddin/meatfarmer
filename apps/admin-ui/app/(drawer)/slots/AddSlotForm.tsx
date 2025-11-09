@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import DateTimePickerMod from 'common-ui/src/components/date-time-picker';
-import { useCreateSlot, useUpdateSlot } from '../../../src/api-hooks/slot.api';
 import { tw } from 'common-ui';
+import { trpc } from '@/src/trpc-client';
 
 interface AddSlotFormProps {
   onSlotAdded?: () => void;
@@ -22,8 +22,8 @@ export default function AddSlotForm({
   const [deliveryTime, setDeliveryTime] = useState<Date | null>(initialDeliveryTime || null);
   const [freezeTime, setFreezeTime] = useState<Date | null>(initialFreezeTime || null);
 
-  const { mutate: createSlot, isPending: isCreating } = useCreateSlot();
-  const { mutate: updateSlot, isPending: isUpdating } = useUpdateSlot();
+  const { mutate: createSlot, isPending: isCreating } = trpc.admin.slots.createSlot.useMutation();
+  const { mutate: updateSlot, isPending: isUpdating } = trpc.admin.slots.updateSlot.useMutation();
 
   const isEditMode = !!slotId;
   const isPending = isCreating || isUpdating;

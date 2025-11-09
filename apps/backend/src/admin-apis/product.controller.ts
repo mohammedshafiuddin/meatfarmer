@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { db } from "../db/db_index";
-import { productInfo, units, specialDeals, productSlots } from "../db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { productInfo, units, specialDeals } from "../db/schema";
+import { eq, inArray } from "drizzle-orm";
 import { ApiError } from "../lib/api-error";
-import { imageUploadS3, generateSignedUrlsFromS3Urls, getOriginalUrlFromSignedUrl } from "../lib/s3-client";
+import { imageUploadS3, getOriginalUrlFromSignedUrl } from "../lib/s3-client";
 import { deleteS3Image } from "../lib/delete-image";
 import type { SpecialDeal } from "../db/types";
 
@@ -18,7 +18,7 @@ type CreateDeal = {
  */
 export const createProduct = async (req: Request, res: Response) => {
   const { name, shortDescription, longDescription, unitId, price, marketPrice, deals } = req.body;
-  
+
   // Validate required fields
   if (!name || !unitId || !price) {
     throw new ApiError("Name, unitId, and price are required", 400);
@@ -93,70 +93,6 @@ export const createProduct = async (req: Request, res: Response) => {
 };
 
 /**
- * Get all products
- */
-export const getProducts = async (req: Request, res: Response) => {
-  try {
-    const products = await db.query.productInfo.findMany({
-      with: {
-        unit: true,
-      },
-    });
-
-    // Generate signed URLs for all product images
-    const productsWithSignedUrls = await Promise.all(
-      products.map(async (product) => ({
-        ...product,
-        images: await generateSignedUrlsFromS3Urls((product.images as string[]) || []),
-      }))
-    );
-
-    return res.status(200).json({
-      products: productsWithSignedUrls,
-      count: productsWithSignedUrls.length,
-    });
-  } catch (error) {
-    console.error("Get products error:", error);
-    return res.status(500).json({ error: "Failed to fetch products" });
-  }
-};
-
-/**
- * Get a product by ID
- */
-export const getProductById = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  const product = await db.query.productInfo.findFirst({
-    where: eq(productInfo.id, parseInt(id)),
-    with: {
-      unit: true,
-    },
-  });
-
-  if (!product) {
-    throw new ApiError("Product not found", 404);
-  }
-
-  // Fetch special deals for this product
-  const deals = await db.query.specialDeals.findMany({
-    where: eq(specialDeals.productId, parseInt(id)),
-    orderBy: specialDeals.quantity,
-  });
-
-  // Generate signed URLs for product images
-  const productWithSignedUrls = {
-    ...product,
-    images: await generateSignedUrlsFromS3Urls((product.images as string[]) || []),
-    deals,
-  };
-
-  return res.status(200).json({
-    product: productWithSignedUrls,
-  });
-};
-
-/**
  * Update a product
  */
 export const updateProduct = async (req: Request, res: Response) => {
@@ -165,7 +101,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
   const deals = dealsRaw ? JSON.parse(dealsRaw) : null;
   const imagesToDelete = imagesToDeleteRaw ? JSON.parse(imagesToDeleteRaw) : [];
-  
+
   if (!name || !unitId || !price) {
     throw new ApiError("Name, unitId, and price are required", 400);
   }
@@ -200,7 +136,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     const imagesToRemoveFromDb = currentImages.filter(storedUrl =>
       originalUrlsToDelete.includes(storedUrl)
     );
-    
+
     // Delete the matching images from S3
     const deletePromises = imagesToRemoveFromDb.map(imageUrl => deleteS3Image(imageUrl));
     await Promise.all(deletePromises);
@@ -305,159 +241,4 @@ export const updateProduct = async (req: Request, res: Response) => {
     product: updatedProduct,
     message: "Product updated successfully",
   });
-};
-
-/**
- * Delete a product
- */
-export const deleteProduct = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    const [deletedProduct] = await db
-      .delete(productInfo)
-      .where(eq(productInfo.id, parseInt(id)))
-      .returning();
-
-    if (!deletedProduct) {
-      throw new ApiError("Product not found", 404);
-    }
-
-    return res.status(200).json({
-      message: "Product deleted successfully",
-    });
-  } catch (error) {
-    console.error("Delete product error:", error);
-    return res.status(500).json({ error: "Failed to delete product" });
-  }
-};
-
-/**
- * Update products associated with a slot (efficient diff-based approach)
- */
-export const updateSlotProducts = async (req: Request, res: Response) => {
-  try {
-    const { slotId } = req.params;
-    const { productIds } = req.body;
-
-    if (!Array.isArray(productIds)) {
-      throw new ApiError("productIds must be an array", 400);
-    }
-
-    // Get current associations
-    const currentAssociations = await db.query.productSlots.findMany({
-      where: eq(productSlots.slotId, parseInt(slotId)),
-      columns: {
-        productId: true,
-      },
-    });
-
-    const currentProductIds = currentAssociations.map(assoc => assoc.productId);
-    const newProductIds = productIds.map((id: string) => parseInt(id));
-
-    // Find products to add and remove
-    const productsToAdd = newProductIds.filter(id => !currentProductIds.includes(id));
-    const productsToRemove = currentProductIds.filter(id => !newProductIds.includes(id));
-
-    // Remove associations for products that are no longer selected
-    if (productsToRemove.length > 0) {
-      await db.delete(productSlots).where(
-        and(
-          eq(productSlots.slotId, parseInt(slotId)),
-          inArray(productSlots.productId, productsToRemove)
-        )
-      );
-    }
-
-    // Add associations for newly selected products
-    if (productsToAdd.length > 0) {
-      const newAssociations = productsToAdd.map(productId => ({
-        productId,
-        slotId: parseInt(slotId),
-      }));
-
-      await db.insert(productSlots).values(newAssociations);
-    }
-
-    return res.status(200).json({
-      message: "Slot products updated successfully",
-      added: productsToAdd.length,
-      removed: productsToRemove.length,
-    });
-  } catch (error) {
-    console.error("Update slot products error:", error);
-    return res.status(500).json({ error: "Failed to update slot products" });
-  }
-};
-
-/**
- * Get product IDs associated with a slot
- */
-export const getSlotProductIds = async (req: Request, res: Response) => {
-  try {
-    const { slotId } = req.params;
-
-    const associations = await db.query.productSlots.findMany({
-      where: eq(productSlots.slotId, parseInt(slotId)),
-      columns: {
-        productId: true,
-      },
-    });
-
-    const productIds = associations.map(assoc => assoc.productId);
-
-    return res.status(200).json({
-      productIds,
-    });
-  } catch (error) {
-    console.error("Get slot product IDs error:", error);
-    return res.status(500).json({ error: "Failed to fetch slot product IDs" });
-  }
-};
-
-/**
- * Get product IDs associated with multiple slots (bulk operation)
- */
-export const getSlotsProductIds = async (req: Request, res: Response) => {
-  try {
-    const { slotIds } = req.body;
-
-    if (!Array.isArray(slotIds)) {
-      throw new ApiError("slotIds must be an array", 400);
-    }
-
-    if (slotIds.length === 0) {
-      return res.status(200).json({});
-    }
-
-    // Fetch all associations for the requested slots
-    const associations = await db.query.productSlots.findMany({
-      where: inArray(productSlots.slotId, slotIds),
-      columns: {
-        slotId: true,
-        productId: true,
-      },
-    });
-
-    // Group by slotId
-    const result = associations.reduce((acc, assoc) => {
-      if (!acc[assoc.slotId]) {
-        acc[assoc.slotId] = [];
-      }
-      acc[assoc.slotId].push(assoc.productId);
-      return acc;
-    }, {} as Record<number, number[]>);
-
-    // Ensure all requested slots have entries (even if empty)
-    slotIds.forEach(slotId => {
-      if (!result[slotId]) {
-        result[slotId] = [];
-      }
-    });
-
-    return res.status(200).json(result);
-  } catch (error) {
-    console.error("Get slots product IDs error:", error);
-    return res.status(500).json({ error: "Failed to fetch slots product IDs" });
-  }
 };

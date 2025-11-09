@@ -3,22 +3,12 @@ import { View, TouchableOpacity, Alert } from "react-native";
 import DraggableFlatList, {
   RenderItemParams,
 } from "react-native-draggable-flatlist";
-import {
-  AppContainer,
-  MyText,
-  tw,
-  useManualRefresh,
-} from "common-ui";
-import {
-  useGetSlots,
-  useGetSlotOrders,
-  useUpdateDeliverySequence,
-  useGetDeliverySequence,
-} from "@/src/api-hooks/slot.api";
-import { Order } from "@/src/api-hooks/order.api";
+import { AppContainer, MyText, tw, useManualRefresh } from "common-ui";
+import { Order } from "common-ui/shared-types";
 import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
+import { trpc } from "@/src/trpc-client";
 
 interface OrderWithSequence extends Order {
   sequenceId: number;
@@ -31,16 +21,29 @@ export default function DeliverySequences() {
     OrderWithSequence[]
   >([]);
 
-
-  const { data: slotsData, refetch: refetchSlots } = useGetSlots();
+  // const { data: slotsData, refetch: refetchSlots } = useGetSlots();
+  const { data: slotsData, refetch: refetchSlots } =
+    trpc.admin.slots.getAll.useQuery();
   const {
     data: ordersData,
     isLoading: ordersLoading,
     refetch: refetchOrders,
-  } = useGetSlotOrders(selectedSlotId || 0);
+  } = trpc.admin.order.getSlotOrders.useQuery(
+    { slotId: String(selectedSlotId) },
+    {
+      enabled: !!selectedSlotId,
+    }
+  );
+
   const { data: sequenceData, refetch: refetchSequence } =
-    useGetDeliverySequence(selectedSlotId || 0);
-  const updateSequenceMutation = useUpdateDeliverySequence();
+    trpc.admin.slots.getDeliverySequence.useQuery(
+      { id: String(selectedSlotId) },
+      {
+        enabled: !!selectedSlotId,
+      }
+    );
+
+  const updateSequenceMutation = trpc.admin.slots.updateDeliverySequence.useMutation();
 
   // Manual refresh functionality
   useManualRefresh(() => {
@@ -57,7 +60,6 @@ export default function DeliverySequences() {
   const computedOrderedOrders = useMemo(() => {
     if (orders.length > 0) {
       let ordered: OrderWithSequence[];
-
       if (deliverySequence.length > 0) {
         // Sort orders according to delivery sequence
         const sequenceMap = new Map(
@@ -88,8 +90,6 @@ export default function DeliverySequences() {
     setLocalOrderedOrders(computedOrderedOrders);
   }, [computedOrderedOrders]);
 
-
-
   const handleDragEnd = ({ data }: { data: OrderWithSequence[] }) => {
     setLocalOrderedOrders(data);
   };
@@ -101,7 +101,7 @@ export default function DeliverySequences() {
 
     try {
       await updateSequenceMutation.mutateAsync({
-        slotId: selectedSlotId,
+        id: selectedSlotId,
         deliverySequence: newSequence,
       });
       Alert.alert("Success", "Delivery sequence updated successfully");
@@ -144,7 +144,8 @@ export default function DeliverySequences() {
             }}
           >
             <MyText style={{ fontWeight: "bold", fontSize: 16 }}>
-              Order #{orderItem.readableId} {orderItem.items
+              Order #{orderItem.readableId}{" "}
+              {orderItem.items
                 .slice(0, 2)
                 .map((i: any) => i.name)
                 .join(", ")}
@@ -156,7 +157,9 @@ export default function DeliverySequences() {
             </MyText>
           </View>
           <MyText style={{ color: "#666", fontSize: 14, marginTop: 4 }}>
-            {[orderItem.address.split(",")[0], orderItem.address.split(",")[1]].filter(Boolean).join(", ")}
+            {[orderItem.address.split(",")[0], orderItem.address.split(",")[1]]
+              .filter(Boolean)
+              .join(", ")}
           </MyText>
         </View>
       </TouchableOpacity>
@@ -177,74 +180,73 @@ export default function DeliverySequences() {
   return (
     <AppContainer>
       <View style={tw`flex-1`}>
-
-      {selectedSlotId && (
-        <>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 16,
-              paddingHorizontal: 16,
-            }}
-          >
-            <MyText style={{ fontSize: 18, fontWeight: "bold" }}>
-              Orders ({localOrderedOrders.length})
-            </MyText>
-            <TouchableOpacity
+        {selectedSlotId && (
+          <>
+            <View
               style={{
-                backgroundColor: "#2e7d32",
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderRadius: 8,
-                opacity: updateSequenceMutation.isPending ? 0.6 : 1,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+                paddingHorizontal: 16,
               }}
-              onPress={handleSaveSequence}
-              disabled={updateSequenceMutation.isPending}
             >
-              <MyText style={{ color: "#fff", fontWeight: "bold" }}>
-                {updateSequenceMutation.isPending
-                  ? "Saving..."
-                  : "Save Sequence"}
+              <MyText style={{ fontSize: 18, fontWeight: "bold" }}>
+                Orders ({localOrderedOrders.length})
               </MyText>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#2e7d32",
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  borderRadius: 8,
+                  opacity: updateSequenceMutation.isPending ? 0.6 : 1,
+                }}
+                onPress={handleSaveSequence}
+                disabled={updateSequenceMutation.isPending}
+              >
+                <MyText style={{ color: "#fff", fontWeight: "bold" }}>
+                  {updateSequenceMutation.isPending
+                    ? "Saving..."
+                    : "Save Sequence"}
+                </MyText>
+              </TouchableOpacity>
+            </View>
 
-          {ordersLoading ? (
-            <MyText style={{ textAlign: "center", marginTop: 20 }}>
-              Loading orders...
-            </MyText>
-          ) : localOrderedOrders.length === 0 ? (
-            <MyText style={{ textAlign: "center", marginTop: 20 }}>
-              No orders found for this slot
-            </MyText>
-          ) : (
-            <MyText
-              style={{
-                fontSize: 14,
-                color: "#666",
-                marginBottom: 12,
-                textAlign: "center",
-              }}
-            >
-              Long press and drag orders to reorder delivery sequence
-            </MyText>
-          )}
+            {ordersLoading ? (
+              <MyText style={{ textAlign: "center", marginTop: 20 }}>
+                Loading orders...
+              </MyText>
+            ) : localOrderedOrders.length === 0 ? (
+              <MyText style={{ textAlign: "center", marginTop: 20 }}>
+                No orders found for this slot
+              </MyText>
+            ) : (
+              <MyText
+                style={{
+                  fontSize: 14,
+                  color: "#666",
+                  marginBottom: 12,
+                  textAlign: "center",
+                }}
+              >
+                Long press and drag orders to reorder delivery sequence
+              </MyText>
+            )}
 
-          <View style={{ flex: 1 }}>
-            <DraggableFlatList
-              data={localOrderedOrders}
-              renderItem={renderOrderItem}
-              keyExtractor={(item) => item.sequenceId.toString()}
-              onDragEnd={handleDragEnd}
-              showsVerticalScrollIndicator={true}
-              bounces={true}
-              contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
-            />
-          </View>
-        </>
-      )}
+            <View style={{ flex: 1 }}>
+              <DraggableFlatList
+                data={localOrderedOrders}
+                renderItem={renderOrderItem}
+                keyExtractor={(item) => item.sequenceId.toString()}
+                onDragEnd={handleDragEnd}
+                showsVerticalScrollIndicator={true}
+                bounces={true}
+                contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
+              />
+            </View>
+          </>
+        )}
       </View>
     </AppContainer>
   );

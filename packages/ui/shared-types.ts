@@ -229,6 +229,68 @@ export interface GetSlotsProductIdsResponse {
   [slotId: number]: number[];
 }
 
+export interface Order {
+  orderId: string;
+  readableId: string;
+  customerName: string;
+  address: string;
+  totalAmount: number;
+  items: {
+    name: string;
+    quantity: number;
+    price: number;
+    amount: number;
+    unit: string;
+  }[];
+  deliveryTime: string;
+  status: 'pending' | 'delivered' | 'cancelled';
+  isPackaged: boolean;
+  isDelivered: boolean;
+  isCod: boolean;
+  paymentMode: string;
+  paymentStatus: string;
+  slotId: number;
+}
+
+export interface Slot {
+  id: number;
+  deliveryTime: string;
+  freezeTime: string;
+  isActive: boolean;
+  deliverySequence?: number[];
+}
+
+export interface Coupon {
+  id: number;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderValue?: number;
+  maxDiscount?: number;
+  isActive: boolean;
+  validFrom: string;
+  validTill: string;
+  usageLimit?: number;
+  usedCount: number;
+  createdAt: string;
+}
+
+export interface CreateCouponPayload {
+  couponCode: string;
+  discountType: 'percentage' | 'fixed';
+  discountPercent?: number;
+  flatDiscount?: number;
+  minOrder?: number;
+  maxValue?: number;
+  validFrom: string;
+  validTill: string;
+  maxLimitForUser?: number;
+  isApplyForAll: boolean;
+  isUserBased: boolean;
+  targetUser?: string;
+  productIds?: number[];
+}
+
 // Patient History Types
 export interface PatientHistoryToken {
   id: number;

@@ -3,7 +3,7 @@ import { useRouter, usePathname } from "expo-router";
 import queryClient from "@/utils/queryClient";
 import { DeviceEventEmitter } from "react-native";
 import { FORCE_LOGOUT_EVENT } from "common-ui/src/lib/const-strs";
-import { useStaffLogin } from "@/src/api-hooks/staff.api";
+import { trpc } from "@/src/trpc-client";
 import { saveJWT, getJWT, deleteJWT } from "@/hooks/useJWT";
 
 interface Staff {
@@ -29,7 +29,7 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
   const [staff, setStaff] = useState<Staff | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const { mutate: loginMutation, isPending: isLoggingIn } = useStaffLogin();
+  const loginMutation = trpc.admin.staffUser.login.useMutation();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -54,7 +54,7 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (name: string, password: string) => {
     setLoginError(null);
-    loginMutation(
+    loginMutation.mutate(
       { name, password },
       {
         onSuccess: async (data) => {
@@ -98,7 +98,7 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
         staff,
         login,
         logout,
-        isLoggingIn,
+        isLoggingIn: loginMutation.isPending,
         loginError,
       }}
     >

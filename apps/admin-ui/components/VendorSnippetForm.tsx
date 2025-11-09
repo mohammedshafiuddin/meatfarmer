@@ -4,7 +4,7 @@ import { useFormik } from 'formik';
 import { MyText, tw, DatePicker, MyTextInput } from 'common-ui';
 import BottomDropdown from 'common-ui/src/components/bottom-dropdown';
 import { trpc } from '../src/trpc-client';
-import { useCreateVendorSnippet, useUpdateVendorSnippet } from '../src/api-hooks/vendor-snippets.api';
+
 
 interface VendorSnippet {
   id: number;
@@ -29,10 +29,10 @@ const VendorSnippetForm: React.FC<VendorSnippetFormProps> = ({
 
   // Fetch slots and products
   const { data: slotsData } = trpc.user.slots.getSlots.useQuery();
-  const { data: productsData } = trpc.common.product.getAllProductsSummary.useQuery();
+  const { data: productsData } = trpc.common.product.getAllProductsSummary.useQuery({});
 
-  const createSnippet = useCreateVendorSnippet();
-  const updateSnippet = useUpdateVendorSnippet();
+  const createSnippet = trpc.admin.vendorSnippets.create.useMutation();
+  const updateSnippet = trpc.admin.vendorSnippets.update.useMutation();
 
   const isEditing = !!snippet;
 

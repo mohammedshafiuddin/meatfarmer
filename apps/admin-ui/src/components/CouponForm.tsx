@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-nati
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { MyTextInput, MyButton } from 'common-ui';
-import { CreateCouponPayload } from '../api-hooks/coupon.api';
+import { CreateCouponPayload } from 'common-ui/shared-types';
 import DateTimePickerMod from '../../components/date-time-picker';
 import { trpc } from '../trpc-client';
 import { BottomDropdown } from 'common-ui';

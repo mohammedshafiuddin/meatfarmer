@@ -2,17 +2,17 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { tw, AppContainer, MyText } from 'common-ui';
-import { useGetProduct, useDeleteProduct, useToggleOutOfStock } from '../../../src/api-hooks/product.api';
 import { MaterialIcons } from '@expo/vector-icons';
+import { trpc } from '@/src/trpc-client';
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const productId = parseInt(id as string);
 
-  const { data: productData, isLoading, error } = useGetProduct(productId);
-  const deleteProduct = useDeleteProduct();
-  const toggleOutOfStock = useToggleOutOfStock();
+  const { data: productData, isLoading, error } = trpc.admin.product.getProductById.useQuery({id: productId});
+  const deleteProduct = trpc.admin.product.deleteProduct.useMutation();
+  const toggleOutOfStock = trpc.admin.product.toggleOutOfStock.useMutation();
 
   const product = productData?.product;
 
@@ -30,7 +30,7 @@ export default function ProductDetail() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            deleteProduct.mutate(productId, {
+            deleteProduct.mutate({id: productId}, {
               onSuccess: () => {
                 Alert.alert('Success', 'Product deleted successfully');
                 router.back();
@@ -103,7 +103,7 @@ export default function ProductDetail() {
              </MyText>
              <TouchableOpacity
                onPress={() => {
-                 toggleOutOfStock.mutate(productId, {
+                 toggleOutOfStock.mutate({id: productId}, {
                    onSuccess: () => {
                      Alert.alert('Success', 'Stock status updated');
                    },

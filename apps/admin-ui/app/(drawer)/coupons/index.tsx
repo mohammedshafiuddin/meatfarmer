@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { tw, AppContainer, BottomDialog, MyButton, MyText } from 'common-ui';
 import useManualRefresh from 'common-ui/hooks/useManualRefresh';
-import { useGetCoupons, useCreateCoupon, useDeleteCoupon, CreateCouponPayload, Coupon } from '../../../src/api-hooks/coupon.api';
+import { CreateCouponPayload, Coupon } from 'common-ui/shared-types';
 import CouponForm from '../../../src/components/CouponForm';
 import { trpc } from '@/src/trpc-client';
 

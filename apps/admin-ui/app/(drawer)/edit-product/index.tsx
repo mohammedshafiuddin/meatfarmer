@@ -3,14 +3,20 @@ import { View, Text, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { AppContainer, useManualRefresh, MyText, tw } from 'common-ui';
 import ProductForm, { ProductFormRef } from '../../../src/components/ProductForm';
-import { useGetProduct, useUpdateProduct } from '../../../src/api-hooks/product.api';
+import { useUpdateProduct } from '../../../src/api-hooks/product.api';
+import { trpc } from '@/src/trpc-client';
 
 export default function EditProduct() {
   const { id } = useLocalSearchParams();
   const productId = Number(id);
   const productFormRef = useRef<ProductFormRef>(null);
 
-  const { data: product, isLoading: isFetching, refetch } = useGetProduct(productId);
+  // const { data: product, isLoading: isFetching, refetch } = useGetProduct(productId);
+  const { data: product, isLoading: isFetching, refetch } = trpc.admin.product.getProductById.useQuery(
+    { id: productId },
+    { enabled: !!productId }
+  );
+  //
   const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
 
   useManualRefresh(() => refetch());

@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, Alert } from "react-native";
 import { tw, ConfirmationDialog, MyText } from "common-ui";
-import {
-  useGetComplaints,
-  useResolveComplaint,
-} from "../../../src/api-hooks/complaint.api";
 import { usePagination } from "../../../hooks/usePagination";
 import { AppContainer } from "common-ui";
 import { trpc } from "@/src/trpc-client";

@@ -1,15 +1,15 @@
 import { View, TouchableOpacity, FlatList } from 'react-native';
 import { AppContainer, MyText, BottomDropdown, tw } from 'common-ui';
 import { useRouter } from 'expo-router';
-import { useGetSlots } from '@/src/api-hooks/slot.api';
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { trpc } from '@/src/trpc-client';
 
 export default function ManageOrders() {
   const router = useRouter();
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
-  const { data: slotsData } = useGetSlots();
+  const { data: slotsData } = trpc.admin.slots.getAll.useQuery();
 
   useEffect(() => {
     if (slotsData?.slots && slotsData.slots.length > 0 && !selectedSlotId) {

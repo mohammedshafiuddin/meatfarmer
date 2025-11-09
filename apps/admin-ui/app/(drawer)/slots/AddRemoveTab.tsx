@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useGetSlots, useDeleteSlot, Slot } from '../../../src/api-hooks/slot.api';
+import { Slot } from 'common-ui/shared-types';
 import dayjs from 'dayjs';
 import { tw, BottomDialog } from 'common-ui';
 import AddSlotForm from './AddSlotForm';
+import { trpc } from '@/src/trpc-client';
 
 export default function AddRemoveTab() {
-  const { data, isLoading, error, refetch } = useGetSlots();
+  const { data, isLoading, error, refetch } = trpc.admin.slots.getAll.useQuery();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
-  const { mutate: deleteSlot, isPending: isDeleting } = useDeleteSlot();
+  const { mutate: deleteSlot, isPending: isDeleting } = trpc.admin.slots.deleteSlot.useMutation();
 
   return (
     <View style={tw`p-4`}>
@@ -64,7 +65,7 @@ export default function AddRemoveTab() {
                           text: 'Delete',
                           style: 'destructive',
                           onPress: () => {
-                            deleteSlot(item.id, {
+                            deleteSlot({id: item.id }, {
                               onSuccess: () => {
                                 Alert.alert('Success', 'Slot deleted successfully!');
                                 refetch();

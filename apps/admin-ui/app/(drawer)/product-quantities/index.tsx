@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, ScrollView } from 'react-native';
 import { AppContainer, MyText, useManualRefresh, tw } from 'common-ui';
-import { useGetSlotOrders } from '@/src/api-hooks/slot.api';
 import { useLocalSearchParams } from 'expo-router';
+import { trpc } from '@/src/trpc-client';
 
 interface ProductQuantity {
   name: string;
@@ -13,7 +13,11 @@ interface ProductQuantity {
 export default function ProductQuantities() {
   const { slotId } = useLocalSearchParams();
   const selectedSlotId = slotId ? Number(slotId) : null;
-  const { data: ordersResponse, isLoading, error, refetch } = useGetSlotOrders(selectedSlotId || 0);
+
+  const { data: ordersResponse, isLoading, error, refetch } = trpc.admin.order.getSlotOrders.useQuery(
+    { slotId: String(selectedSlotId) },
+    { enabled: !!selectedSlotId }
+  );
 
   useManualRefresh(() => refetch());
 

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, TouchableOpacity, Dimensions } from 'react-native';
 import dayjs from 'dayjs';
 import { TabViewWrapper, AppContainer, MyText, useManualRefresh, tw, BottomDialog } from 'common-ui';
-import { Order, useUpdatePackaged } from '@/src/api-hooks/order.api';
-import { useGetSlots, useGetSlotOrders } from '@/src/api-hooks/slot.api';
+import { Order } from 'common-ui/shared-types';
 import { useLocalSearchParams } from 'expo-router';
 import { OrderMenu } from '@/components/OrderMenu';
+import { trpc } from '@/src/trpc-client';
 
 const OrderItem = ({
   order,
@@ -50,10 +50,12 @@ export default function Packaging() {
   const [index, setIndex] = useState(0);
   const { slotId } = useLocalSearchParams();
   const selectedSlotId = slotId ? Number(slotId) : null;
-  const { data: ordersResponse, isLoading, error, refetch, isRefetching } = useGetSlotOrders(selectedSlotId || 0);
+  const { data: ordersResponse, isLoading, error, refetch, isRefetching } = trpc.admin.order.getSlotOrders.useQuery({slotId: String(selectedSlotId)}, {
+    enabled: !!selectedSlotId,
+  });
   const orders = ordersResponse?.data;
-  const { data: slotsData } = useGetSlots();
-  const updatePackagedMutation = useUpdatePackaged();
+  const { data: slotsData } = trpc.admin.slots.getAll.useQuery();
+  const updatePackagedMutation = trpc.admin.order.updatePackaged.useMutation();
 
 
 

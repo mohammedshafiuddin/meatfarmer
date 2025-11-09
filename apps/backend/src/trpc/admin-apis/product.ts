@@ -39,13 +39,13 @@ export const productRouter = router({
 
   getProductById: protectedProcedure
     .input(z.object({
-      id: z.string(),
+      id: z.number(),
     }))
     .query(async ({ input, ctx }) => {
       const { id } = input;
 
       const product = await db.query.productInfo.findFirst({
-        where: eq(productInfo.id, parseInt(id)),
+        where: eq(productInfo.id, id),
         with: {
           unit: true,
         },
@@ -57,7 +57,7 @@ export const productRouter = router({
 
       // Fetch special deals for this product
       const deals = await db.query.specialDeals.findMany({
-        where: eq(specialDeals.productId, parseInt(id)),
+        where: eq(specialDeals.productId, id),
         orderBy: specialDeals.quantity,
       });
 
@@ -75,14 +75,14 @@ export const productRouter = router({
 
   deleteProduct: protectedProcedure
     .input(z.object({
-      id: z.string(),
+      id: z.number(),
     }))
     .mutation(async ({ input, ctx }) => {
       const { id } = input;
 
       const [deletedProduct] = await db
         .delete(productInfo)
-        .where(eq(productInfo.id, parseInt(id)))
+        .where(eq(productInfo.id, id))
         .returning();
 
       if (!deletedProduct) {
@@ -96,13 +96,13 @@ export const productRouter = router({
 
   toggleOutOfStock: protectedProcedure
     .input(z.object({
-      id: z.string(),
+      id: z.number(),
     }))
     .mutation(async ({ input, ctx }) => {
       const { id } = input;
 
       const product = await db.query.productInfo.findFirst({
-        where: eq(productInfo.id, parseInt(id)),
+        where: eq(productInfo.id, id),
       });
 
       if (!product) {
@@ -114,7 +114,7 @@ export const productRouter = router({
         .set({
           isOutOfStock: !product.isOutOfStock,
         })
-        .where(eq(productInfo.id, parseInt(id)))
+        .where(eq(productInfo.id, id))
         .returning();
 
       return {
