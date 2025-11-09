@@ -38,8 +38,8 @@ const localhost =
     ? "http://10.0.2.2:4000" // Android emulator
     : "http://localhost:4000"; // iOS simulator / web dev
 
-const production = "https://technocracy.ovh/mf";
-// const production = "http://10.0.2.2:4000";
+// const production = "https://technocracy.ovh/mf";
+const production = "http://10.0.2.2:4000";
 // const production = "http://192.168.1.3:4000";
 
 const API_URL =

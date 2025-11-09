@@ -5,10 +5,10 @@ import { tw, useManualRefresh, AppContainer } from 'common-ui';
 import { BottomDropdown, Checkbox } from 'common-ui';
 import { Quantifier } from 'common-ui';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useGetCart, useUpdateCartItem, useRemoveFromCart, useGetCartSlots } from '@/src/api-hooks/cart.api';
+
 import dayjs from 'dayjs';
 import { trpc } from '@/src/trpc-client';
-// import { useGetCart, useUpdateCartItem, useRemoveFromCart } from '../../src/api-hooks/cart.api';
+
 
 
 export default function MyCart() {

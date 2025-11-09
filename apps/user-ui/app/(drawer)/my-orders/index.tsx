@@ -3,16 +3,14 @@ import { View, FlatList, Image, TouchableOpacity, TextInput, Alert, ActivityIndi
 import { Entypo, MaterialIcons } from '@expo/vector-icons';
 import { tw, useManualRefresh, MyText, AppContainer } from 'common-ui';
 import { BottomDialog } from 'common-ui';
-import { useGetUserOrders, useCancelOrder, useRaiseComplaint } from '../../../src/api-hooks/order.api';
+
 import { trpc } from '@/src/trpc-client';
 import RazorpayCheckout from 'react-native-razorpay';
 
 export default function MyOrders() {
   const { data: ordersData, isLoading, error, refetch } = trpc.user.order.getOrders.useQuery();
   
-  // const cancelOrderMutation = useCancelOrder();
   const cancelOrderMutation = trpc.user.order.cancelOrder.useMutation();
-  // const raiseComplaintMutation = useRaiseComplaint();
   const raiseComplaintMutation = trpc.user.complaint.raise.useMutation();
   const updateNotesMutation = trpc.user.order.updateUserNotes.useMutation({
     onSuccess: () => {

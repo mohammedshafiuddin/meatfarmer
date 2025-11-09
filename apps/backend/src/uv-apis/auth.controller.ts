@@ -10,11 +10,6 @@ import { jwtSecret } from 'src/lib/env-exporter';
 import uploadHandler from '../lib/upload-handler';
 import { imageUploadS3, generateSignedUrlFromS3Url } from '../lib/s3-client';
 
-interface LoginRequest {
-  identifier: string; // email or mobile
-  password: string;
-}
-
 interface RegisterRequest {
   name: string;
   email: string;
@@ -57,75 +52,6 @@ const generateToken = (userId: number): string => {
 
   return jwt.sign({ userId }, secret, { expiresIn: '7d' });
 };
-
-export const login = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const { identifier, password }: LoginRequest = req.body;
-  
-  console.log({identifier, password})
-  if (!identifier || !password) {
-    throw new ApiError('Email/mobile and password are required', 400);
-  }
-  
-
-  // Find user by email or mobile
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.mobile, identifier))
-    .limit(1);
-
-  let foundUser = user;
-  
-  if (!foundUser) {
-    // Try mobile if email didn't work
-    const [userByMobile] = await db
-    .select()
-    .from(users)
-    .where(eq(users.mobile, identifier))
-    .limit(1);
-    foundUser = userByMobile;
-  }
-  
-  if (!foundUser) {
-    throw new ApiError('Invalid credentials', 401);
-  }
-  
-  // Get user details for profile image
-  const [userDetail] = await db
-    .select()
-    .from(userDetails)
-    .where(eq(userDetails.userId, foundUser.id))
-    .limit(1);
-
-  // Generate signed URL for profile image if it exists
-  const profileImageSignedUrl = userDetail?.profileImage
-    ? await generateSignedUrlFromS3Url(userDetail.profileImage)
-    : null;
-
-  const token = generateToken(foundUser.id);
-
-  const response: AuthResponse = {
-    token,
-    user: {
-      id: foundUser.id,
-      name: foundUser.name,
-      email: foundUser.email,
-      mobile: foundUser.mobile,
-      profileImage: profileImageSignedUrl,
-      bio: userDetail?.bio || null,
-      dateOfBirth: userDetail?.dateOfBirth || null,
-      gender: userDetail?.gender || null,
-      occupation: userDetail?.occupation || null,
-    },
-  };
-
-  res.status(200).json({
-    success: true,
-    data: response,
-  });
-  console.log('sent response sucessfully')
-  
-});
 
 export const register = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { name, email, mobile, password }: RegisterRequest = req.body;
@@ -234,52 +160,6 @@ export const register = catchAsync(async (req: Request, res: Response, next: Nex
   res.status(201).json({
     success: true,
     data: response,
-  });
-});
-
-export const getProfile = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  // This will be used with auth middleware
-  const userId = req.user?.userId;
-
-  if (!userId) {
-    throw new ApiError('User not authenticated', 401);
-  }
-
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-
-  if (!user) {
-    throw new ApiError('User not found', 404);
-  }
-
-  // Get user details for profile image
-  const [userDetail] = await db
-    .select()
-    .from(userDetails)
-    .where(eq(userDetails.userId, userId))
-    .limit(1);
-
-  // Generate signed URL for profile image if it exists
-  const profileImageSignedUrl = userDetail?.profileImage
-    ? await generateSignedUrlFromS3Url(userDetail.profileImage)
-    : null;
-
-  res.status(200).json({
-    success: true,
-    data: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      mobile: user.mobile,
-      profileImage: profileImageSignedUrl,
-      bio: userDetail?.bio || null,
-      dateOfBirth: userDetail?.dateOfBirth || null,
-      gender: userDetail?.gender || null,
-      occupation: userDetail?.occupation || null,
-    },
   });
 });
 

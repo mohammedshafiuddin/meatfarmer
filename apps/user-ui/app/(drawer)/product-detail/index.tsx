@@ -5,7 +5,7 @@ import { ImageCarousel, tw, BottomDialog, useManualRefresh } from 'common-ui';
 import { theme } from 'common-ui/src/theme';
 import dayjs from 'dayjs';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useAddToCart } from '@/src/api-hooks/cart.api';
+
 import CustomHeader from '@/components/CustomHeader';
 import { trpc } from '@/src/trpc-client';
 
@@ -18,7 +18,7 @@ import { trpc } from '@/src/trpc-client';
     const { id } = useLocalSearchParams();
     const [showAllSlots, setShowAllSlots] = useState(false);
     const { data: productDetail, isLoading, error, refetch } = trpc.user.product.getProductDetails.useQuery({ id: id.toString() });
-    const addToCart = useAddToCart();
+    const addToCart = trpc.user.cart.addToCart.useMutation();
    
 
    useManualRefresh(() => {

@@ -46,37 +46,33 @@
       },
    ];
 
-   return (
-     <AppContainer>
-       <View style={tw`flex-1 p-6`}>
-         <MyText style={tw`text-3xl font-bold mb-2 text-center text-gray-800`}>Admin Dashboard</MyText>
-         <MyText style={tw`text-base text-center text-gray-600 mb-8`}>Manage your meat farm operations</MyText>
-
-          <FlatList
-            data={menuItems}
-            numColumns={2}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={tw`${item.color} p-4 rounded-2xl mb-4 shadow-lg flex-1 mx-1`}
-                onPress={item.onPress}
-              >
-                <View style={tw`items-center`}>
-                  <MaterialIcons
-                    name={item.icon as any}
-                    size={32}
-                    color="white"
-                    style={tw`mb-3`}
-                  />
-                  <MyText style={tw`text-white text-center text-lg font-semibold`}>
-                    {item.title}
-                  </MyText>
-                </View>
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item, index) => index.toString()}
-            columnWrapperStyle={tw`justify-between`}
-          />
-       </View>
-     </AppContainer>
-   );
+    return (
+      <View style={tw`flex-1`}>
+        <FlatList
+          data={menuItems}
+          numColumns={2}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={tw`${item.color} p-4 rounded-2xl mb-4 shadow-lg flex-1 mx-1`}
+              onPress={item.onPress}
+            >
+              <View style={tw`items-center`}>
+                <MaterialIcons
+                  name={item.icon as any}
+                  size={32}
+                  color="white"
+                  style={tw`mb-3`}
+                />
+                <MyText style={tw`text-white text-center text-base font-semibold`}>
+                  {item.title}
+                </MyText>
+              </View>
+            </TouchableOpacity>
+          )}
+          keyExtractor={(item, index) => index.toString()}
+          columnWrapperStyle={tw`justify-between`}
+          contentContainerStyle={tw`p-6 bg-white flex-1` }
+        />
+      </View>
+    );
  }

@@ -20,7 +20,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token: null,
   });
 
-  const loginMutation = useLogin();
+  // const loginMutation = useLogin();
+  const loginMutation = trpc.user.auth.login.useMutation();
   const registerMutation = useRegister();
 
   // Initialize auth state on app startup
@@ -141,7 +142,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const response = await loginMutation.mutateAsync(credentials);
       // const response = loginMutation.mutate(credentials);
-      const { token, user } = response;
+      const { token, user } = response.data;
 
       await saveAuthToken(token);
       await saveUserId(user.id.toString());

@@ -1,4 +1,4 @@
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, FlatList } from 'react-native';
 import { AppContainer, MyText, BottomDropdown, tw } from 'common-ui';
 import { useRouter } from 'expo-router';
 import { useGetSlots } from '@/src/api-hooks/slot.api';
@@ -17,87 +17,79 @@ export default function ManageOrders() {
     }
   }, [slotsData]);
 
+  const menuItems = [
+    {
+      title: 'Packaging',
+      icon: 'inventory',
+      color: 'bg-green-500',
+      onPress: () => router.push(`/(drawer)/packaging?slotId=${selectedSlotId}`),
+    },
+    {
+      title: 'Delivery',
+      icon: 'local-shipping',
+      color: 'bg-blue-500',
+      onPress: () => router.push(`/(drawer)/delivery?slotId=${selectedSlotId}`),
+    },
+    {
+      title: 'Delivery Sequences',
+      icon: 'route',
+      color: 'bg-purple-500',
+      onPress: () => router.push(`/(drawer)/delivery-sequences?slotId=${selectedSlotId}`),
+    },
+    {
+      title: 'Product Quantities',
+      icon: 'calculate',
+      color: 'bg-orange-500',
+      onPress: () => {
+        if (selectedSlotId) {
+          router.push(`/(drawer)/product-quantities?slotId=${selectedSlotId}`);
+        }
+      },
+    },
+    {
+      title: 'Cancelled Orders',
+      icon: 'cancel',
+      color: 'bg-red-500',
+      onPress: () => router.push(`/(drawer)/cancelled-orders`),
+    },
+  ];
+
   return (
-    <AppContainer>
-      <MyText style={tw`text-3xl font-bold mb-8 text-center text-gray-800`}>
-        Manage Orders
-      </MyText>
-
-      <View style={tw`mb-6`}>
-        <BottomDropdown
-          label='Select Slot'
-          options={slotsData?.slots?.map(slot => ({ label: dayjs(slot.deliveryTime).format('ddd DD MMM, h:mm a'), value: slot.id })) || []}
-          value={selectedSlotId || ''}
-          onValueChange={val => setSelectedSlotId(Number(val))}
-          placeholder="Select Slot"
-        />
-      </View>
-
-       <View style={tw`gap-4`}>
-         <TouchableOpacity
-           style={tw`bg-green-500 p-6 rounded-2xl shadow-lg`}
-           onPress={() => router.push(`/(drawer)/packaging?slotId=${selectedSlotId}`)}
-         >
-           <View style={tw`items-center`}>
-             <MaterialIcons name="inventory" size={32} color="white" style={tw`mb-2`} />
-             <MyText style={tw`text-white text-xl font-bold text-center`}>
-               Packaging
-             </MyText>
-           </View>
-         </TouchableOpacity>
-
-         <TouchableOpacity
-           style={tw`bg-blue-500 p-6 rounded-2xl shadow-lg`}
-           onPress={() => router.push(`/(drawer)/delivery?slotId=${selectedSlotId}`)}
-         >
-           <View style={tw`items-center`}>
-             <MaterialIcons name="local-shipping" size={32} color="white" style={tw`mb-2`} />
-             <MyText style={tw`text-white text-xl font-bold text-center`}>
-               Delivery
-             </MyText>
-           </View>
-         </TouchableOpacity>
-
+    <View style={tw`flex-1`}>
+      <FlatList
+        data={menuItems}
+        numColumns={2}
+        renderItem={({ item }) => (
           <TouchableOpacity
-            style={tw`bg-purple-500 p-6 rounded-2xl shadow-lg`}
-            onPress={() => router.push(`/(drawer)/delivery-sequences?slotId=${selectedSlotId}`)}
+            style={tw`${item.color} p-6 rounded-2xl shadow-lg mb-4 flex-1`}
+            onPress={item.onPress}
           >
             <View style={tw`items-center`}>
-              <MaterialIcons name="route" size={32} color="white" style={tw`mb-2`} />
-              <MyText style={tw`text-white text-xl font-bold text-center`}>
-                Delivery Sequences
+              <MaterialIcons name={item.icon as any} size={32} color="white" style={tw`mb-2`} />
+              <MyText style={tw`text-white text-lg font-bold text-center`}>
+                {item.title}
               </MyText>
             </View>
           </TouchableOpacity>
-
-           <TouchableOpacity
-             style={tw`bg-orange-500 p-6 rounded-2xl shadow-lg`}
-             onPress={() => {
-               if (selectedSlotId) {
-                 router.push(`/(drawer)/product-quantities?slotId=${selectedSlotId}`);
-               }
-             }}
-           >
-             <View style={tw`items-center`}>
-               <MaterialIcons name="calculate" size={32} color="white" style={tw`mb-2`} />
-               <MyText style={tw`text-white text-xl font-bold text-center`}>
-                 Product Quantities
-               </MyText>
-             </View>
-           </TouchableOpacity>
-
-           <TouchableOpacity
-             style={tw`bg-red-500 p-6 rounded-2xl shadow-lg`}
-             onPress={() => router.push(`/(drawer)/cancelled-orders`)}
-           >
-             <View style={tw`items-center`}>
-               <MaterialIcons name="cancel" size={32} color="white" style={tw`mb-2`} />
-               <MyText style={tw`text-white text-xl font-bold text-center`}>
-                 Cancelled Orders
-               </MyText>
-             </View>
-           </TouchableOpacity>
-       </View>
-    </AppContainer>
+        )}
+        keyExtractor={(item, index) => index.toString()}
+        columnWrapperStyle={tw`justify-between gap-4`}
+        contentContainerStyle={tw`p-6 gap-4 bg-white flex-1`}
+        ListHeaderComponent={
+          <>
+            <View style={tw`mb-6`}>
+              <BottomDropdown
+                label='Select Slot'
+                options={slotsData?.slots?.map(slot => ({ label: dayjs(slot.deliveryTime).format('ddd DD MMM, h:mm a'), value: slot.id })) || []}
+                value={selectedSlotId || ''}
+                onValueChange={val => setSelectedSlotId(Number(val))}
+                placeholder="Select Slot"
+              />
+            </View>
+          </>
+        }
+        
+      />
+    </View>
   );
 }

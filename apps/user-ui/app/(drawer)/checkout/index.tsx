@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import AddressForm from '@/src/components/AddressForm';
 import RazorpayCheckout from 'react-native-razorpay';
-import { useGetEligibleCoupons, EligibleCoupon } from '@/src/api-hooks/coupon.api';
+
 import { trpc } from '@/src/trpc-client';
 
 
@@ -58,7 +58,7 @@ export default function Checkout() {
   const { data: eligibleCouponsRaw } = trpc.user.coupon.getEligible.useQuery({
     orderAmount: totalAmount,
   });
-  const eligibleCoupons: EligibleCoupon[] = eligibleCouponsRaw?.data || [];
+  const eligibleCoupons = eligibleCouponsRaw?.data || [];
   //  const { data: eligibleCoupons } = useGetEligibleCoupons(totalAmount);
 
     const dropdownData = useMemo(() =>

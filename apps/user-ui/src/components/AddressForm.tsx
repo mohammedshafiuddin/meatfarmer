@@ -8,6 +8,7 @@ import { tw } from 'common-ui';
 import { Checkbox } from 'common-ui';
 import { MyTextInput } from 'common-ui';
 import axios from 'common-ui/src/services/axios';
+import { trpc } from '../trpc-client';
 
 interface AddressFormProps {
   onSuccess: () => void;
@@ -28,19 +29,7 @@ const AddressForm: React.FC<AddressFormProps> = ({ onSuccess, initialValues, isE
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  const createAddressMutation = useMutation({
-    mutationFn: async (values: any) => {
-      const response = await axios.post('/uv/address', values);
-      return response.data;
-    },
-    onSuccess: () => {
-      Alert.alert('Success', 'Address added successfully');
-      onSuccess();
-    },
-    onError: (error: any) => {
-      Alert.alert('Error', error.message || 'Failed to add address');
-    },
-  });
+  const createAddressMutation = trpc.user.address.createAddress.useMutation();
 
   const attachCurrentLocation = async (setFieldValue: (field: string, value: any) => void) => {
     setLocationLoading(true);
@@ -180,23 +169,6 @@ const AddressForm: React.FC<AddressFormProps> = ({ onSuccess, initialValues, isE
               value={values.pincode}
             />
             {touched.pincode && errors.pincode && <Text style={tw`text-red-500 mb-2`}>{errors.pincode}</Text>}
-
-            {/* Temporarily hidden - Attach Current Location button */}
-            {/* <TouchableOpacity
-              style={tw`bg-blue-500 p-3 rounded mb-2 ${locationLoading ? 'opacity-50' : ''}`}
-              onPress={() => attachCurrentLocation(setFieldValue)}
-              disabled={locationLoading}
-            >
-              <Text style={tw`text-white text-center font-medium`}>
-                {locationLoading ? '📍 Getting location...' : '📍 Attach Current Location'}
-              </Text>
-            </TouchableOpacity>
-
-            {locationError && (
-              <Text style={tw`text-red-500 text-sm mb-2 text-center`}>
-                {locationError}
-              </Text>
-            )} */}
 
             <View style={tw`flex-row items-center mb-4`}>
               <Checkbox

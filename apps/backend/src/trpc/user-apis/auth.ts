@@ -4,7 +4,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db/db_index';
-import { users, userCreds } from '../../db/schema';
+import { users, userCreds, userDetails } from '../../db/schema';
+import { generateSignedUrlFromS3Url } from '../../lib/s3-client';
 import { ApiError } from '../../lib/api-error';
 import catchAsync from '../../lib/catch-async';
 import { jwtSecret } from 'src/lib/env-exporter';
@@ -31,6 +32,10 @@ interface AuthResponse {
     mobile: string | null;
     createdAt: string;
     profileImage: string | null;
+    bio?: string | null;
+    dateOfBirth?: string | null;
+    gender?: string | null;
+    occupation?: string | null;
   };
 }
 
@@ -60,7 +65,7 @@ export const authRouter = router({
       const [user] = await db
         .select()
         .from(users)
-        .where(eq(users.email, identifier))
+        .where(eq(users.email, identifier.toLowerCase()))
         .limit(1);
 
       let foundUser = user;
@@ -90,6 +95,18 @@ export const authRouter = router({
         throw new ApiError('Account setup incomplete. Please contact support.', 401);
       }
 
+      // Get user details for profile image
+      const [userDetail] = await db
+        .select()
+        .from(userDetails)
+        .where(eq(userDetails.userId, foundUser.id))
+        .limit(1);
+
+      // Generate signed URL for profile image if it exists
+      const profileImageSignedUrl = userDetail?.profileImage
+        ? await generateSignedUrlFromS3Url(userDetail.profileImage)
+        : null;
+
       // Verify password
       const isPasswordValid = await bcrypt.compare(password, userCredentials.userPassword);
       if (!isPasswordValid) {
@@ -106,7 +123,11 @@ export const authRouter = router({
           email: foundUser.email,
           mobile: foundUser.mobile,
           createdAt: foundUser.createdAt.toISOString(),
-          profileImage: null,
+          profileImage: profileImageSignedUrl,
+          bio: userDetail?.bio || null,
+          dateOfBirth: userDetail?.dateOfBirth || null,
+          gender: userDetail?.gender || null,
+          occupation: userDetail?.occupation || null,
         },
       };
 

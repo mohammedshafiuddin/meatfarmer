@@ -1,4 +1,3 @@
-import {useAddPushToken, useHasPushToken } from "@/api-hooks/user.api";
 import React from "react";
 import { useNotification } from "./notif-context";
 import { BottomDialog } from "common-ui";
@@ -15,8 +14,10 @@ function NotifChecker(props: Props) {
   const [showPermissionDialog, setShowPermissionDialog] = React.useState(false);
 
   const {isLoggedIn} = useAuth();
-  const { data: hasPushToken, isLoading, isError } = useHasPushToken({enabled: isLoggedIn});
-  const { mutate: addPushToken } = useAddPushToken();
+  // const { data: hasPushToken, isLoading, isError } = useHasPushToken({enabled: isLoggedIn});
+  const hasPushToken = false;
+  // const { mutate: addPushToken } = useAddPushToken();
+  const addPushToken = (input:any) => {};
   const { notifPermission, expoPushToken } = useNotification();
   React.useEffect(() => {
     if(isLoggedIn && !hasPushToken && notifPermission =='granted') {

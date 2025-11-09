@@ -13,7 +13,6 @@ import { useRouter } from "expo-router";
     import { useGetAllProductsSummary } from "common-ui/src/common-api-hooks/product.api";
    import dayjs from "dayjs";
    import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useAddToCart } from "@/src/api-hooks/cart.api";
 import SearchBar from "common-ui/src/components/search-bar";
 import { trpc } from "@/src/trpc-client";
 
@@ -119,7 +118,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
        const { data: productsData, isLoading, error, refetch } = trpc.common.product.getAllProductsSummary.useQuery({ searchQuery });
        
        const products = productsData?.products || [];
-       const addToCart = useAddToCart();
+      const addToCart = trpc.user.cart.addToCart.useMutation();
     
      useManualRefresh(() => {
        refetch();
@@ -164,36 +163,29 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
   }
 
   return (
-    <AppContainer>
-      <View style={tw`flex-1 bg-gray1 `}>
-       {/* <View style={tw`items-center mb-5`}>
-         <ImageCarousel
-           urls={demoImages}
-           imageWidth={imageWidth}
-           imageHeight={imageHeight}
-         />
-       </View> */}
-         <View style={tw` pt-5 pb-3`}>
-           <SearchBar
-             value={inputQuery}
-             onChangeText={setInputQuery}
-             onSearch={() => setSearchQuery(inputQuery)}
-             placeholder="Search products..."
-             containerStyle={tw`mb-3`}
-           />
-           {searchQuery ? (
-             <Text style={tw`text-lg font-semibold mb-2`}>Results for "{searchQuery}"</Text>
-           ) : null}
-         </View>
-        <FlatList
-          data={products}
-          numColumns={2}
-          renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}
-          keyExtractor={(item, index) => index.toString()}
-          columnWrapperStyle={{ gap: 12 }} // horizontal gap between items
-          contentContainerStyle={{ gap: 12 }} // vertical gap
-        />
-      </View>
-    </AppContainer>
+    <View style={tw`flex-1 bg-gray1`}>
+      <FlatList
+        data={products}
+        numColumns={2}
+        renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}
+        keyExtractor={(item, index) => index.toString()}
+        columnWrapperStyle={{ gap: 12 }} // horizontal gap between items
+        contentContainerStyle={[tw`px-4`,{ gap: 12 }]} // vertical gap
+        ListHeaderComponent={
+          <View style={tw`pt-5 pb-3`}>
+            <SearchBar
+              value={inputQuery}
+              onChangeText={setInputQuery}
+              onSearch={() => setSearchQuery(inputQuery)}
+              placeholder="Search products..."
+              containerStyle={tw`mb-3`}
+            />
+            {searchQuery ? (
+              <Text style={tw`text-lg font-semibold mb-2`}>Results for "{searchQuery}"</Text>
+            ) : null}
+          </View>
+        }
+      />
+    </View>
   );
 }

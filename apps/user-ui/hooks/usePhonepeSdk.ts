@@ -1,9 +1,12 @@
-import { usePhonepeCreds } from '@/api-hooks/payment.api';
+
 import { useEffect } from 'react';
 import PhonePePaymentSDK from 'react-native-phonepe-pg';
 
 export function usePhonepeSdk() {
-  const { data: creds, isLoading, isError } = usePhonepeCreds();
+  // const { data: creds, isLoading, isError } = usePhonepeCreds();
+  const creds: any = {};
+  const isError = false;
+  const isLoading = false;
 
   useEffect(() => {
     if (creds && creds.clientId && creds.clientVersion) {
