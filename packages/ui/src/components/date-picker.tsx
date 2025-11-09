@@ -8,13 +8,12 @@ import React, { useState } from "react";
 import {
   Modal,
   Platform,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import MyText from "./text";
-import { useTheme } from "common-ui";
+import { useTheme, tw } from "common-ui";
 
 interface Props {
   value: Date | null;
@@ -49,28 +48,19 @@ function DatePicker(props: Props) {
   };
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity onPress={showDatepicker} style={styles.fullWidth}>
-        {showLabel && <MyText>{placeholder}</MyText>}
+    <View style={tw`justify-center items-start p-0  w-full`}>
+      <TouchableOpacity onPress={showDatepicker} style={tw`w-full`}>
+        {showLabel && <MyText style={tw`text-xs`}>{placeholder}</MyText>}
         <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            borderColor: theme.colors.gray1,
-            borderWidth: 0.5,
-            borderRadius: 4,
-            paddingVertical: 8,
-            paddingHorizontal: 8,
-            justifyContent: "space-between",
-          }}
+          style={[tw`flex-row items-center border border-gray5 rounded py-2 px-2 justify-between`]}
         >
-          <Text style={[styles.dateText, { opacity: value ? 1 : 0.5 }]}>
+          <Text style={[tw`text-sm font-medium text-gray-800 ml-1 mr-1`, { opacity: value ? 1 : 0.5 }]}>
             {value?.toLocaleDateString() || placeholder}
           </Text>
           <MaterialCommunityIcons
             name="calendar"
             size={24}
-            color={theme.colors.gray1}
+            color={theme.colors.gray5}
           />
         </View>
       </TouchableOpacity>
@@ -83,8 +73,8 @@ function DatePicker(props: Props) {
           visible={show}
           onRequestClose={() => setShow(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.pickerContainer}>
+          <View style={[tw`flex-1 justify-center items-center`, { backgroundColor: "rgba(0, 0, 0, 0.5)" }]}>
+            <View style={[tw`w-4/5 bg-white rounded-xl p-5`, { elevation: 5 }]}>
               <DateTimePicker
                 testID="dateTimePicker"
                 value={value || new Date()}
@@ -95,9 +85,9 @@ function DatePicker(props: Props) {
               />
               <TouchableOpacity
                 onPress={() => setShow(false)}
-                style={styles.doneButton}
+                style={tw`mt-2.5 bg-blue-500 rounded py-2.5 items-center`}
               >
-                <Text style={styles.doneButtonText}>Done</Text>
+                <Text style={tw`text-white font-bold`}>Done</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -108,47 +98,3 @@ function DatePicker(props: Props) {
 }
 
 export default DatePicker;
-
-const styles = StyleSheet.create({
-  container: {
-    justifyContent: "center",
-    alignItems: "flex-start",
-    padding: 0,
-    marginBottom: 16,
-    width: "100%",
-  },
-  fullWidth: {
-    width: "100%",
-  },
-  dateText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#333",
-    marginLeft: 2,
-    marginRight: 2,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  pickerContainer: {
-    width: "80%",
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 20,
-    elevation: 5,
-  },
-  doneButton: {
-    marginTop: 10,
-    backgroundColor: "#007bff",
-    borderRadius: 5,
-    padding: 10,
-    alignItems: "center",
-  },
-  doneButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-});

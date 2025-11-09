@@ -1,5 +1,5 @@
  import React from 'react';
- import { View, TouchableOpacity } from 'react-native';
+ import { View, TouchableOpacity, FlatList } from 'react-native';
  import { useRouter } from 'expo-router';
  import MaterialIcons from '@expo/vector-icons/MaterialIcons';
  import { AppContainer, MyText, tw } from 'common-ui';
@@ -52,27 +52,30 @@
          <MyText style={tw`text-3xl font-bold mb-2 text-center text-gray-800`}>Admin Dashboard</MyText>
          <MyText style={tw`text-base text-center text-gray-600 mb-8`}>Manage your meat farm operations</MyText>
 
-         <View style={tw`flex-row flex-wrap justify-between`}>
-           {menuItems.map((item, index) => (
-             <TouchableOpacity
-               key={index}
-               style={tw`w-[48%] ${item.color} p-4 rounded-2xl mb-4 shadow-lg ${index === 5 ? 'self-center' : ''}`}
-               onPress={item.onPress}
-             >
-               <View style={tw`items-center`}>
-                 <MaterialIcons
-                   name={item.icon as any}
-                   size={32}
-                   color="white"
-                   style={tw`mb-3`}
-                 />
-                 <MyText style={tw`text-white text-center text-lg font-semibold`}>
-                   {item.title}
-                 </MyText>
-               </View>
-             </TouchableOpacity>
-           ))}
-         </View>
+          <FlatList
+            data={menuItems}
+            numColumns={2}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={tw`${item.color} p-4 rounded-2xl mb-4 shadow-lg flex-1 mx-1`}
+                onPress={item.onPress}
+              >
+                <View style={tw`items-center`}>
+                  <MaterialIcons
+                    name={item.icon as any}
+                    size={32}
+                    color="white"
+                    style={tw`mb-3`}
+                  />
+                  <MyText style={tw`text-white text-center text-lg font-semibold`}>
+                    {item.title}
+                  </MyText>
+                </View>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item, index) => index.toString()}
+            columnWrapperStyle={tw`justify-between`}
+          />
        </View>
      </AppContainer>
    );

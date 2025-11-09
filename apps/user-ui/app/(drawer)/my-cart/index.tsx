@@ -184,24 +184,26 @@ export default function MyCart() {
                       )}
                     </View>
                   )}
-                 <Text style={tw`text-base font-bold`}>₹{item.product.price * (quantities[item.id] || item.quantity)}</Text>
-               </View>
-               <TouchableOpacity
-                 onPress={() => {
-                   removeFromCart.mutate(item.id, {
-                     onSuccess: () => {
-                       Alert.alert('Success', 'Item removed from cart');
-                       refetch();
-                     },
-                     onError: (error: any) => {
-                       Alert.alert('Error', error.message || 'Failed to remove item');
-                     },
-                   });
-                 }}
-                 style={tw`ml-2`}
-               >
-                 <MaterialIcons name="delete" size={20} color="#ef4444" />
-               </TouchableOpacity>
+                  <View style={tw`flex-row items-center`}>
+                    <Text style={tw`text-base font-bold`}>₹{item.product.price * (quantities[item.id] || item.quantity)}</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        removeFromCart.mutate(item.id, {
+                          onSuccess: () => {
+                            Alert.alert('Success', 'Item removed from cart');
+                            refetch();
+                          },
+                          onError: (error: any) => {
+                            Alert.alert('Error', error.message || 'Failed to remove item');
+                          },
+                        });
+                      }}
+                      style={tw`ml-2`}
+                    >
+                      <MaterialIcons name="delete" size={20} color="#ef4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
             </View>
           </View>
           )

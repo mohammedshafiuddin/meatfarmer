@@ -45,14 +45,14 @@ const MyTextInput: React.FC<MyTextInputProps> = ({
         style={[
           {
             borderRadius: 4,
-            backgroundColor: "transparent",
+            backgroundColor: theme.colors.gray2,
             borderColor: theme.colors.gray2,
             borderWidth: 1,
           },
           props.style,
         ]}
         underlineColor="transparent"
-        placeholderTextColor={theme.colors.gray2}
+        placeholderTextColor={theme.colors.gray5}
         activeUnderlineColor={"transparent"}
         selectionColor={theme.colors.blue1}
         cursorColor={theme.colors.blue1}

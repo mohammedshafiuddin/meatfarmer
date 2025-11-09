@@ -56,7 +56,7 @@ export default function AddProduct() {
     unitId: 0,
     price: '',
     marketPrice: '',
-    deals: [{ quantity: '', price: '' }],
+    deals: [{ quantity: '', price: '', validTill: new Date() }],
   };
 
   return (
@@ -66,6 +66,7 @@ export default function AddProduct() {
         initialValues={initialValues}
         onSubmit={handleSubmit}
         isLoading={isCreating}
+        existingImages={[]}
       />
     </AppContainer>
   );

@@ -16,6 +16,7 @@ export const colors = {
     gray2: '#f2f2f2',
     gray3: '#F5F5F5',
     gray4: '#6C7278',
+    gray5: '#ced4da',
     yellow1: '#FFB74D', 
     yellow2: '#FFE3AD',
     get error() { return this.red1; }, // alias, not hardcoded

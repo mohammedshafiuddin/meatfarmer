@@ -16,7 +16,7 @@ const TabViewWrapper: React.FC<TabViewWrapperProps> = (props) => {
       style={{ backgroundColor: theme.colors.white1 }}
       labelStyle={{ color: theme.colors.black1 }}
       activeColor={theme.colors.blue1}
-      inactiveColor={theme.colors.gray1}
+      inactiveColor={theme.colors.black1}
     />
   );
 

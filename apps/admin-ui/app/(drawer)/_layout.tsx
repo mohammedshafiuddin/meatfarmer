@@ -37,13 +37,13 @@ function CustomDrawerContent() {
           <MaterialIcons name="dashboard" size={size} color={color} />
         )}
       />
-       <DrawerItem
+       {/* <DrawerItem
          label="Add Product"
          onPress={() => router.push("/(drawer)/add-product" as any)}
          icon={({ color, size }) => (
            <MaterialIcons name="add" size={size} color={color} />
          )}
-       />
+       /> */}
        <DrawerItem
          label="Products"
          onPress={() => router.push("/(drawer)/products" as any)}
@@ -58,13 +58,13 @@ function CustomDrawerContent() {
            <MaterialIcons name="schedule" size={size} color={color} />
          )}
        />
-      <DrawerItem
+      {/* <DrawerItem
         label="Edit Product"
         onPress={() => router.push("/(drawer)/edit-product" as any)}
         icon={({ color, size }) => (
           <MaterialIcons name="edit" size={size} color={color} />
         )}
-      />
+      /> */}
       <DrawerItem
         label="Complaints"
         onPress={() => router.push("/(drawer)/complaints" as any)}

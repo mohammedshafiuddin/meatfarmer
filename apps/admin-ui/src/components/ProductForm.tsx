@@ -54,6 +54,8 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
 
   // Initialize existing images state when existingImages prop changes
   useEffect(() => {
+    console.log('changing existing imaes statte')
+    
     setExistingImagesState(existingImages);
   }, [existingImages]);
 
@@ -242,7 +244,7 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
 
                    <TouchableOpacity
                       onPress={() => push({ quantity: '', price: '', validTill: null })}
-                      style={tw`bg-green-500 p-4 rounded-2xl shadow-lg flex-row items-center justify-center mt-4`}
+                      style={tw`bg-green-500 px-4 py-2 rounded-lg shadow-lg flex-row items-center justify-center mt-4`}
                     >
                       <MaterialIcons name="add" size={20} color="white" />
                       <MyText style={tw`text-white font-bold text-lg ml-2`}>Add Package Deal</MyText>
@@ -254,7 +256,7 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
              <TouchableOpacity
                onPress={submit}
                disabled={isLoading}
-               style={tw`p-4 rounded-2xl shadow-lg items-center mt-6 ${isLoading ? 'bg-gray-400' : 'bg-blue-500'}`}
+               style={tw`px-4 py-2 rounded-lg shadow-lg items-center mt-2 ${isLoading ? 'bg-gray-400' : 'bg-blue-500'}`}
              >
               <MyText style={tw`text-white text-lg font-bold`}>
                 {isLoading ? (mode === 'create' ? 'Creating...' : 'Updating...') : (mode === 'create' ? 'Create Product' : 'Update Product')}
