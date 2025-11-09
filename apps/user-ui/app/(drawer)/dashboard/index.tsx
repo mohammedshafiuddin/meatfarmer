@@ -33,7 +33,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
   
   return (
      <TouchableOpacity
-       style={[tw`bg-white rounded-lg items-center shadow-md mb-3 mr-2.5`, { width: itemWidth }]}
+       style={[tw`flex-1 bg-white rounded-lg items-center shadow-md`,]}
         onPress={() => router.push(`/product-detail?id=${item.id}`)}
      >
         <Image
@@ -165,7 +165,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
 
   return (
     <AppContainer>
-      <View style={tw`flex-1 bg-gray1`}>
+      <View style={tw`flex-1 bg-gray1 `}>
        {/* <View style={tw`items-center mb-5`}>
          <ImageCarousel
            urls={demoImages}
@@ -173,7 +173,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
            imageHeight={imageHeight}
          />
        </View> */}
-         <View style={tw`px-5 pt-5 pb-3`}>
+         <View style={tw` pt-5 pb-3`}>
            <SearchBar
              value={inputQuery}
              onChangeText={setInputQuery}
@@ -188,9 +188,10 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
         <FlatList
           data={products}
           numColumns={2}
-            renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}
+          renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}
           keyExtractor={(item, index) => index.toString()}
-          contentContainerStyle={tw`px-5`}
+          columnWrapperStyle={{ gap: 12 }} // horizontal gap between items
+          contentContainerStyle={{ gap: 12 }} // vertical gap
         />
       </View>
     </AppContainer>

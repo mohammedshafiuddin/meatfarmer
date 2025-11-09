@@ -7,16 +7,20 @@ import { Quantifier } from 'common-ui';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useGetCart, useUpdateCartItem, useRemoveFromCart, useGetCartSlots } from '@/src/api-hooks/cart.api';
 import dayjs from 'dayjs';
+import { trpc } from '@/src/trpc-client';
 // import { useGetCart, useUpdateCartItem, useRemoveFromCart } from '../../src/api-hooks/cart.api';
 
 
 export default function MyCart() {
   const [checkedProducts, setCheckedProducts] = useState<Record<number, boolean>>({});
-  const { data: cartData, isLoading, error, refetch } = useGetCart();
-  const { data: slotsData, refetch: refetchSlots } = useGetCartSlots();
+  const { data: cartData, isLoading, error, refetch } = trpc.user.cart.getCart.useQuery(undefined, {
+    refetchOnWindowFocus: true,
+  });
+  const { data: slotsData, refetch: refetchSlots } = trpc.user.cart.getCartSlots.useQuery();
+  const updateCartItem = trpc.user.cart.updateCartItem.useMutation();
+  const removeFromCart = trpc.user.cart.removeFromCart.useMutation();
+
   
-  const updateCartItem = useUpdateCartItem();
-  const removeFromCart = useRemoveFromCart();
 
   useManualRefresh(() => { refetch(); refetchSlots(); });
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
