@@ -1,4 +1,3 @@
-// import { useTheme } from "@/hooks/theme-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import DateTimePicker, {
   AndroidNativeProps,
@@ -9,13 +8,12 @@ import React, { useState } from "react";
 import {
   Modal,
   Platform,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 
-import { useTheme } from "../../hooks/theme-context";
+import { useTheme, tw } from "common-ui";
 import MyText from './text';
 
 interface Props {
@@ -62,24 +60,12 @@ function DateTimePickerMod(props: Props) {
   const { theme } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={tw`justify-center items-start p-0 w-full mb-4`}>
       {timeOnly ? (
-        <TouchableOpacity onPress={showTimepicker}>
-          {showLabels && <MyText>Select Time</MyText>}
-          <View
-            style={{
-              borderColor: theme.colors.gray1,
-              borderWidth: 0.5,
-              borderRadius: 4,
-              paddingVertical: 4,
-              paddingHorizontal: 4,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 4,
-            }}
-          >
-            <Text style={[styles.timeText, { opacity: value ? 1 : 0.5 }]}>
+        <TouchableOpacity onPress={showTimepicker} style={tw`w-full`}>
+          {showLabels && <MyText style={tw`text-xs`}>Select Time</MyText>}
+          <View style={tw`flex-row items-center border border-gray5 rounded py-1 px-1 justify-between gap-1`}>
+            <Text style={[tw`text-sm font-medium text-gray-800 ml-0.5 mr-0.5`, { opacity: value ? 1 : 0.5 }]}>
               {value?.toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -88,63 +74,34 @@ function DateTimePickerMod(props: Props) {
             <MaterialCommunityIcons
               name="clock"
               size={24}
-              color={theme.colors.gray1}
+              color={theme.colors.gray5}
             />
           </View>
         </TouchableOpacity>
       ) : (
-        <View
-          style={{ width: "100%", flexDirection: "row", alignItems: "stretch" }}
-        >
+        <View style={tw`w-full flex-row items-stretch`}>
           <TouchableOpacity
             onPress={showDatepicker}
-            style={{
-              width: "50%",
-            }}
+            style={tw`w-1/2`}
           >
-            {showLabels && <MyText>Select Date</MyText>}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                borderColor: theme.colors.gray1,
-                borderWidth: 0.5,
-                borderRadius: 4,
-                paddingVertical: 4,
-                paddingHorizontal: 4,
-                justifyContent: "space-between",
-              }}
-            >
-              <Text style={[styles.dateText, { opacity: value ? 1 : 0.5 }]}>{value?.toLocaleDateString() || "Select Date"}</Text>
+            {showLabels && <MyText style={tw`text-xs`}>Select Date</MyText>}
+            <View style={tw`flex-row items-center border border-gray5 rounded py-1 px-1 justify-between`}>
+              <Text style={[tw`text-sm font-medium text-gray-800 ml-0.5 mr-0.5`, { opacity: value ? 1 : 0.5 }]}>{value?.toLocaleDateString() || "Select Date"}</Text>
               <MaterialCommunityIcons
                 name="calendar"
                 size={24}
-                color={theme.colors.gray1}
+                color={theme.colors.gray5}
               />
             </View>
           </TouchableOpacity>
-          <View style={styles.spacerHorizontalSmall} />
+          <View style={tw`w-2`} />
           <TouchableOpacity
             onPress={showTimepicker}
-            style={{
-              width: "50%",
-            }}
+            style={tw`w-1/2`}
           >
-            {showLabels && <MyText>Select Time</MyText>}
-            <View
-              style={{
-                borderColor: theme.colors.gray1,
-                borderWidth: 0.5,
-                borderRadius: 4,
-                paddingVertical: 4,
-                paddingHorizontal: 4,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 4,
-              }}
-            >
-              <Text style={[styles.timeText, { opacity: value ? 1 : 0.5 }]}>
+            {showLabels && <MyText style={tw`text-xs`}>Select Time</MyText>}
+            <View style={tw`flex-row items-center border border-gray5 rounded py-1 px-1 justify-between gap-1`}>
+              <Text style={[tw`text-sm font-medium text-gray-800 ml-0.5 mr-0.5`, { opacity: value ? 1 : 0.5 }]}>
                 {value?.toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -153,7 +110,7 @@ function DateTimePickerMod(props: Props) {
               <MaterialCommunityIcons
                 name="clock"
                 size={24}
-                color={theme.colors.gray1}
+                color={theme.colors.gray5}
               />
             </View>
           </TouchableOpacity>
@@ -167,8 +124,8 @@ function DateTimePickerMod(props: Props) {
           visible={show}
           onRequestClose={() => setShow(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.pickerContainer}>
+          <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+            <View style={[tw`w-4/5 bg-white rounded-xl p-5`, { elevation: 5 }]}>
               <DateTimePicker
                 testID="dateTimePicker"
                 value={value || new Date()}
@@ -179,9 +136,9 @@ function DateTimePickerMod(props: Props) {
               />
               <TouchableOpacity
                 onPress={() => setShow(false)}
-                style={styles.doneButton}
+                style={tw`mt-2.5 bg-blue-500 rounded py-2.5 items-center`}
               >
-                <Text style={styles.doneButtonText}>Done</Text>
+                <Text style={tw`text-white font-bold`}>Done</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -193,87 +150,4 @@ function DateTimePickerMod(props: Props) {
 
 export default DateTimePickerMod;
 
-const styles = StyleSheet.create({
-  container: {
-    // flex: 1, // Remove flex to avoid taking up extra space
-    justifyContent: "center",
-    alignItems: "flex-start",
-    padding: 0, // Reduce padding for compactness
-    marginBottom: 16, // Add margin for spacing in forms
-  },
-  iconRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  iconRowSingleLine: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 0,
-  },
-  iconNoBg: {
-    backgroundColor: "transparent",
-    borderRadius: 0,
-    padding: 0,
-    elevation: 0,
-  },
-  spacerHorizontal: {
-    width: 30,
-  },
-  spacerHorizontalSmall: {
-    width: 8,
-  },
-  spacer: {
-    height: 20, // Add some space between buttons
-  },
-  selectedText: {
-    marginTop: 30,
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  timeTextContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  timeText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#333",
-    marginLeft: 2,
-  },
-  dateText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#333",
-    marginLeft: 2,
-    marginRight: 2,
-  },
 
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  pickerContainer: {
-    width: "80%",
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 20,
-    elevation: 5,
-  },
-  doneButton: {
-    marginTop: 10,
-    backgroundColor: "#007bff",
-    borderRadius: 5,
-    padding: 10,
-    alignItems: "center",
-  },
-  doneButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-});

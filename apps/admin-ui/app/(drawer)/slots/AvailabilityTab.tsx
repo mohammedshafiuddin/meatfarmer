@@ -1,14 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { AppContainer, useFocusCallback, useManualRefresh } from 'common-ui';
+import { AppContainer, theme, tw, useFocusCallback, useManualRefresh } from 'common-ui';
 import dayjs from 'dayjs';
 import { trpc } from '../../../src/trpc-client';
 import BottomDropdown, { DropdownOption } from 'common-ui/src/components/bottom-dropdown';
+import { FlatList } from 'react-native';
 
 export default function AvailabilityTab() {
   // Fetch data
   const { data: slotsData, isFetching: slotsLoading, refetch: refetchSlots } = trpc.admin.slots.getAll.useQuery();
-  const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = trpc.common.product.getAllProductsSummary.useQuery();
+  const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = trpc.common.product.getAllProductsSummary.useQuery({});
   
   useManualRefresh(() => { refetchSlots(); refetchProducts(); });
 
@@ -98,49 +99,54 @@ export default function AvailabilityTab() {
   }
 
   return (
-    <AppContainer>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>Manage Product Availability</Text>
+    <View style={[tw`px-6 pt-4 bg-white`,{ flex: 1 }]}>
 
-        {sortedSlots.map(slot => (
-          <View key={slot.id} style={{ marginBottom: 24, padding: 16, backgroundColor: '#f9f9f9', borderRadius: 8 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>
-              {dayjs(slot.deliveryTime).format('ddd DD MMM, h a')}
-            </Text>
-            <Text style={{ marginBottom: 12, color: '#666' }}>
-              Freeze Time: {dayjs(slot.freezeTime).format('ddd DD MMM, h a')} | Active: {slot.isActive ? 'Yes' : 'No'}
-            </Text>
-
-            <Text style={{ fontSize: 16, marginBottom: 8 }}>Select Products:</Text>
-            <BottomDropdown
-              label="Select Products"
-              options={productOptions}
-              value={selectedProducts[slot.id] || []}
-              onValueChange={(values) => handleProductChange(slot.id, values as string[])}
-              placeholder="Select products for this slot"
-              multiple={true}
-            />
-
-            <TouchableOpacity
-              onPress={() => handleSaveSlot(slot.id)}
-              disabled={isUpdatingSlotProducts}
-              style={{
-                marginTop: 12,
-                padding: 12,
-                backgroundColor: isUpdatingSlotProducts ? '#ccc' : '#007AFF',
-                borderRadius: 8,
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{ color: 'white', fontWeight: 'bold' }}>
-                {isUpdatingSlotProducts ? 'Saving...' : 'Save Changes'}
+        <FlatList
+          data={sortedSlots}
+          keyExtractor={(item) => item.id.toString()}
+          ListHeaderComponent={() => (
+            <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>Manage Product Availability</Text>
+          )}
+          renderItem={({ item: slot }) => (
+            <View style={{ marginBottom: 24, backgroundColor: '#f9f9f9', borderRadius: 8 }}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>
+                {dayjs(slot.deliveryTime).format('ddd DD MMM, h a')}
               </Text>
-            </TouchableOpacity>
-          </View>
-        ))}
+              <Text style={{ marginBottom: 12, color: '#666' }}>
+                Freeze Time: {dayjs(slot.freezeTime).format('ddd DD MMM, h a')} | Active: {slot.isActive ? 'Yes' : 'No'}
+              </Text>
 
-        {sortedSlots.length === 0 && (
-          <Text style={{ textAlign: 'center', marginTop: 32 }}>No slots available</Text>
-        )}
-    </AppContainer>
+              <Text style={{ fontSize: 16, marginBottom: 8 }}>Select Products:</Text>
+              <BottomDropdown
+                label="Select Products"
+                options={productOptions}
+                value={selectedProducts[slot.id] || []}
+                onValueChange={(values) => handleProductChange(slot.id, values as string[])}
+                placeholder="Select products for this slot"
+                multiple={true}
+              />
+
+              <TouchableOpacity
+                onPress={() => handleSaveSlot(slot.id)}
+                disabled={isUpdatingSlotProducts}
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  backgroundColor: isUpdatingSlotProducts ? '#ccc' : theme.colors.pink1,
+                  borderRadius: 8,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                  {isUpdatingSlotProducts ? 'Saving...' : 'Save Changes'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 32 }}>No slots available</Text>}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={tw`bg-white`}
+        />
+    </View>
   );
 }

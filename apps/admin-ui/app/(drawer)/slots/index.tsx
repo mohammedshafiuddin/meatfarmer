@@ -21,7 +21,6 @@ export default function SlotsPage() {
   });
 
   return (
-    <AppContainer>
       <View style={{ flex: 1 }}>
       <TabViewWrapper
         navigationState={{ index, routes }}
@@ -30,6 +29,5 @@ export default function SlotsPage() {
         initialLayout={initialLayout}
       />
     </View>
-  </AppContainer>
   );
 }

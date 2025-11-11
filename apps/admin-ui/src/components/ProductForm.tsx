@@ -84,7 +84,7 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
       initialValues={initialValues}
       onSubmit={(values) => onSubmit(values, images, deletedImages)}
     >
-      {({ handleChange, handleSubmit, values }) => {
+      {({ handleChange, handleSubmit, values, setFieldValue }) => {
         const submit = () => handleSubmit();
 
         return (
@@ -151,7 +151,8 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
               label="Unit"
               value={values.unitId}
               options={unitOptions}
-              onValueChange={(value) => handleChange('unitId')(value+'')}
+              // onValueChange={(value) => handleChange('unitId')(value+'')}
+              onValueChange={(value) => setFieldValue('unitId', value)}
               placeholder="Select unit"
               style={{ marginBottom: 16 }}
             />

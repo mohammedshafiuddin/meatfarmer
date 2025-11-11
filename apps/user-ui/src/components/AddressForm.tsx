@@ -7,7 +7,6 @@ import * as Location from 'expo-location';
 import { tw } from 'common-ui';
 import { Checkbox } from 'common-ui';
 import { MyTextInput } from 'common-ui';
-import axios from 'common-ui/src/services/axios';
 import { trpc } from '../trpc-client';
 
 interface AddressFormProps {

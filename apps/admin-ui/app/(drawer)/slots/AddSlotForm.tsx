@@ -97,7 +97,7 @@ export default function AddSlotForm({
       <TouchableOpacity
         onPress={handleSubmit}
         disabled={isPending}
-        style={tw`${isPending ? 'bg-gray-300' : 'bg-blue-500'} p-3 rounded-lg items-center mt-6 pb-4`}
+        style={tw`${isPending ? 'bg-pink2' : 'bg-pink1'} p-3 rounded-lg items-center mt-6 pb-4`}
       >
         <Text style={tw`text-white text-base font-bold`}>
           {isPending ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Slot' : 'Add Slot')}

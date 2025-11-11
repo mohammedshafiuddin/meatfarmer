@@ -20,12 +20,11 @@ export default function AddRemoveTab() {
           setEditingSlot(null);
           setIsDialogOpen(true);
         }}
-        style={tw`bg-blue-500 p-3 rounded-lg items-center mb-6`}
+        style={tw`bg-pink1 p-3 rounded-lg items-center mb-6`}
       >
         <Text style={tw`text-white text-base font-bold`}>Add a new slot</Text>
       </TouchableOpacity>
 
-      <Text style={tw`text-xl font-bold mb-4`}>Available Slots</Text>
       {isLoading ? (
         <Text style={tw`text-gray-600`}>Loading slots...</Text>
       ) : error ? (
