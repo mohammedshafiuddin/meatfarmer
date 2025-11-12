@@ -27,7 +27,7 @@ interface AuthResponse {
   token: string;
   user: {
     id: number;
-    name: string;
+    name?: string | null;
     email: string | null;
     mobile: string | null;
     createdAt: string;
@@ -256,13 +256,22 @@ export const authRouter = router({
       }
 
       // Find user
-      const user = await db.query.users.findFirst({
+      let user = await db.query.users.findFirst({
         where: eq(users.mobile, input.mobile),
       });
 
-      if (!user) {
-        throw new ApiError("User not found", 404);
-      }
+       // If user doesn't exist, create one
+       if (!user) {
+         const [newUser] = await db
+           .insert(users)
+           .values({
+             name: null,
+             email: null,
+             mobile: input.mobile,
+           })
+           .returning();
+         user = newUser;
+       }
 
       // Generate JWT
       const token = generateToken(user.id);

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { tw, AppContainer, BottomDialog, MyButton, MyText, SearchBar } from 'common-ui';
+import { tw, AppContainer, BottomDialog, MyButton, MyText, SearchBar, MyFlatList } from 'common-ui';
 import useManualRefresh from 'common-ui/hooks/useManualRefresh';
 import { CreateCouponPayload, Coupon } from 'common-ui/shared-types';
 import CouponForm from '../../../src/components/CouponForm';
@@ -187,7 +187,7 @@ export default function Coupons() {
            </View>
          </MyButton>
        </View>
-       <FlatList
+        <MyFlatList
          data={filteredCoupons}
          keyExtractor={(item) => item.id.toString()}
          renderItem={renderCoupon}

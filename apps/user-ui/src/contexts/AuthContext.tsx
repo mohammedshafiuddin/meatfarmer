@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getAuthToken, saveAuthToken, deleteAuthToken, saveUserId, getUserId } from '../../hooks/useJWT';
 import { getCurrentUserId } from '@/utils/getCurrentUserId';
-import { useLogin, useRegister } from '@/src/api-hooks/auth.api';
+import { useRegister } from '@/src/api-hooks/auth.api';
 import { AuthState, AuthContextType, LoginCredentials, RegisterData, User, UserDetails } from '@/src/types/auth';
 import { trpc } from '@/src/trpc-client';
 
@@ -150,7 +150,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setAuthState({
         user: {
           id: user.id,
-          name: user.name,
+          name: user.name || null,
           email: user.email,
           mobile: user.mobile,
           profileImage: user.profileImage,

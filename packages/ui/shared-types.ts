@@ -7,7 +7,7 @@ export type Person = {
 
 export interface User {
   id: number;
-  name: string;
+  name?: string | null;
   email: string;
   mobile: string;
   profilePicUrl?: string;

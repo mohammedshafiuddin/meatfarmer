@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, Alert } from "react-native";
-import { tw, ConfirmationDialog, MyText } from "common-ui";
+import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { tw, ConfirmationDialog, MyText, MyFlatList } from "common-ui";
 import { usePagination } from "../../../hooks/usePagination";
-import { AppContainer } from "common-ui";
 import { trpc } from "@/src/trpc-client";
 
 export default function Complaints() {
@@ -48,32 +47,30 @@ export default function Complaints() {
     );
   };
 
-   if (isLoading) {
-     return (
-       <AppContainer>
-         <View style={tw`flex-1 justify-center items-center`}>
-           <MyText style={tw`text-gray-600`}>Loading complaints...</MyText>
-         </View>
-       </AppContainer>
-     );
-   }
+    if (isLoading) {
+      return (
+        <View style={tw`flex-1 justify-center items-center`}>
+          <MyText style={tw`text-gray-600`}>Loading complaints...</MyText>
+        </View>
+      );
+    }
 
-   if (error) {
-     return (
-       <AppContainer>
-         <View style={tw`flex-1 justify-center items-center`}>
-           <MyText style={tw`text-red-600`}>Error loading complaints</MyText>
-         </View>
-       </AppContainer>
-     );
-   }
+    if (error) {
+      return (
+        <View style={tw`flex-1 justify-center items-center`}>
+          <MyText style={tw`text-red-600`}>Error loading complaints</MyText>
+        </View>
+      );
+    }
 
-  return (
-    <AppContainer>
-      <FlatList
-        data={complaints}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
+   return (
+     <View style={tw`flex-1`}>
+       <MyFlatList
+         style={tw`flex-1 bg-white`}
+         contentContainerStyle={tw`px-4 pb-6`}
+         data={complaints}
+         keyExtractor={(item) => item.id.toString()}
+         renderItem={({ item }) => (
            <View style={tw`bg-white p-4 mb-4 rounded-2xl shadow-lg`}>
              <MyText style={tw`text-lg font-bold mb-2 text-gray-800`}>Complaint #{item.id}</MyText>
              <MyText style={tw`text-base mb-2 text-gray-700`}>{item.text}</MyText>
@@ -121,22 +118,22 @@ export default function Complaints() {
            <View style={tw`flex-1 justify-center items-center py-10`}>
              <MyText style={tw`text-gray-500 text-center`}>No complaints found</MyText>
            </View>
-         }
-      />
-      <PaginationComponent totalCount={totalCount} />
-      <ConfirmationDialog
-        open={dialogOpen}
-        positiveAction={handleConfirmResolve}
-        commentNeeded={true}
-        negativeAction={() => {
-          setDialogOpen(false);
-          setSelectedComplaintId(null);
-        }}
-        title="Mark as Resolved"
-        message="Add admin notes for this resolution:"
-        confirmText="Resolve"
-        cancelText="Cancel"
-      />
-    </AppContainer>
+          }
+       />
+       <PaginationComponent totalCount={totalCount} />
+       <ConfirmationDialog
+         open={dialogOpen}
+         positiveAction={handleConfirmResolve}
+         commentNeeded={true}
+         negativeAction={() => {
+           setDialogOpen(false);
+           setSelectedComplaintId(null);
+         }}
+         title="Mark as Resolved"
+         message="Add admin notes for this resolution:"
+         confirmText="Resolve"
+         cancelText="Cancel"
+       />
+     </View>
   );
 }

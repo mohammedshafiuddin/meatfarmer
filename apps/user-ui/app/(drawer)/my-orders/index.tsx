@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, Image, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Entypo, MaterialIcons } from '@expo/vector-icons';
-import { tw, useManualRefresh, MyText, AppContainer } from 'common-ui';
+import { tw, useManualRefresh, MyText, MyFlatList } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 
 import { trpc } from '@/src/trpc-client';
@@ -320,94 +320,92 @@ export default function MyOrders() {
 
   if (isLoading) {
     return (
-      <AppContainer>
-        <View style={tw`flex-1 justify-center items-center`}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <MyText style={tw`text-gray-600 mt-4`}>Loading your orders...</MyText>
-        </View>
-      </AppContainer>
+      <View style={tw`flex-1 justify-center items-center`}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <MyText style={tw`text-gray-600 mt-4`}>Loading your orders...</MyText>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <AppContainer>
-        <View style={tw`flex-1 justify-center items-center`}>
-          <MaterialIcons name="error-outline" size={48} color="#EF4444" />
-          <MyText style={tw`text-gray-800 text-lg font-semibold mt-4`}>Unable to load orders</MyText>
-          <MyText style={tw`text-gray-600 text-center mt-2`}>Please check your connection and try again</MyText>
-          <TouchableOpacity
-            onPress={() => refetch()}
-            style={tw`bg-blue-500 px-6 py-3 rounded-lg mt-4`}
-          >
-            <MyText style={tw`text-white font-semibold`}>Retry</MyText>
-          </TouchableOpacity>
-        </View>
-      </AppContainer>
+      <View style={tw`flex-1 justify-center items-center`}>
+        <MaterialIcons name="error-outline" size={48} color="#EF4444" />
+        <MyText style={tw`text-gray-800 text-lg font-semibold mt-4`}>Unable to load orders</MyText>
+        <MyText style={tw`text-gray-600 text-center mt-2`}>Please check your connection and try again</MyText>
+        <TouchableOpacity
+          onPress={() => refetch()}
+          style={tw`bg-blue-500 px-6 py-3 rounded-lg mt-4`}
+        >
+          <MyText style={tw`text-white font-semibold`}>Retry</MyText>
+        </TouchableOpacity>
+      </View>
     );
   }
 
 
 
   return (
-    <AppContainer>
-      <View style={tw`flex-1`}>
+    <View style={tw`flex-1`}>
 
-        <FlatList
-          style={tw`flex-1`}
-          contentContainerStyle={tw` pb-6`}
-          data={orders}
-          renderItem={({ item }) => renderOrder({ item })}
-          keyExtractor={(item) => item.orderId}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={tw`flex-1 justify-center items-center py-12`}>
-              <MaterialIcons name="shopping-bag" size={64} color="#D1D5DB" />
-              <MyText style={tw`text-gray-500 text-lg font-semibold mt-4`}>No orders yet</MyText>
-              <MyText style={tw`text-gray-400 text-center mt-2`}>Your order history will appear here</MyText>
-            </View>
-          }
-        />
+      <MyFlatList
+        style={tw`flex-1 bg-white`}
+        contentContainerStyle={tw`px-4 pb-6`}
+        data={orders}
+        renderItem={({ item }) => renderOrder({ item })}
+        keyExtractor={(item) => item.orderId}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={tw`flex-1 justify-center items-center py-12`}>
+            <MaterialIcons name="shopping-bag" size={64} color="#D1D5DB" />
+            <MyText style={tw`text-gray-500 text-lg font-semibold mt-4`}>No orders yet</MyText>
+            <MyText style={tw`text-gray-400 text-center mt-2`}>Your order history will appear here</MyText>
+          </View>
+        }
+      />
 
         {/* Menu Dialog */}
         <BottomDialog open={menuDialogOpen} onClose={() => setMenuDialogOpen(false)}>
           <View style={tw`p-6`}>
             <MyText style={tw`text-xl font-bold text-gray-800 mb-6`}>Order Options</MyText>
-            <View style={tw`space-y-4`}>
-              <TouchableOpacity
-                style={tw`bg-blue-50 p-4 rounded-lg`}
-                onPress={() => {
-                  const order = orders.find(o => o.orderId === menuOrderId);
-                  if (order) {
-                    setEditNotes(order.userNotes || '');
-                    setEditNotesOrderId(menuOrderId);
-                    setEditNotesDialogOpen(true);
-                  }
-                }}
-              >
-                <MyText style={tw`text-blue-700 font-medium`}>Edit Notes</MyText>
-              </TouchableOpacity>
+             <View style={tw`space-y-4`}>
+               <TouchableOpacity
+                 style={tw`px-4 py-3 border-b border-gray-200 flex-row items-center`}
+                 onPress={() => {
+                   const order = orders.find(o => o.orderId === menuOrderId);
+                   if (order) {
+                     setEditNotes(order.userNotes || '');
+                     setEditNotesOrderId(menuOrderId);
+                     setEditNotesDialogOpen(true);
+                   }
+                 }}
+               >
+                 <MaterialIcons name="edit" size={20} color="#6B7280" style={tw`mr-3`} />
+                 <MyText style={tw`text-gray-800 font-medium`}>Edit Notes</MyText>
+               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={tw`bg-yellow-50 p-4 rounded-lg`}
-                onPress={() => {
-                  setComplaintOrderId(menuOrderId);
-                  setComplaintDialogOpen(true);
-                }}
-              >
-                <MyText style={tw`text-yellow-700 font-medium`}>Raise Complaint</MyText>
-              </TouchableOpacity>
+               <TouchableOpacity
+                 style={tw`px-4 py-3 border-b border-gray-200 flex-row items-center`}
+                 onPress={() => {
+                   setComplaintOrderId(menuOrderId);
+                   setComplaintDialogOpen(true);
+                 }}
+               >
+                 <MaterialIcons name="report-problem" size={20} color="#6B7280" style={tw`mr-3`} />
+                 <MyText style={tw`text-gray-800 font-medium`}>Raise Complaint</MyText>
+               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={tw`bg-red-50 p-4 rounded-lg`}
-                onPress={() => {
-                  setCancelOrderId(menuOrderId);
-                  setCancelDialogOpen(true);
-                }}
-              >
-                <MyText style={tw`text-red-700 font-medium`}>Cancel Order</MyText>
-              </TouchableOpacity>
-            </View>
+               <TouchableOpacity
+                 style={tw`px-4 py-3 border-b border-gray-200 flex-row items-center`}
+                 onPress={() => {
+                   setCancelOrderId(menuOrderId);
+                   setCancelDialogOpen(true);
+                 }}
+               >
+                 <MaterialIcons name="cancel" size={20} color="#6B7280" style={tw`mr-3`} />
+                 <MyText style={tw`text-gray-800 font-medium`}>Cancel Order</MyText>
+               </TouchableOpacity>
+             </View>
           </View>
         </BottomDialog>
 
@@ -511,7 +509,6 @@ export default function MyOrders() {
             </View>
           </View>
         </BottomDialog>
-      </View>
-    </AppContainer>
+    </View>
   );
 }

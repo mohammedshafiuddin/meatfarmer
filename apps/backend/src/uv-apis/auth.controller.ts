@@ -33,7 +33,7 @@ interface AuthResponse {
   token: string;
   user: {
     id: number;
-    name: string;
+    name: string | null;
     email: string | null;
     mobile: string | null;
     profileImage?: string | null;

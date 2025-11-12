@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Slot } from 'common-ui/shared-types';
 import dayjs from 'dayjs';
-import { tw, BottomDialog } from 'common-ui';
+import { tw, BottomDialog, MyFlatList } from 'common-ui';
 import AddSlotForm from './AddSlotForm';
 import { trpc } from '@/src/trpc-client';
 
@@ -14,7 +14,7 @@ export default function AddRemoveTab() {
   const { mutate: deleteSlot, isPending: isDeleting } = trpc.admin.slots.deleteSlot.useMutation();
 
   return (
-    <View style={tw`p-4`}>
+    <View style={tw`p-4 flex-1`}>
       <TouchableOpacity
         onPress={() => {
           setEditingSlot(null);
@@ -30,7 +30,7 @@ export default function AddRemoveTab() {
       ) : error ? (
         <Text style={tw`text-red-600`}>Error loading slots: {error.message}</Text>
       ) : (
-        <FlatList
+        <MyFlatList
           data={data?.slots || []}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (

@@ -188,15 +188,16 @@ export const cartRouter = router({
         .select({ productId: cartItems.productId })
         .from(cartItems)
         .where(eq(cartItems.userId, userId));
-
-      if (cartProductIds.length === 0) {
-        return {};
-      }
-
-      const productIds = cartProductIds.map(item => item.productId);
-
-      // Get slots for these products where freeze time is after current time
-      const slotsData = await db
+      
+        
+        if (cartProductIds.length === 0) {
+          return {};
+        }
+        
+        const productIds = cartProductIds.map(item => item.productId);
+        
+        // Get slots for these products where freeze time is after current time
+        const slotsData = await db
         .select({
           productId: productSlots.productId,
           slotId: deliverySlotInfo.id,
@@ -211,7 +212,8 @@ export const cartRouter = router({
           gt(deliverySlotInfo.freezeTime, sql`NOW()`),
           eq(deliverySlotInfo.isActive, true)
         ));
-
+        
+        console.log({cartProductIds, slotsData})
       // Group by productId
       const result: Record<number, any[]> = {};
       slotsData.forEach(slot => {

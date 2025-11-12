@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."users" ALTER COLUMN "name" DROP NOT NULL;

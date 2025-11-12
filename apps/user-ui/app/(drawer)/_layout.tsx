@@ -201,6 +201,18 @@ function CustomDrawerContent() {
           }}
         />
         <Drawer.Screen
+          name="my-orders"
+          options={{
+            title: "My Orders",
+          }}
+        />
+        <Drawer.Screen
+          name="complaints"
+          options={{
+            title: "Complaints",
+          }}
+        />
+        <Drawer.Screen
           name="checkout"
           options={{
             title: "Checkout",

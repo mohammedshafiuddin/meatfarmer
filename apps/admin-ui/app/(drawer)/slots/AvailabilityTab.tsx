@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { AppContainer, theme, tw, useFocusCallback, useManualRefresh } from 'common-ui';
+import { AppContainer, theme, tw, useFocusCallback, useManualRefresh, MyFlatList } from 'common-ui';
 import dayjs from 'dayjs';
 import { trpc } from '../../../src/trpc-client';
 import BottomDropdown, { DropdownOption } from 'common-ui/src/components/bottom-dropdown';
-import { FlatList } from 'react-native';
+
 
 export default function AvailabilityTab() {
   // Fetch data
@@ -101,7 +101,7 @@ export default function AvailabilityTab() {
   return (
     <View style={[tw`px-6 pt-4 bg-white`,{ flex: 1 }]}>
 
-        <FlatList
+        <MyFlatList
           data={sortedSlots}
           keyExtractor={(item) => item.id.toString()}
           ListHeaderComponent={() => (

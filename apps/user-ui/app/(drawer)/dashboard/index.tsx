@@ -2,14 +2,13 @@ import React, { useState } from "react";
 import {
   View,
   Dimensions,
-  FlatList,
   Image,
   Text,
   TouchableOpacity,
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-  import { ImageCarousel, theme, tw, useManualRefresh, AppContainer } from "common-ui";
+  import { ImageCarousel, theme, tw, useManualRefresh, AppContainer, MyFlatList } from "common-ui";
     import { useGetAllProductsSummary } from "common-ui/src/common-api-hooks/product.api";
    import dayjs from "dayjs";
    import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -164,7 +163,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
 
   return (
     <View style={tw`flex-1 bg-gray1`}>
-      <FlatList
+      <MyFlatList
         data={products}
         numColumns={2}
         renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}

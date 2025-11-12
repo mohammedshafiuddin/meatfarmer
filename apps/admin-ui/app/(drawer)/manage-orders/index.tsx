@@ -1,5 +1,5 @@
-import { View, TouchableOpacity, FlatList } from 'react-native';
-import { AppContainer, MyText, BottomDropdown, tw } from 'common-ui';
+import { View, TouchableOpacity } from 'react-native';
+import { AppContainer, MyText, BottomDropdown, tw, MyFlatList } from 'common-ui';
 import { useRouter } from 'expo-router';
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
@@ -56,7 +56,7 @@ export default function ManageOrders() {
 
   return (
     <View style={tw`flex-1`}>
-      <FlatList
+      <MyFlatList
         data={menuItems}
         numColumns={2}
         renderItem={({ item }) => (

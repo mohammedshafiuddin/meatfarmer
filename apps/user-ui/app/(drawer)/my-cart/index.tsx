@@ -17,6 +17,8 @@ export default function MyCart() {
     refetchOnWindowFocus: true,
   });
   const { data: slotsData, refetch: refetchSlots } = trpc.user.cart.getCartSlots.useQuery();
+  console.log({slotsData})
+  
   const updateCartItem = trpc.user.cart.updateCartItem.useMutation();
   const removeFromCart = trpc.user.cart.removeFromCart.useMutation();
 

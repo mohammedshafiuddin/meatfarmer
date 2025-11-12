@@ -7,7 +7,7 @@ const mf = pgSchema('mf');
 
 export const users = mf.table('users', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar({ length: 255 }).notNull(),
+  name: varchar({ length: 255 }),
   email: varchar({ length: 255 }),
   mobile: varchar({ length: 255 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),

@@ -59,27 +59,27 @@ export default function DeliverySequences() {
   // Create ordered orders based on delivery sequence
   const computedOrderedOrders = useMemo(() => {
     if (orders.length > 0) {
-      let ordered: OrderWithSequence[];
+      // let ordered: OrderWithSequence[];
       if (deliverySequence.length > 0) {
         // Sort orders according to delivery sequence
         const sequenceMap = new Map(
           deliverySequence.map((id, index) => [id, index])
         );
-        ordered = orders
+        let ordered = orders
           .map((order) => ({ ...order, sequenceId: parseInt(order.orderId) }))
           .sort((a, b) => {
             const aIndex = sequenceMap.get(a.sequenceId) ?? Infinity;
             const bIndex = sequenceMap.get(b.sequenceId) ?? Infinity;
             return aIndex - bIndex;
           });
+        return ordered;
       } else {
         // Default order by order ID if no sequence exists
-        ordered = orders
+        let ordered = orders
           .map((order) => ({ ...order, sequenceId: parseInt(order.orderId) }))
           .sort((a, b) => a.sequenceId - b.sequenceId);
+        return ordered;
       }
-
-      return ordered;
     } else {
       return [];
     }

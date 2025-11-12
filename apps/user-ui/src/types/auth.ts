@@ -1,6 +1,6 @@
 export interface User {
   id: number;
-  name: string;
+  name?: string | null;
   email: string | null;
   mobile: string | null;
   profileImage?: string | null;
@@ -9,7 +9,7 @@ export interface User {
 
 export interface UserDetails {
   id: number;
-  name: string;
+  name?: string | null;
   email: string | null;
   mobile: string | null;
   profileImage?: string | null;

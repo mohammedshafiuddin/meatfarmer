@@ -329,8 +329,8 @@ export const couponRouter = router({
            throw new Error("User not found for this order");
          }
 
-         // Generate coupon code: first 3 letters of user name + orderId
-         const userNamePrefix = order.user.name.substring(0, 3).toUpperCase();
+          // Generate coupon code: first 3 letters of user name or mobile + orderId
+          const userNamePrefix = (order.user.name || order.user.mobile || 'USR').substring(0, 3).toUpperCase();
          const couponCode = `${userNamePrefix}${orderId}`;
 
          // Check if coupon code already exists

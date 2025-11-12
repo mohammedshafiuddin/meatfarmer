@@ -204,6 +204,13 @@
       "when": 1762624949568,
       "tag": "0028_clever_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1762958926686,
+      "tag": "0029_short_king_cobra",
+      "breakpoints": true
     }
   ]
 }

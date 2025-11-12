@@ -5,8 +5,6 @@ import { useRouter } from "expo-router";
 
 import { AppContainer, MyButton, MyText, MyTextInput, tw } from "common-ui";
 import { useAuth } from "@/src/contexts/AuthContext";
-import { useLogin } from "@/src/api-hooks/auth.api";
-import GoogleSignInPKCE from "@/src/components/google-sign-in";
 import { trpc } from '@/src/trpc-client';
 
 interface LoginFormInputs {
@@ -273,7 +271,7 @@ function Login() {
                 }}
               >
                 <MyText weight="semibold" style={tw`text-blue-600`}>
-                  Change Number
+                  Go Back
                 </MyText>
               </TouchableOpacity>
             </View>
@@ -316,7 +314,7 @@ function Login() {
                 }}
               >
                 <MyText weight="semibold" style={tw`text-blue-600`}>
-                  Change Number
+                  Go Back
                 </MyText>
               </TouchableOpacity>
             </View>

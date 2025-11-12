@@ -1,8 +1,8 @@
  import React from 'react';
- import { View, TouchableOpacity, FlatList } from 'react-native';
+  import { View, TouchableOpacity } from 'react-native';
  import { useRouter } from 'expo-router';
  import MaterialIcons from '@expo/vector-icons/MaterialIcons';
- import { AppContainer, MyText, tw } from 'common-ui';
+  import { AppContainer, MyText, tw, MyFlatList } from 'common-ui';
 
  export default function Dashboard() {
    const router = useRouter();
@@ -48,7 +48,7 @@
 
     return (
       <View style={tw`flex-1`}>
-        <FlatList
+        <MyFlatList
           data={menuItems}
           numColumns={2}
           renderItem={({ item }) => (

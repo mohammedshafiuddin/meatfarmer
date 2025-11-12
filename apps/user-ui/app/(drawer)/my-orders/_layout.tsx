@@ -2,7 +2,7 @@ import { Stack } from 'expo-router'
 
 function MyOrdersLayout() {
     return (
-        <Stack screenOptions={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false, title: "My Orders" }} />
     )
 }
 
