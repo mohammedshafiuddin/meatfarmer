@@ -57,6 +57,14 @@ export const staffUsers = mf.table('staff_users', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+export const storeInfo = mf.table('store_info', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  name: varchar({ length: 255 }).notNull(),
+  description: varchar({ length: 500 }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  owner: integer('owner').notNull().references(() => staffUsers.id),
+});
+
 export const units = mf.table('units', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   shortNotation: varchar('short_notation', { length: 50 }).notNull(),
@@ -76,6 +84,7 @@ export const productInfo = mf.table('product_info', {
   images: jsonb('images'),
   isOutOfStock: boolean('is_out_of_stock').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  storeId: integer('store_id').notNull().references(() => storeInfo.id),
 });
 
 export const deliverySlotInfo = mf.table('delivery_slot_info', {
@@ -267,6 +276,7 @@ export const userCredsRelations = relations(userCreds, ({ one }) => ({
 
 export const staffUsersRelations = relations(staffUsers, ({ many }) => ({
   coupons: many(coupons),
+  stores: many(storeInfo),
 }));
 
 export const addressesRelations = relations(addresses, ({ one, many }) => ({
@@ -280,6 +290,7 @@ export const unitsRelations = relations(units, ({ many }) => ({
 
 export const productInfoRelations = relations(productInfo, ({ one, many }) => ({
   unit: one(units, { fields: [productInfo.unitId], references: [units.id] }),
+  store: one(storeInfo, { fields: [productInfo.storeId], references: [storeInfo.id] }),
   productSlots: many(productSlots),
   specialDeals: many(specialDeals),
   orderItems: many(orderItems),
@@ -361,4 +372,9 @@ export const userDetailsRelations = relations(userDetails, ({ one }) => ({
 
 export const notifCredsRelations = relations(notifCreds, ({ one }) => ({
   user: one(users, { fields: [notifCreds.userId], references: [users.id] }),
+}));
+
+export const storeInfoRelations = relations(storeInfo, ({ one, many }) => ({
+  owner: one(staffUsers, { fields: [storeInfo.owner], references: [staffUsers.id] }),
+  products: many(productInfo),
 }));

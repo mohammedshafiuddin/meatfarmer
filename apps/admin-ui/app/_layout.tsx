@@ -10,7 +10,7 @@ export default function Layout() {
     <QueryClientProvider client={queryClient}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <StaffAuthProvider>
-          <SafeAreaView edges={['left', 'right', 'bottom']} style={{ flex: 1 }}>
+          <SafeAreaView edges={['left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: '#fff' }}>
           <Stack screenOptions={{ headerShown: false }} />
           </SafeAreaView>
         </StaffAuthProvider>

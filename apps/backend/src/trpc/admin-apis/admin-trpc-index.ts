@@ -7,6 +7,7 @@ import { vendorSnippetsRouter } from './vendor-snippets';
 import { slotsRouter } from './slots';
 import { productRouter } from './product';
 import { staffUserRouter } from './staff-user';
+import { storeRouter } from './store';
 
 export const adminRouter = router({
   complaint: complaintRouter,
@@ -17,6 +18,7 @@ export const adminRouter = router({
   slots: slotsRouter,
   product: productRouter,
   staffUser: staffUserRouter,
+  store: storeRouter,
 });
 
 export type AdminRouter = typeof adminRouter;

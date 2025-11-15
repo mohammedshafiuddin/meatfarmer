@@ -1,4 +1,4 @@
-import { router, publicProcedure } from '../trpc-index';
+import { router, publicProcedure, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { staffUsers } from '../../db/schema';
@@ -43,6 +43,20 @@ export const staffUserRouter = router({
         message: 'Login successful',
         token,
         staff: { id: staff.id, name: staff.name },
+      };
+    }),
+
+  getStaff: protectedProcedure
+    .query(async ({ ctx }) => {
+      const staff = await db.query.staffUsers.findMany({
+        columns: {
+          id: true,
+          name: true,
+        },
+      });
+
+      return {
+        staff,
       };
     }),
 });

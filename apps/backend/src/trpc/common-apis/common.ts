@@ -1,6 +1,6 @@
 import { router, publicProcedure } from '../trpc-index';
 import { db } from '../../db/db_index';
-import { productInfo, units, productSlots, deliverySlotInfo } from '../../db/schema';
+import { productInfo, units, productSlots, deliverySlotInfo, storeInfo } from '../../db/schema';
 import { eq, gt, and, sql } from 'drizzle-orm';
 import { generateSignedUrlsFromS3Urls } from '../../lib/s3-client';
 import { z } from 'zod';
@@ -63,6 +63,21 @@ export const commonRouter = router({
       return {
         products: formattedProducts,
         count: formattedProducts.length,
+      };
+    }),
+
+  getStoresSummary: publicProcedure
+    .query(async () => {
+      const stores = await db.query.storeInfo.findMany({
+        columns: {
+          id: true,
+          name: true,
+          description: true,
+        },
+      });
+
+      return {
+        stores,
       };
     }),
 });

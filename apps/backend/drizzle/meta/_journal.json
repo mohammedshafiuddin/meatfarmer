@@ -211,6 +211,20 @@
       "when": 1762958926686,
       "tag": "0029_short_king_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1763058797153,
+      "tag": "0030_superb_exiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1763060107438,
+      "tag": "0031_clean_the_hunter",
+      "breakpoints": true
     }
   ]
 }

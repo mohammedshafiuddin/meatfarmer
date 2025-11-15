@@ -1,11 +1,8 @@
 # Agent Instructions for Meat Farmer Monorepo
 
-## Build/Lint/Test Commands
-- **Build all apps**: `npm run build` (Turbo pipeline)
-- **Lint all apps**: `npm run lint` (Turbo pipeline)
-- **Test all apps**: `npm run test` (Turbo pipeline) - Note: No tests currently configured
-- **Dev servers**: `npm run dev` (Turbo parallel dev)
-- **Single app dev**: `cd apps/{app-name} && npm run start`
+## Important instructions
+- Don't try to build the code or run or compile it. Just make changes and leave the rest for the user.
+- Don't run any drizzle migrations. User will handle it. 
 
 ## Code Style Guidelines
 
@@ -21,6 +18,7 @@
 - Third-party libraries second
 - Local imports last
 - Use absolute imports with path aliases when possible
+- imports from /packages/ui are aliased as `common-ui` in apps/user-ui and apps/admin-ui
 
 ### Error Handling
 - API errors handled via axios interceptors

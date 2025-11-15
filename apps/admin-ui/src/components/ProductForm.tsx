@@ -5,12 +5,14 @@ import * as Yup from 'yup';
 import { MyTextInput, BottomDropdown, MyText, ImageUploader, ImageGalleryWithDelete, useTheme, DatePicker, tw, useFocusCallback } from 'common-ui';
 import usePickImage from 'common-ui/src/components/use-pick-image';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { trpc } from '../trpc-client';
 
 interface ProductFormData {
   name: string;
   shortDescription: string;
   longDescription: string;
   unitId: number;
+  storeId: number;
   price: string;
   marketPrice: string;
   deals: Deal[];
@@ -51,6 +53,12 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
   const { theme } = useTheme();
   const [images, setImages] = useState<{ uri?: string }[]>([]);
   const [existingImagesState, setExistingImagesState] = useState<string[]>(existingImages);
+
+  const { data: storesData } = trpc.common.getStoresSummary.useQuery();
+  const storeOptions = storesData?.stores.map(store => ({
+    label: store.name,
+    value: store.id,
+  })) || [];
 
   // Initialize existing images state when existingImages prop changes
   useEffect(() => {
@@ -154,6 +162,14 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
               // onValueChange={(value) => handleChange('unitId')(value+'')}
               onValueChange={(value) => setFieldValue('unitId', value)}
               placeholder="Select unit"
+              style={{ marginBottom: 16 }}
+            />
+            <BottomDropdown
+              label="Store"
+              value={values.storeId}
+              options={storeOptions}
+              onValueChange={(value) => setFieldValue('storeId', value)}
+              placeholder="Select store"
               style={{ marginBottom: 16 }}
             />
             <MyTextInput

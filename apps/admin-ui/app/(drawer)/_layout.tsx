@@ -86,15 +86,22 @@ function CustomDrawerContent() {
            <MaterialIcons name="local-offer" size={size} color={color} />
          )}
        />
-       <DrawerItem
-         label="Vendor Snippets"
-         onPress={() => router.push("vendor-snippets" as any)}
-         icon={({ color, size }) => (
-           <MaterialIcons name="code" size={size} color={color} />
-         )}
-       />
-       <DrawerItem
-         label="Logout"
+        <DrawerItem
+          label="Vendor Snippets"
+          onPress={() => router.push("vendor-snippets" as any)}
+          icon={({ color, size }) => (
+            <MaterialIcons name="code" size={size} color={color} />
+          )}
+        />
+        <DrawerItem
+          label="Stores"
+          onPress={() => router.push("/(drawer)/stores" as any)}
+          icon={({ color, size }) => (
+            <MaterialIcons name="store" size={size} color={color} />
+          )}
+        />
+        <DrawerItem
+          label="Logout"
          onPress={() => logout()}
          icon={({ color, size }) => (
            <MaterialIcons name="logout" size={size} color={color} />
@@ -180,7 +187,8 @@ export default function Layout() {
       />
        <Drawer.Screen name="complaints" options={{ title: "Complaints" }} />
        <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
-       <Drawer.Screen name="vendor-snippets" options={{ title: "Vendor Snippets" }} />
-    </Drawer>
+        <Drawer.Screen name="vendor-snippets" options={{ title: "Vendor Snippets" }} />
+        <Drawer.Screen name="stores" options={{ title: "Stores" }} />
+     </Drawer>
   );
 }

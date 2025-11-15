@@ -48,9 +48,9 @@ const API_URL =
 
 
 // const BASE_API_URL = API_URL;
-// const BASE_API_URL = 'http://10.0.2.2:4000';
+const BASE_API_URL = 'http://10.0.2.2:4000';
 // const BASE_API_URL = 'http://192.168.100.97:4000';
-const BASE_API_URL = 'https://technocracy.ovh/mf';
+// const BASE_API_URL = 'https://technocracy.ovh/mf';
 export {
   RolesDropdown,
   StorageService,

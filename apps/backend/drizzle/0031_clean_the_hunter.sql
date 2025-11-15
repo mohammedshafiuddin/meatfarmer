@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."product_info" ALTER COLUMN "store_id" SET NOT NULL;
