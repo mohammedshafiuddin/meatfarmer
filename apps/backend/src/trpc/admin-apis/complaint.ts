@@ -1,11 +1,11 @@
-import { router, publicProcedure } from '../trpc-index';
+import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { complaints, users } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 
 export const complaintRouter = router({
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .input(z.object({
       page: z.number().optional().default(1),
       limit: z.number().optional().default(10),
@@ -52,7 +52,7 @@ export const complaintRouter = router({
       };
     }),
 
-  resolve: publicProcedure
+  resolve: protectedProcedure
     .input(z.object({ id: z.string(), response: z.string().optional() }))
     .mutation(async ({ input }) => {
       await db

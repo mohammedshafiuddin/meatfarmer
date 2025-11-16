@@ -35,6 +35,7 @@ import useFocusCallback from './hooks/useFocusCallback'
 import useManualRefresh from './hooks/useManualRefresh';
 import { useDrawerTitle } from './hooks/useDrawerTitle';
 import { useMarkDataFetchers } from './hooks/useMarkDataFetchers';
+import { StorageServiceCasual } from './src/services/StorageServiceCasual';
 
 const localhost =
   Platform.OS === "android"
@@ -92,5 +93,6 @@ export {
     useManualRefresh,
     useDrawerTitle,
     BASE_API_URL,
-    useMarkDataFetchers
+    useMarkDataFetchers,
+    StorageServiceCasual
 };

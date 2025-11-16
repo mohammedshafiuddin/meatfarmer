@@ -1,4 +1,4 @@
-import { router, publicProcedure } from '../trpc-index';
+import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { orders, orderItems, orderStatus, users, addresses, productInfo, units, deliverySlotInfo, payments, paymentInfoTable } from '../../db/schema';
@@ -34,7 +34,7 @@ const getTodaysOrdersSchema = z.object({
 });
 
 export const orderRouter = router({
-  updateNotes: publicProcedure
+  updateNotes: protectedProcedure
     .input(updateOrderNotesSchema)
     .mutation(async ({ input }) => {
       const { orderId, adminNotes } = input;
@@ -53,7 +53,7 @@ export const orderRouter = router({
       return result[0];
     }),
 
-  getFullOrder: publicProcedure
+  getFullOrder: protectedProcedure
     .input(getFullOrderSchema)
     .query(async ({ input }) => {
       const { orderId } = input;
@@ -127,7 +127,7 @@ export const orderRouter = router({
       };
     }),
 
-  updatePackaged: publicProcedure
+  updatePackaged: protectedProcedure
     .input(updatePackagedSchema)
     .mutation(async ({ input }) => {
       const { orderId, isPackaged } = input;
@@ -140,7 +140,7 @@ export const orderRouter = router({
       return { success: true };
     }),
 
-  updateDelivered: publicProcedure
+  updateDelivered: protectedProcedure
     .input(updateDeliveredSchema)
     .mutation(async ({ input }) => {
       const { orderId, isDelivered } = input;
@@ -153,7 +153,7 @@ export const orderRouter = router({
       return { success: true };
     }),
 
-  getSlotOrders: publicProcedure
+  getSlotOrders: protectedProcedure
     .input(getSlotOrdersSchema)
     .query(async ({ input }) => {
       const { slotId } = input;
@@ -219,7 +219,7 @@ export const orderRouter = router({
       return { success: true, data: formattedOrders };
     }),
 
-  getTodaysOrders: publicProcedure
+  getTodaysOrders: protectedProcedure
     .input(getTodaysOrdersSchema)
     .query(async ({ input }) => {
       const { slotId } = input;

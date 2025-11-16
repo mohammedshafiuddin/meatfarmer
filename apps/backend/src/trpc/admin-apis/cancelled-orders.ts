@@ -1,4 +1,4 @@
-import { router, publicProcedure } from '../trpc-index';
+import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { orders, orderStatus, users, addresses, orderItems, productInfo, units, orderCancellationsTable } from '../../db/schema';
@@ -16,7 +16,7 @@ const updateRefundSchema = z.object({
 });
 
 export const cancelledOrdersRouter = router({
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .query(async () => {
       // First get cancelled order statuses with order details
       const cancelledOrderStatuses = await db.query.orderStatus.findMany({
@@ -72,7 +72,7 @@ export const cancelledOrdersRouter = router({
       });
     }),
 
-  updateReview: publicProcedure
+  updateReview: protectedProcedure
     .input(updateCancellationReviewSchema)
     .mutation(async ({ input }) => {
       const { orderId, cancellationReviewed, adminNotes } = input;
@@ -93,7 +93,7 @@ export const cancelledOrdersRouter = router({
       return result[0];
     }),
 
-  updateRefund: publicProcedure
+  updateRefund: protectedProcedure
     .input(updateRefundSchema)
     .mutation(async ({ input }) => {
       const { orderId, isRefundDone } = input;

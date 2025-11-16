@@ -1,4 +1,4 @@
-import { router, publicProcedure } from "../trpc-index";
+import { router, protectedProcedure } from "../trpc-index";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "../../db/db_index";
@@ -38,7 +38,7 @@ const updateDeliverySequenceSchema = z.object({
 
 export const slotsRouter = router({
   // Exact replica of GET /av/slots
-  getAll: publicProcedure.query(async ({ ctx }) => {
+  getAll: protectedProcedure.query(async ({ ctx }) => {
     if (!ctx.staffUser?.id) {
       throw new TRPCError({ code: "UNAUTHORIZED", message: "Access denied" });
     }
@@ -64,7 +64,7 @@ export const slotsRouter = router({
   }),
 
   // Exact replica of POST /av/products/slots/product-ids
-  getSlotsProductIds: publicProcedure
+  getSlotsProductIds: protectedProcedure
     .input(z.object({ slotIds: z.array(z.number()) }))
     .query(async ({ input, ctx }) => {
       if (!ctx.staffUser?.id) {
@@ -115,7 +115,7 @@ export const slotsRouter = router({
     }),
 
   // Exact replica of PUT /av/products/slots/:slotId/products
-  updateSlotProducts: publicProcedure
+  updateSlotProducts: protectedProcedure
     .input(
       z.object({
         slotId: z.number(),
@@ -186,7 +186,7 @@ export const slotsRouter = router({
       };
     }),
 
-  createSlot: publicProcedure
+  createSlot: protectedProcedure
     .input(createSlotSchema)
     .mutation(async ({ input, ctx }) => {
       if (!ctx.staffUser?.id) {
@@ -216,7 +216,7 @@ export const slotsRouter = router({
       };
     }),
 
-  getSlots: publicProcedure.query(async ({ ctx }) => {
+  getSlots: protectedProcedure.query(async ({ ctx }) => {
     if (!ctx.staffUser?.id) {
       throw new TRPCError({ code: "UNAUTHORIZED", message: "Access denied" });
     }
@@ -231,7 +231,7 @@ export const slotsRouter = router({
     };
   }),
 
-  getSlotById: publicProcedure
+  getSlotById: protectedProcedure
     .input(getSlotByIdSchema)
     .query(async ({ input, ctx }) => {
       if (!ctx.staffUser?.id) {
@@ -253,7 +253,7 @@ export const slotsRouter = router({
       };
     }),
 
-  updateSlot: publicProcedure
+  updateSlot: protectedProcedure
     .input(updateSlotSchema)
     .mutation(async ({ input, ctx }) => {
       if (!ctx.staffUser?.id) {
@@ -286,7 +286,7 @@ export const slotsRouter = router({
       };
     }),
 
-  deleteSlot: publicProcedure
+  deleteSlot: protectedProcedure
     .input(deleteSlotSchema)
     .mutation(async ({ input, ctx }) => {
       if (!ctx.staffUser?.id) {
@@ -310,7 +310,7 @@ export const slotsRouter = router({
       };
     }),
 
-  getDeliverySequence: publicProcedure
+  getDeliverySequence: protectedProcedure
     .input(getDeliverySequenceSchema)
     .query(async ({ input, ctx }) => {
       // if (!ctx.staffUser?.id) {
@@ -332,7 +332,7 @@ export const slotsRouter = router({
       };
     }),
 
-  updateDeliverySequence: publicProcedure
+  updateDeliverySequence: protectedProcedure
     .input(updateDeliverySequenceSchema)
     .mutation(async ({ input, ctx }) => {
       if (!ctx.staffUser?.id) {

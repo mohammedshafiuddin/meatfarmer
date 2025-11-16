@@ -1,4 +1,4 @@
-import { router, publicProcedure } from '../trpc-index';
+import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { coupons, users, staffUsers, orders } from '../../db/schema';
@@ -25,7 +25,7 @@ const validateCouponBodySchema = z.object({
 });
 
 export const couponRouter = router({
-  create: publicProcedure
+  create: protectedProcedure
     .input(createCouponBodySchema)
     .mutation(async ({ input, ctx }) => {
       const { couponCode, isUserBased, discountPercent, flatDiscount, minOrder, targetUser, productIds, maxValue, isApplyForAll, validTill, maxLimitForUser } = input;
@@ -97,7 +97,7 @@ export const couponRouter = router({
       return result[0];
     }),
 
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .query(async () => {
       const result = await db.query.coupons.findMany({
         with: {
@@ -110,7 +110,7 @@ export const couponRouter = router({
       return result;
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       const couponId = input.id;
@@ -130,7 +130,7 @@ export const couponRouter = router({
       return result;
     }),
 
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({
       id: z.number(),
       updates: createCouponBodySchema.extend({
@@ -193,7 +193,7 @@ export const couponRouter = router({
       return result[0];
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const { id } = input;
@@ -210,7 +210,7 @@ export const couponRouter = router({
       return { message: "Coupon invalidated successfully" };
     }),
 
-  validate: publicProcedure
+  validate: protectedProcedure
     .input(validateCouponBodySchema)
     .query(async ({ input }) => {
       const { code, userId, orderAmount } = input;
@@ -278,7 +278,7 @@ export const couponRouter = router({
        };
      }),
 
-     generateCancellationCoupon: publicProcedure
+      generateCancellationCoupon: protectedProcedure
        .input(
          z.object({
            orderId: z.string().regex(/^ORD\d+$/, "Invalid order ID format"),

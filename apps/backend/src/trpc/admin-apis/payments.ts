@@ -1,4 +1,4 @@
-import { router, publicProcedure } from '../trpc-index';
+import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { orders, orderStatus, payments, orderCancellationsTable } from '../../db/schema';
@@ -23,7 +23,7 @@ const initiateRefundSchema = z.object({
 }, { message: "Provide either refundPercent or refundAmount, not both or neither" });
 
 export const adminPaymentsRouter = router({
-  initiateRefund: publicProcedure
+  initiateRefund: protectedProcedure
     .input(initiateRefundSchema)
     .mutation(async ({ input }) => {
       const { orderId, refundPercent, refundAmount } = input;

@@ -66,7 +66,7 @@ export const vendorSnippetsRouter = router({
       return result[0];
     }),
 
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .query(async () => {
       console.log('from the vendor snipptes methods')
 
@@ -89,7 +89,7 @@ export const vendorSnippetsRouter = router({
       return [];
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input }) => {
       const { id } = input;
@@ -108,7 +108,7 @@ export const vendorSnippetsRouter = router({
       return result;
     }),
 
-  update: publicProcedure
+  update: protectedProcedure
     .input(updateSnippetSchema)
     .mutation(async ({ input }) => {
       const { id, updates } = input;
@@ -168,7 +168,7 @@ export const vendorSnippetsRouter = router({
       return result[0];
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const { id } = input;
@@ -184,7 +184,7 @@ export const vendorSnippetsRouter = router({
       return { message: "Vendor snippet deleted successfully" };
     }),
 
-  getOrdersBySnippet: publicProcedure
+  getOrdersBySnippet: protectedProcedure
     .input(z.object({
       snippetCode: z.string().min(1, "Snippet code is required")
     }))
@@ -278,7 +278,7 @@ export const vendorSnippetsRouter = router({
       };
     }),
 
-  getVendorOrders: publicProcedure
+  getVendorOrders: protectedProcedure
     .query(async () => {
       const vendorOrders = await db.query.orders.findMany({
         with: {

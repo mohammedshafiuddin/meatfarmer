@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, Text, Alert, TouchableOpacity, Image } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "expo-router";
@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { AppContainer, MyButton, MyText, MyTextInput, tw } from "common-ui";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { trpc } from '@/src/trpc-client';
+import { StorageServiceCasual } from 'common-ui';
 
 interface LoginFormInputs {
   mobile: string;
@@ -19,13 +20,83 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'mobile' | 'choice' | 'otp' | 'password'>('mobile');
   const [selectedMobile, setSelectedMobile] = useState('');
+  const [canResend, setCanResend] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const intervalRef = useRef<any | null>(null);
 
   const loginMutation = trpc.user.auth.login.useMutation();
   // const loginMutation = useLogin();
 
+  // Check for stored OTP timestamp on mount
+  useEffect(() => {
+    const checkStoredOtpTime = async () => {
+      const storedTime = await StorageServiceCasual.getItem('otp_sent_time');
+      if (storedTime) {
+        const timeDiff = Date.now() - parseInt(storedTime);
+        const remainingTime = Math.max(0, 120 - Math.floor(timeDiff / 1000));
+
+        if (remainingTime > 0) {
+          setResendCountdown(remainingTime);
+          setCanResend(false);
+        } else {
+          setCanResend(true);
+          setResendCountdown(0);
+        }
+      } else {
+        setCanResend(true);
+      }
+    };
+
+    checkStoredOtpTime();
+  }, []);
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []);
+
+  // Countdown timer effect
+  useEffect(() => {
+    // Clear existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (resendCountdown > 0) {
+      // Set new interval and attach to ref
+      intervalRef.current = setInterval(() => {
+        setResendCountdown((prev) => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      // Cleanup on unmount or dependency change
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [resendCountdown]);
+
   const sendOtpMutation = trpc.user.auth.sendOtp.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data.success) {
+        // Save the current timestamp for resend cooldown
+        await StorageServiceCasual.setItem('otp_sent_time', Date.now().toString());
+        setResendCountdown(120); // 2 minutes
+        setCanResend(false);
         setStep('otp');
         Alert.alert('Success', data.message);
       } else {
@@ -262,7 +333,7 @@ function Login() {
               </Text>
             )}
 
-            <View style={tw`flex-row justify-end mb-6`}>
+            <View style={tw`flex-row justify-between items-center mb-6`}>
               <TouchableOpacity
                 onPress={() => {
                   setStep('choice');
@@ -272,6 +343,23 @@ function Login() {
               >
                 <MyText weight="semibold" style={tw`text-blue-600`}>
                   Go Back
+                </MyText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => sendOtpMutation.mutate({ mobile: selectedMobile })}
+                disabled={!canResend || sendOtpMutation.isPending}
+              >
+                <MyText
+                  weight="semibold"
+                  style={tw`${canResend && !sendOtpMutation.isPending ? 'text-blue-600' : 'text-gray-400'}`}
+                >
+                  {sendOtpMutation.isPending
+                    ? 'Sending...'
+                    : canResend
+                      ? 'Resend OTP'
+                      : `Resend in ${resendCountdown}s`
+                  }
                 </MyText>
               </TouchableOpacity>
             </View>
