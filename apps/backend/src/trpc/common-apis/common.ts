@@ -24,6 +24,10 @@ const getNextDeliveryDate = async (productId: number): Promise<Date | null> => {
   return result[0]?.deliveryTime || null;
 };
 
+
+
+
+
 export const commonRouter = router({
   getAllProductsSummary: publicProcedure
     .input(z.object({ searchQuery: z.string().optional() }))

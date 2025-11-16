@@ -302,7 +302,7 @@ export const couponRouter = router({
 
          // Find the order with user and order status information
          const order = await db.query.orders.findFirst({
-           where: eq(orders.readableId, readableId),
+           where: eq(orders.id, readableId),
            with: {
              user: true,
              orderStatus: true,

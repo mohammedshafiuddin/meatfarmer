@@ -146,6 +146,13 @@ import { trpc } from '@/src/trpc-client';
           <Text style={tw`text-base mb-4 pl-2`}>{productDetail.longDescription}</Text>
         )}
 
+        {productDetail.store && (
+          <View style={tw`mb-4 pl-2`}>
+            <Text style={tw`text-lg font-semibold`}>Store:</Text>
+            <Text style={tw`text-base text-gray-600`}>{productDetail.store.name}</Text>
+          </View>
+        )}
+
         {productDetail.specialPackageDeals && productDetail.specialPackageDeals.length > 0 && (
           <>
             <Text style={tw`text-lg font-semibold mb-2 pl-2`}>Special Package Deals:</Text>

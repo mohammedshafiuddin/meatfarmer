@@ -17,11 +17,11 @@ type CreateDeal = {
  * Create a new product
  */
 export const createProduct = async (req: Request, res: Response) => {
-  const { name, shortDescription, longDescription, unitId, price, marketPrice, deals } = req.body;
+  const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, deals } = req.body;
 
   // Validate required fields
-  if (!name || !unitId || !price) {
-    throw new ApiError("Name, unitId, and price are required", 400);
+  if (!name || !unitId || !storeId || !price) {
+    throw new ApiError("Name, unitId, storeId, and price are required", 400);
   }
 
   // Check for duplicate name
@@ -63,6 +63,7 @@ export const createProduct = async (req: Request, res: Response) => {
       shortDescription,
       longDescription,
       unitId,
+      storeId,
       price,
       marketPrice,
       images: uploadedImageUrls,
@@ -97,13 +98,13 @@ export const createProduct = async (req: Request, res: Response) => {
  */
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, shortDescription, longDescription, unitId, price, marketPrice, deals:dealsRaw, imagesToDelete:imagesToDeleteRaw } = req.body;
+  const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, deals:dealsRaw, imagesToDelete:imagesToDeleteRaw } = req.body;
 
   const deals = dealsRaw ? JSON.parse(dealsRaw) : null;
   const imagesToDelete = imagesToDeleteRaw ? JSON.parse(imagesToDeleteRaw) : [];
 
-  if (!name || !unitId || !price) {
-    throw new ApiError("Name, unitId, and price are required", 400);
+  if (!name || !unitId || !storeId || !price) {
+    throw new ApiError("Name, unitId, storeId, and price are required", 400);
   }
 
   // Check if unit exists
@@ -168,6 +169,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       shortDescription,
       longDescription,
       unitId,
+      storeId,
       price,
       marketPrice,
       images: finalImages.length > 0 ? finalImages : undefined,

@@ -7,6 +7,7 @@ export interface CreateProductPayload {
   shortDescription?: string;
   longDescription?: string;
   unitId: number;
+  storeId: number;
   price: number;
   marketPrice?: number;
   isOutOfStock?: boolean;
@@ -22,6 +23,7 @@ export interface UpdateProductPayload {
   shortDescription?: string;
   longDescription?: string;
   unitId: number;
+  storeId: number;
   price: number;
   marketPrice?: number;
   isOutOfStock?: boolean;
@@ -38,6 +40,7 @@ export interface Product {
   shortDescription?: string | null;
   longDescription?: string;
   unitId: number;
+  storeId: number;
   price: number;
   marketPrice?: number;
   isOutOfStock?: boolean;

@@ -30,13 +30,11 @@ interface CancelledOrder {
 const OrderItem = ({
   order,
   isReviewedTab,
-  onToggleReview,
-  onToggleRefund
+  onToggleReview
 }: {
   order: CancelledOrder;
   isReviewedTab: boolean;
   onToggleReview: (orderId: number, reviewed: boolean) => void;
-  onToggleRefund: (orderId: number, refundDone: boolean) => void;
 }) => {
   const displayedItems = order.items.slice(0, 2);
   const moreItems = order.items.length > 2 ? ` +${order.items.length - 2} more` : '';
@@ -56,20 +54,7 @@ const OrderItem = ({
     );
   };
 
-  const handleToggleRefund = () => {
-    const action = order.isRefundDone ? 'mark refund as not done' : 'initiate refund';
-    Alert.alert(
-      'Update Refund Status',
-      `Are you sure you want to ${action} for order #${order.readableId}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: () => onToggleRefund(order.id, !order.isRefundDone),
-        },
-      ]
-    );
-  };
+
 
   return (
     <View style={tw`bg-white p-4 mb-2 rounded-2xl shadow-lg`}>
@@ -81,14 +66,6 @@ const OrderItem = ({
         >
           <MyText style={tw`text-white text-sm font-semibold`}>
             {isReviewedTab ? 'Mark not reviewed' : 'Mark Reviewed'}
-          </MyText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleToggleRefund}
-          style={tw`bg-green-500 px-3 py-2 rounded-lg`}
-        >
-          <MyText style={tw`text-white text-sm font-semibold`}>
-            {order.isRefundDone ? 'Refund Done' : 'Initiate Refund'}
           </MyText>
         </TouchableOpacity>
         <OrderMenu
@@ -128,7 +105,6 @@ export default function CancelledOrders() {
   const [index, setIndex] = useState(0);
   const { data: cancelledOrders, isLoading, error, refetch } = trpc.admin.cancelledOrders.getAll.useQuery();
   const updateReviewMutation = trpc.admin.cancelledOrders.updateReview.useMutation();
-  const updateRefundMutation = trpc.admin.cancelledOrders.updateRefund.useMutation();
 
   useManualRefresh(refetch);
 
@@ -139,12 +115,7 @@ export default function CancelledOrders() {
     });
   };
 
-  const handleToggleRefund = (orderId: number, refundDone: boolean) => {
-    updateRefundMutation.mutate({
-      orderId,
-      isRefundDone: refundDone,
-    });
-  };
+
 
   const notReviewedCount = (cancelledOrders || []).filter(order => !order.cancellationReviewed).length;
   const reviewedCount = (cancelledOrders || []).filter(order => order.cancellationReviewed).length;
@@ -195,7 +166,6 @@ export default function CancelledOrders() {
                 order={order}
                 isReviewedTab={isReviewedTab}
                 onToggleReview={handleToggleReview}
-                onToggleRefund={handleToggleRefund}
               />
             ))}
           </ScrollView>

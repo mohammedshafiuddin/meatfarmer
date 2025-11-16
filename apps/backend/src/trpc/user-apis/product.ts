@@ -1,7 +1,7 @@
 import { router, publicProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { productInfo, units, productSlots, deliverySlotInfo, specialDeals } from '../../db/schema';
+import { productInfo, units, productSlots, deliverySlotInfo, specialDeals, storeInfo } from '../../db/schema';
 import { generateSignedUrlsFromS3Urls } from '../../lib/s3-client';
 import { eq, and, gt, sql } from 'drizzle-orm';
 
@@ -29,6 +29,7 @@ export const productRouter = router({
           marketPrice: productInfo.marketPrice,
           images: productInfo.images,
           isOutOfStock: productInfo.isOutOfStock,
+          storeId: productInfo.storeId,
           unitShortNotation: units.shortNotation,
         })
         .from(productInfo)
@@ -41,6 +42,12 @@ export const productRouter = router({
       }
 
       const product = productData[0];
+
+      // Fetch store info for this product
+      const storeData = product.storeId ? await db.query.storeInfo.findFirst({
+        where: eq(storeInfo.id, product.storeId),
+        columns: { id: true, name: true, description: true },
+      }) : null;
 
       // Fetch delivery slots for this product
       const deliverySlotsData = await db
@@ -88,6 +95,11 @@ export const productRouter = router({
         unit: product.unitShortNotation,
         images: signedImages,
         isOutOfStock: product.isOutOfStock,
+        store: storeData ? {
+          id: storeData.id,
+          name: storeData.name,
+          description: storeData.description,
+        } : null,
         deliverySlots: deliverySlotsData,
         specialPackageDeals: specialDealsData,
       };

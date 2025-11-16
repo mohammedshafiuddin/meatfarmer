@@ -13,6 +13,7 @@ import {
   couponUsage,
   payments,
   cartItems,
+  orderCancellationsTable,
 } from "../../db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { READABLE_ORDER_ID_KEY } from "../../lib/const-strings";
@@ -226,7 +227,7 @@ export const orderRouter = router({
         });
       }
 
-      await sendOrderPlacedNotification(userId, newOrder.id.toString());
+      sendOrderPlacedNotification(userId, newOrder.id.toString());
 
       return { success: true, data: newOrder };
     }),
@@ -245,6 +246,7 @@ export const orderRouter = router({
         slot: true,
         paymentInfo: true,
         orderStatus: true,
+        orderCancellations: true,
       },
       orderBy: (orders, { desc }) => [desc(orders.createdAt)],
     });
@@ -252,6 +254,7 @@ export const orderRouter = router({
     const mappedOrders = await Promise.all(
       userOrders.map(async (order) => {
         const status = order.orderStatus[0]; // assuming one status per order
+        const cancellation = order.orderCancellations[0]; // assuming one cancellation per order
         const deliveryStatus = status?.isCancelled
           ? "cancelled"
           : status?.isDelivered
@@ -260,6 +263,7 @@ export const orderRouter = router({
         const orderStatus = status?.isCancelled ? "cancelled" : "success";
         const paymentMode = order.isCod ? "CoD" : "Online";
         const paymentStatus = status?.paymentStatus || "pending";
+        const isRefundDone = cancellation?.refundStatus === 'processed' || false;
 
         const items = await Promise.all(
           order.orderItems.map(async (item) => {
@@ -289,7 +293,7 @@ export const orderRouter = router({
           cancelReason: status?.cancelReason || null,
           paymentMode,
           paymentStatus,
-          isRefundDone: status?.isRefundDone || false,
+          isRefundDone,
           userNotes: order.userNotes || null,
           items,
         };
@@ -364,6 +368,15 @@ export const orderRouter = router({
           cancelReason: reason,
         })
         .where(eq(orderStatus.id, status.id));
+
+      // Insert cancellation record
+      await db.insert(orderCancellationsTable).values({
+        orderId: order.id,
+        userId,
+        reason,
+        cancellationUserNotes: reason,
+        cancellationReviewed: false,
+      });
 
       await sendOrderCancelledNotification(userId, order.id.toString());
 

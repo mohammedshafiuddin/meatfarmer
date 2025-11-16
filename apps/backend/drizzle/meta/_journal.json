@@ -225,6 +225,13 @@
       "when": 1763060107438,
       "tag": "0031_clean_the_hunter",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1763281196495,
+      "tag": "0032_tricky_baron_zemo",
+      "breakpoints": true
     }
   ]
 }

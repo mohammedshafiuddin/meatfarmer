@@ -9,6 +9,7 @@ import { slotsRouter } from './slots';
 import { userRouter as userDataRouter } from './user';
 import { userCouponRouter } from './coupon';
 import { paymentRouter } from './payments';
+import { storesRouter } from './stores';
 
 export const userRouter = router({
   address: addressRouter,
@@ -21,6 +22,7 @@ export const userRouter = router({
   user: userDataRouter,
   coupon: userCouponRouter,
   payment: paymentRouter,
+  stores: storesRouter,
 });
 
 export type UserRouter = typeof userRouter;

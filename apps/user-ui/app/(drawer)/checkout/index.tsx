@@ -98,8 +98,11 @@ export default function Checkout() {
   const placeOrderMutation = trpc.user.order.placeOrder.useMutation({
     onSuccess: (data) => {
       // For online payment, proceed to payment instead of navigating
-      if (data.data) {
+      if (!data.data.isCod) {
         createRazorpayOrderMutation.mutate({ orderId: data.data.id.toString() });
+      }
+      else {
+        router.replace(`/order-success?orderId=${data.data.id}`);
       }
     },
     onError: (error: any) => {

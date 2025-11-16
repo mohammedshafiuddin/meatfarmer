@@ -133,8 +133,6 @@ export const orders = mf.table('orders', {
   paymentInfoId: integer('payment_info_id').references(() => paymentInfoTable.id),
   totalAmount: numeric('total_amount', { precision: 10, scale: 2 }).notNull(),
   readableId: integer('readable_id').notNull(),
-  cancellationReviewed: boolean('cancellation_reviewed').notNull().default(false),
-  isRefundDone: boolean('is_refund_done').notNull().default(false),
   adminNotes: text('admin_notes'),
   userNotes: text('user_notes'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -159,7 +157,6 @@ export const orderStatus = mf.table('order_status', {
   isDelivered: boolean('is_delivered').notNull().default(false),
   isCancelled: boolean('is_cancelled').notNull().default(false),
   cancelReason: varchar('cancel_reason', { length: 255 }),
-  isRefundDone: boolean('is_refund_done').notNull().default(false),
   paymentStatus: paymentStatusEnum('payment_state').notNull().default('pending'),
 });
 
@@ -181,6 +178,22 @@ export const payments = mf.table('payments', {
   token: varchar({ length: 500 }),
   merchantOrderId: varchar('merchant_order_id', { length: 255 }).notNull().unique(),
   payload: jsonb('payload'),
+});
+
+export const orderCancellationsTable = mf.table('order_cancellations', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  orderId: integer('order_id').notNull().references(() => orders.id).unique(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  reason: varchar({ length: 500 }),
+  cancellationUserNotes: text('cancellation_user_notes'),
+  cancellationAdminNotes: text('cancellation_admin_notes'),
+  cancellationReviewed: boolean('cancellation_reviewed').notNull().default(false),
+  refundAmount: numeric('refund_amount', { precision: 10, scale: 2 }),
+  refundStatus: varchar('refund_status', { length: 50 }).default('none'),
+  razorpayRefundId: varchar('razorpay_refund_id', { length: 255 }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  reviewedAt: timestamp('reviewed_at'),
+  refundProcessedAt: timestamp('refund_processed_at'),
 });
 
 export const keyValStore = mf.table('key_val_store', {
@@ -319,6 +332,7 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   payment: one(payments),
   paymentInfo: one(paymentInfoTable, { fields: [orders.paymentInfoId], references: [paymentInfoTable.id] }),
   orderStatus: many(orderStatus),
+  orderCancellations: many(orderCancellationsTable),
 }));
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
@@ -337,6 +351,11 @@ export const paymentInfoRelations = relations(paymentInfoTable, ({ one }) => ({
 
 export const paymentsRelations = relations(payments, ({ one }) => ({
   order: one(orders, { fields: [payments.orderId], references: [orders.id] }),
+}));
+
+export const orderCancellationsRelations = relations(orderCancellationsTable, ({ one }) => ({
+  order: one(orders, { fields: [orderCancellationsTable.orderId], references: [orders.id] }),
+  user: one(users, { fields: [orderCancellationsTable.userId], references: [users.id] }),
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({

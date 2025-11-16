@@ -1,17 +1,21 @@
-   import { Drawer } from "expo-router/drawer";
-   import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-   import { useRouter, Redirect } from "expo-router";
-   import { useNavigation, DrawerActions } from "@react-navigation/native";
-   import { TouchableOpacity, DeviceEventEmitter, View, ActivityIndicator, Image } from "react-native";
-   import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-   import { REFRESH_EVENT } from "common-ui/src/lib/const-strs";
-   import { useAuth, useUserDetails } from "@/src/contexts/AuthContext";
-   import { tw, MyText, theme } from "common-ui";
+    import { Drawer } from "expo-router/drawer";
+    import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
+    import { useRouter, Redirect } from "expo-router";
+    import { useNavigation, DrawerActions } from "@react-navigation/native";
+    import { TouchableOpacity, DeviceEventEmitter, View, ActivityIndicator, Image } from "react-native";
+    import { useState, useEffect } from "react";
+    import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+    import { REFRESH_EVENT } from "common-ui/src/lib/const-strs";
+    import { useAuth, useUserDetails } from "@/src/contexts/AuthContext";
+    import { tw, MyText, theme } from "common-ui";
+    import { trpc } from "@/src/trpc-client";
 
 function CustomDrawerContent() {
   const router = useRouter();
   const { logout } = useAuth();
   const userDetails = useUserDetails();
+  const [isStoresExpanded, setIsStoresExpanded] = useState(false);
+  const { data: storesData, isLoading: isLoadingStores } = trpc.common.getStoresSummary.useQuery();
 
   const handleLogout = async () => {
     await logout();
@@ -46,12 +50,43 @@ function CustomDrawerContent() {
         </View>
       )}
       <DrawerItem
-        label="Dashboard"
+        label="Home"
         onPress={() => router.push("/(drawer)/dashboard")}
         icon={({ color, size }) => (
-          <MaterialIcons name="dashboard" size={size} color={color} />
+          <MaterialIcons name="home" size={size} color={color} />
         )}
       />
+      <TouchableOpacity
+        onPress={() => setIsStoresExpanded(!isStoresExpanded)}
+        style={tw`flex-row items-center p-3`}
+      >
+        <MaterialIcons name="store" size={24} color="#374151" style={tw`mr-3`} />
+        <MyText style={tw`flex-1 text-gray-800`}>Stores</MyText>
+        <View style={{ transform: [{ rotate: isStoresExpanded ? '180deg' : '0deg' }] }}>
+          <MaterialIcons name="keyboard-arrow-down" size={24} color="#374151" />
+        </View>
+      </TouchableOpacity>
+      {isStoresExpanded && (
+        <View style={tw`ml-4`}>
+          {isLoadingStores ? (
+            <MyText style={tw`text-gray-500 p-2`}>Loading stores...</MyText>
+          ) : storesData?.stores?.length ? (
+            storesData.stores.map((store) => (
+              <TouchableOpacity
+                key={store.id}
+                onPress={() => {
+                  router.push(`/(drawer)/stores?storeId=${store.id}`);
+                }}
+                style={tw`p-3 pl-8 mb-1`}
+              >
+                <MyText style={tw`text-sm font-medium`}>{store.name}</MyText>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <MyText style={tw`text-gray-500 p-2`}>No stores available</MyText>
+          )}
+        </View>
+      )}
        <DrawerItem
          label="My Cart"
          onPress={() => router.push("/(drawer)/my-cart")}
@@ -59,28 +94,36 @@ function CustomDrawerContent() {
            <MaterialIcons name="shopping-cart" size={size} color={color} />
          )}
        />
-       <DrawerItem
-         label="Me"
-         onPress={() => router.push("/(drawer)/me")}
-         icon={({ color, size }) => (
-           <MaterialIcons name="person" size={size} color={color} />
-         )}
-       />
-       <DrawerItem
-         label="Logout"
-         onPress={handleLogout}
-         icon={({ color, size }) => (
-           <MaterialIcons name="logout" size={size} color={color} />
-         )}
-       />
+        <DrawerItem
+          label="Me"
+          onPress={() => router.push("/(drawer)/me")}
+          icon={({ color, size }) => (
+            <MaterialIcons name="person" size={size} color={color} />
+          )}
+        />
+        <DrawerItem
+          label="Logout"
+          onPress={handleLogout}
+          icon={({ color, size }) => (
+            <MaterialIcons name="logout" size={size} color={color} />
+          )}
+        />
     </DrawerContentScrollView>
   );
 }
 
-   export default function Layout() {
-     const { isAuthenticated, isLoading } = useAuth();
-     const router = useRouter();
-     const navigation = useNavigation();
+    export default function Layout() {
+      const { isAuthenticated, isLoading } = useAuth();
+      const router = useRouter();
+      const navigation = useNavigation();
+      const [drawerTitle, setDrawerTitle] = useState<string | undefined>(undefined);
+
+      useEffect(() => {
+        const subscription = DeviceEventEmitter.addListener('updateDrawerTitle', (title: string) => {
+          setDrawerTitle(title);
+        });
+        return () => subscription.remove();
+      }, []);
 
     if (isLoading) {
       return (
@@ -108,15 +151,14 @@ function CustomDrawerContent() {
              shadowOffset: { height: 0, width:0 },
              elevation: 0,
            },
-           headerTitle: route.name === "dashboard" ? () => (
-            <View style={tw`-ml-8`}>
-
-             <Image
-               source={require("@/assets/logo.png")}
-               style={{ width: 120, height: 40, resizeMode: "contain" }}
-               />
-               </View>
-           ) : undefined,
+            headerTitle: route.name === "dashboard" ? () => (
+             <View style={tw`-ml-8`}>
+              <Image
+                source={require("@/assets/logo.png")}
+                style={{ width: 120, height: 40, resizeMode: "contain" }}
+                />
+                </View>
+            ) : (drawerTitle ? drawerTitle : undefined),
            headerTitleAlign: 'center',
            headerLeft: () => (
              <TouchableOpacity

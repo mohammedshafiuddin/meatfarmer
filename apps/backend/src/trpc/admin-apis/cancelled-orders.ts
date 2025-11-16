@@ -1,7 +1,7 @@
 import { router, publicProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { orders, orderStatus, users, addresses, orderItems, productInfo, units } from '../../db/schema';
+import { orders, orderStatus, users, addresses, orderItems, productInfo, units, orderCancellationsTable } from '../../db/schema';
 import { eq, desc } from 'drizzle-orm';
 
 const updateCancellationReviewSchema = z.object({
@@ -35,6 +35,7 @@ export const cancelledOrdersRouter = router({
                   },
                 },
               },
+              orderCancellations: true,
             },
           },
         },
@@ -45,27 +46,30 @@ export const cancelledOrdersRouter = router({
         return status.order.isCod || status.paymentStatus === 'success';
       });
 
-      return filteredStatuses.map(status => ({
-        id: status.order.id,
-        readableId: status.order.readableId,
-        customerName: `${status.order.user.name}`,
-        address: `${status.order.address.addressLine1}, ${status.order.address.city}`,
-        totalAmount: status.order.totalAmount,
-        cancellationReviewed: status.order.cancellationReviewed,
-        isRefundDone: status.order.isRefundDone,
-        adminNotes: status.order.adminNotes,
-        cancelReason: status.cancelReason,
-        paymentMode: status.order.isCod ? 'COD' : 'Online',
-        paymentStatus: status.paymentStatus || 'pending',
-        items: status.order.orderItems.map(item => ({
-          name: item.product.name,
-          quantity: item.quantity,
-          price: item.price,
-          unit: item.product.unit?.shortNotation,
-          amount: parseFloat(item.price.toString()) * parseFloat(item.quantity || '0'),
-        })),
-        createdAt: status.order.createdAt,
-      }));
+      return filteredStatuses.map(status => {
+        const cancellation = status.order.orderCancellations[0];
+        return {
+          id: status.order.id,
+          readableId: status.order.readableId,
+          customerName: `${status.order.user.name}`,
+          address: `${status.order.address.addressLine1}, ${status.order.address.city}`,
+          totalAmount: status.order.totalAmount,
+          cancellationReviewed: cancellation?.cancellationReviewed || false,
+          isRefundDone: cancellation?.refundStatus === 'processed' || false,
+          adminNotes: status.order.adminNotes,
+          cancelReason: status.cancelReason,
+          paymentMode: status.order.isCod ? 'COD' : 'Online',
+          paymentStatus: status.paymentStatus || 'pending',
+          items: status.order.orderItems.map(item => ({
+            name: item.product.name,
+            quantity: item.quantity,
+            price: item.price,
+            unit: item.product.unit?.shortNotation,
+            amount: parseFloat(item.price.toString()) * parseFloat(item.quantity || '0'),
+          })),
+          createdAt: status.order.createdAt,
+        };
+      });
     }),
 
   updateReview: publicProcedure
@@ -73,16 +77,17 @@ export const cancelledOrdersRouter = router({
     .mutation(async ({ input }) => {
       const { orderId, cancellationReviewed, adminNotes } = input;
 
-      const result = await db.update(orders)
+      const result = await db.update(orderCancellationsTable)
         .set({
           cancellationReviewed,
-          adminNotes: adminNotes || null,
+          cancellationAdminNotes: adminNotes || null,
+          reviewedAt: new Date(),
         })
-        .where(eq(orders.id, orderId))
+        .where(eq(orderCancellationsTable.orderId, orderId))
         .returning();
 
       if (result.length === 0) {
-        throw new Error("Order not found");
+        throw new Error("Cancellation record not found");
       }
 
       return result[0];
@@ -93,15 +98,17 @@ export const cancelledOrdersRouter = router({
     .mutation(async ({ input }) => {
       const { orderId, isRefundDone } = input;
 
-      const result = await db.update(orders)
+      const refundStatus = isRefundDone ? 'processed' : 'none';
+      const result = await db.update(orderCancellationsTable)
         .set({
-          isRefundDone,
+          refundStatus,
+          refundProcessedAt: isRefundDone ? new Date() : null,
         })
-        .where(eq(orders.id, orderId))
+        .where(eq(orderCancellationsTable.orderId, orderId))
         .returning();
 
       if (result.length === 0) {
-        throw new Error("Order not found");
+        throw new Error("Cancellation record not found");
       }
 
       return result[0];

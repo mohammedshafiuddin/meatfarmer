@@ -212,8 +212,6 @@ export const cartRouter = router({
           gt(deliverySlotInfo.freezeTime, sql`NOW()`),
           eq(deliverySlotInfo.isActive, true)
         ));
-        
-        console.log({cartProductIds, slotsData})
       // Group by productId
       const result: Record<number, any[]> = {};
       slotsData.forEach(slot => {

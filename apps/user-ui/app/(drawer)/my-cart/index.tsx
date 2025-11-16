@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { tw, useManualRefresh, AppContainer } from 'common-ui';
+import { tw, useManualRefresh, AppContainer, useFocusCallback, useMarkDataFetchers } from 'common-ui';
 import { BottomDropdown, Checkbox } from 'common-ui';
 import { Quantifier } from 'common-ui';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -17,13 +17,15 @@ export default function MyCart() {
     refetchOnWindowFocus: true,
   });
   const { data: slotsData, refetch: refetchSlots } = trpc.user.cart.getCartSlots.useQuery();
-  console.log({slotsData})
   
   const updateCartItem = trpc.user.cart.updateCartItem.useMutation();
   const removeFromCart = trpc.user.cart.removeFromCart.useMutation();
 
   
-
+  useMarkDataFetchers(() => {
+    refetch();
+    refetchSlots();
+  })
   useManualRefresh(() => { refetch(); refetchSlots(); });
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   

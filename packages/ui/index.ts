@@ -33,6 +33,8 @@ import TabViewWrapper from './src/components/tab-view';
 import MyFlatList from './src/components/flat-list';
 import useFocusCallback from './hooks/useFocusCallback'
 import useManualRefresh from './hooks/useManualRefresh';
+import { useDrawerTitle } from './hooks/useDrawerTitle';
+import { useMarkDataFetchers } from './hooks/useMarkDataFetchers';
 
 const localhost =
   Platform.OS === "android"
@@ -48,8 +50,8 @@ const API_URL =
 
 
 // const BASE_API_URL = API_URL;
-const BASE_API_URL = 'http://10.0.2.2:4000';
-// const BASE_API_URL = 'http://192.168.100.97:4000';
+// const BASE_API_URL = 'http://10.0.2.2:4000';
+const BASE_API_URL = 'http://192.168.1.10:4000';
 // const BASE_API_URL = 'https://technocracy.ovh/mf';
 export {
   RolesDropdown,
@@ -86,7 +88,9 @@ export {
    Quantifier,
    TabViewWrapper,
    MyFlatList,
-   useFocusCallback,
-   useManualRefresh,
-   BASE_API_URL
+    useFocusCallback,
+    useManualRefresh,
+    useDrawerTitle,
+    BASE_API_URL,
+    useMarkDataFetchers
 };

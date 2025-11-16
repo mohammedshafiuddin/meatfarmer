@@ -19,6 +19,7 @@ import { Provider as PaperProvider } from "react-native-paper";
 import { AuthProvider } from "@/src/contexts/AuthContext";
 import { trpc, trpcClient } from "@/src/trpc-client";
 import { SafeAreaView } from "react-native-safe-area-context";
+import LocationTestWrapper from "@/components/LocationTestWrapper";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -39,7 +40,9 @@ export default function RootLayout() {
               <AuthProvider>
                 <NotificationProvider>
                   <PaperProvider>
-                    <Stack screenOptions={{ headerShown: false }} />
+                    <LocationTestWrapper>
+                      <Stack screenOptions={{ headerShown: false }} />
+                    </LocationTestWrapper>
                   </PaperProvider>
                 </NotificationProvider>
               </AuthProvider>

@@ -3,7 +3,7 @@ import { razorpayId, razorpaySecret } from "../../lib/env-exporter";
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { orders, payments, orderStatus } from '../../db/schema';
+import { orders, payments, orderStatus, orderCancellationsTable } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { ApiError } from '../../lib/api-error';
 import crypto from 'crypto';
@@ -201,6 +201,86 @@ export const paymentRouter = router({
       return {
         success: true,
         message: "Payment verified successfully",
+      };
+    }),
+
+  initiateRefund: protectedProcedure
+    .input(z.object({
+      orderId: z.number(),
+      refundPercent: z.number().min(0).max(100).optional(),
+      refundAmount: z.number().min(0).optional(),
+    }).refine((data) => {
+      const hasPercent = data.refundPercent !== undefined;
+      const hasAmount = data.refundAmount !== undefined;
+      return (hasPercent && !hasAmount) || (!hasPercent && hasAmount);
+    }, { message: "Provide either refundPercent or refundAmount, not both or neither" }))
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.user.userId;
+      const { orderId, refundPercent, refundAmount } = input;
+
+      // Validate order exists and belongs to user
+      const order = await db.query.orders.findFirst({
+        where: eq(orders.id, orderId),
+      });
+
+      if (!order) {
+        throw new ApiError("Order not found", 404);
+      }
+
+      if (order.userId !== userId) {
+        throw new ApiError("Order does not belong to user", 403);
+      }
+
+      // Check if order is paid
+      const orderStatusRecord = await db.query.orderStatus.findFirst({
+        where: eq(orderStatus.orderId, orderId),
+      });
+
+      if (!orderStatusRecord || orderStatusRecord.paymentStatus !== 'success') {
+        throw new ApiError("Order is not paid or payment not verified", 400);
+      }
+
+      // Get payment record
+      const payment = await db.query.payments.findFirst({
+        where: eq(payments.orderId, orderId),
+      });
+
+      if (!payment || payment.status !== 'success') {
+        throw new ApiError("Payment not found or not successful", 404);
+      }
+
+      // Calculate refund amount
+      let calculatedRefundAmount: number;
+      if (refundPercent !== undefined) {
+        calculatedRefundAmount = (parseFloat(order.totalAmount) * refundPercent) / 100;
+      } else if (refundAmount !== undefined) {
+        calculatedRefundAmount = refundAmount;
+        if (calculatedRefundAmount > parseFloat(order.totalAmount)) {
+          throw new ApiError("Refund amount cannot exceed order total", 400);
+        }
+      } else {
+        throw new ApiError("Invalid refund parameters", 400);
+      }
+
+      // Initiate Razorpay refund
+      const razorpayRefund = await razorpayInstance.payments.refund(payment.merchantOrderId, {
+        amount: Math.round(calculatedRefundAmount * 100), // Convert to paisa
+      });
+
+      // Insert refund record
+      await db.insert(orderCancellationsTable).values({
+        orderId,
+        userId,
+        refundAmount: calculatedRefundAmount.toString(),
+        refundStatus: 'initiated',
+        razorpayRefundId: razorpayRefund.id,
+      });
+
+      return {
+        refundId: razorpayRefund.id,
+        amount: calculatedRefundAmount,
+        status: 'initiated',
+        message: "Refund initiated successfully",
       };
     }),
 });
