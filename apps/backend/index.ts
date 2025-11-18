@@ -12,6 +12,7 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { appRouter } from './src/trpc/router';
 import jwt from 'jsonwebtoken'
 import signedUrlCache from 'src/lib/signed-url-cache';
+import { seed } from 'src/db/seed';
 // import { seed } from 'src/db/seed';
 
 

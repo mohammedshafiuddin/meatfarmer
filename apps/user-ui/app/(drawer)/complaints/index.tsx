@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { MyText, tw, useManualRefresh, MyFlatList } from 'common-ui';
+import { MyText, tw, useManualRefresh, MyFlatList, useMarkDataFetchers } from 'common-ui';
 import { MaterialIcons } from '@expo/vector-icons';
 import { trpc } from '@/src/trpc-client';
 
@@ -9,6 +9,10 @@ export default function Complaints() {
   const complaints = data?.complaints || [];
 
   useManualRefresh(() => refetch());
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
 
   if (isLoading) {
     return (

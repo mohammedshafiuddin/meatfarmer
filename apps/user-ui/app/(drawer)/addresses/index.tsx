@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AppContainer, MyText, tw } from 'common-ui';
+import { AppContainer, MyText, tw, useMarkDataFetchers } from 'common-ui';
 import { trpc } from '@/src/trpc-client';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useFocusCallback } from 'common-ui';
 import AddressForm from '@/src/components/AddressForm';
 
 interface Address {
@@ -84,8 +83,7 @@ export default function Addresses() {
 
   const { data, isLoading, error, refetch } = trpc.user.address.getUserAddresses.useQuery();
 
-  // Refetch addresses when screen comes into focus
-  useFocusCallback(() => {
+  useMarkDataFetchers(() => {
     refetch();
   });
 

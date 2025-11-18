@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ImageCarousel, theme, tw, useManualRefresh, MyFlatList, useDrawerTitle } from 'common-ui';
+import { ImageCarousel, theme, tw, useManualRefresh, MyFlatList, useDrawerTitle, useMarkDataFetchers } from 'common-ui';
 import dayjs from 'dayjs';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { trpc } from '@/src/trpc-client';
@@ -102,10 +102,14 @@ export default function Stores() {
   const { storeId } = useLocalSearchParams();
   const storeIdNum = parseInt(storeId as string);
 
-  const { data: storeData, isLoading } = trpc.user.stores.getStoreWithProducts.useQuery(
+  const { data: storeData, isLoading, refetch } = trpc.user.stores.getStoreWithProducts.useQuery(
     { storeId: storeIdNum },
     { enabled: !!storeIdNum }
   );
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
 
   useDrawerTitle(storeData?.store?.name || 'Store',[storeData?.store?.name]);
 

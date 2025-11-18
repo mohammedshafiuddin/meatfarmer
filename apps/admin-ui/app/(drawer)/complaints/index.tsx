@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Alert } from "react-native";
-import { tw, ConfirmationDialog, MyText, MyFlatList } from "common-ui";
+import { tw, ConfirmationDialog, MyText, MyFlatList, useMarkDataFetchers } from "common-ui";
 import { usePagination } from "../../../hooks/usePagination";
 import { trpc } from "@/src/trpc-client";
 
@@ -11,6 +11,10 @@ export default function Complaints() {
     limit: pageSize,
   });
   const resolveComplaint = trpc.admin.complaint.resolve.useMutation();
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedComplaintId, setSelectedComplaintId] = useState<number | null>(null);

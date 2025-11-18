@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { tw, useManualRefresh, AppContainer, useFocusCallback, useMarkDataFetchers } from 'common-ui';
+import { tw, useManualRefresh, AppContainer, useMarkDataFetchers } from 'common-ui';
 import { BottomDropdown, Checkbox } from 'common-ui';
 import { Quantifier } from 'common-ui';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';

@@ -1,7 +1,7 @@
   import React, { useState } from 'react';
   import { View, Text, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
   import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ImageCarousel, tw, BottomDialog, useManualRefresh } from 'common-ui';
+import { ImageCarousel, tw, BottomDialog, useManualRefresh, useMarkDataFetchers } from 'common-ui';
 import { theme } from 'common-ui/src/theme';
 import dayjs from 'dayjs';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -21,9 +21,13 @@ import { trpc } from '@/src/trpc-client';
     const addToCart = trpc.user.cart.addToCart.useMutation();
    
 
-   useManualRefresh(() => {
-     refetch();
-   });
+    useManualRefresh(() => {
+      refetch();
+    });
+
+    useMarkDataFetchers(() => {
+      refetch();
+    });
 
     const handleAddToCart = (productId: number) => {
       addToCart.mutate({ productId, quantity: 1 }, {

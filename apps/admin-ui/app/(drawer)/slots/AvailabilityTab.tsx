@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { AppContainer, theme, tw, useFocusCallback, useManualRefresh, MyFlatList } from 'common-ui';
+import { AppContainer, theme, tw, useManualRefresh, MyFlatList } from 'common-ui';
 import dayjs from 'dayjs';
 import { trpc } from '../../../src/trpc-client';
 import BottomDropdown, { DropdownOption } from 'common-ui/src/components/bottom-dropdown';
@@ -25,8 +25,6 @@ export default function AvailabilityTab() {
     enabled: slotIds.length > 0,
   });
   
-  
-  useFocusCallback(refetchSlotProducts)
 
   useManualRefresh(() => {
     refetchSlots();

@@ -12,6 +12,7 @@ import {
   AppContainer,
   MyText,
   useManualRefresh,
+  useMarkDataFetchers,
   tw,
 } from "common-ui";
 import { Order } from "common-ui/shared-types";
@@ -74,10 +75,15 @@ export default function Delivery() {
     }
   );
   const orders = ordersResponse?.data;
-  const { data: slotsData } = trpc.admin.slots.getAll.useQuery();
+  const { data: slotsData, refetch: refetchSlots } = trpc.admin.slots.getAll.useQuery();
   const updateDeliveredMutation = trpc.admin.order.updateDelivered.useMutation();
 
   useManualRefresh(() => refetch());
+
+  useMarkDataFetchers(() => {
+    refetch();
+    refetchSlots();
+  });
 
   const notDeliveredCount = (orders || []).filter(
     (order) => !order.isDelivered

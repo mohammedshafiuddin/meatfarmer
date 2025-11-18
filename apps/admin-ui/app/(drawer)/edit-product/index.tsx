@@ -27,6 +27,7 @@ export default function EditProduct() {
       shortDescription: values.shortDescription,
       longDescription: values.longDescription,
       unitId: parseInt(values.unitId),
+      storeId: parseInt(values.storeId),
       price: parseFloat(values.price),
       marketPrice: values.marketPrice ? parseFloat(values.marketPrice) : undefined,
       deals: values.deals?.filter((deal: any) =>
@@ -110,6 +111,7 @@ export default function EditProduct() {
     shortDescription: productData.shortDescription || '',
     longDescription: productData.longDescription || '',
     unitId: productData.unitId,
+    storeId: productData.storeId,
     price: productData.price.toString(),
     marketPrice: productData.marketPrice?.toString() || '',
     deals: productData.deals?.map(deal => ({

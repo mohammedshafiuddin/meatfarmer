@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, Image, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Entypo, MaterialIcons } from '@expo/vector-icons';
-import { tw, useManualRefresh, MyText, MyFlatList } from 'common-ui';
+import { tw, useManualRefresh, MyText, MyFlatList, useMarkDataFetchers } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 
 import { trpc } from '@/src/trpc-client';
@@ -50,6 +50,10 @@ export default function MyOrders() {
   const orders = ordersData?.data || [];
 
   useManualRefresh(() => refetch());
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogItems, setDialogItems] = useState<typeof orders[0]['items']>([]);

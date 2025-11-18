@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { tw, AppContainer, MyText } from 'common-ui';
+import { tw, AppContainer, MyText, useMarkDataFetchers } from 'common-ui';
 import { MaterialIcons } from '@expo/vector-icons';
 import { trpc } from '@/src/trpc-client';
 
@@ -10,7 +10,11 @@ export default function ProductDetail() {
   const router = useRouter();
   const productId = parseInt(id as string);
 
-  const { data: productData, isLoading, error } = trpc.admin.product.getProductById.useQuery({id: productId});
+  const { data: productData, isLoading, error, refetch } = trpc.admin.product.getProductById.useQuery({id: productId});
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
   const deleteProduct = trpc.admin.product.deleteProduct.useMutation();
   const toggleOutOfStock = trpc.admin.product.toggleOutOfStock.useMutation();
 

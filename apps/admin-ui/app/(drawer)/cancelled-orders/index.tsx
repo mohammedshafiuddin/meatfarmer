@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
-import { TabViewWrapper, AppContainer, MyText, tw, useManualRefresh } from 'common-ui';
+import { TabViewWrapper, AppContainer, MyText, tw, useManualRefresh, useMarkDataFetchers } from 'common-ui';
 import { trpc } from '../../../src/trpc-client';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { OrderMenu } from '@/components/OrderMenu';
@@ -107,6 +107,10 @@ export default function CancelledOrders() {
   const updateReviewMutation = trpc.admin.cancelledOrders.updateReview.useMutation();
 
   useManualRefresh(refetch);
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
 
   const handleToggleReview = (orderId: number, reviewed: boolean) => {
     updateReviewMutation.mutate({

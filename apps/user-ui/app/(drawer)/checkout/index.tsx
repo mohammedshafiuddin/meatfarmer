@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { tw, theme, MyTextInput, AppContainer } from 'common-ui';
+import { tw, theme, MyTextInput, AppContainer, useMarkDataFetchers, LoadingDialog } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 import { Checkbox } from 'common-ui';
 import { BottomDropdown } from 'common-ui';
@@ -21,9 +21,15 @@ export default function Checkout() {
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
 
-  const { data: cartData } = trpc.user.cart.getCart.useQuery();
-  const { data: addresses } = trpc.user.address.getUserAddresses.useQuery();
-  const { data: slotsData } = trpc.user.slots.getSlots.useQuery();
+  const { data: cartData, refetch: refetchCart } = trpc.user.cart.getCart.useQuery();
+  const { data: addresses, refetch: refetchAddresses } = trpc.user.address.getUserAddresses.useQuery();
+  const { data: slotsData, refetch: refetchSlots } = trpc.user.slots.getSlots.useQuery();
+
+  useMarkDataFetchers(() => {
+    refetchCart();
+    refetchAddresses();
+    refetchSlots();
+  });
 
   
   
@@ -33,6 +39,7 @@ export default function Checkout() {
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [selectedCouponId, setSelectedCouponId] = useState<number | null>(null);
   const [userNotes, setUserNotes] = useState('');
+  const [isLoadingDialogOpen, setIsLoadingDialogOpen] = useState(false);
 
   const isAddressSelected = !!selectedAddress;
 
@@ -98,6 +105,8 @@ export default function Checkout() {
   const placeOrderMutation = trpc.user.order.placeOrder.useMutation({
     onSuccess: (data) => {
       // For online payment, proceed to payment instead of navigating
+      console.log({data})
+      
       if (!data.data.isCod) {
         createRazorpayOrderMutation.mutate({ orderId: data.data.id.toString() });
       }
@@ -107,6 +116,9 @@ export default function Checkout() {
     },
     onError: (error: any) => {
       Alert.alert('Error', error.message || 'Failed to place order');
+    },
+    onSettled: () => {
+      setIsLoadingDialogOpen(false);
     },
   });
 
@@ -142,6 +154,7 @@ export default function Checkout() {
       return;
     }
 
+    setIsLoadingDialogOpen(true);
     const orderData = {
       selectedItems: selectedItems.map(item => ({ productId: item.productId, quantity: item.quantity })),
       addressId: selectedAddress,
@@ -163,6 +176,7 @@ export default function Checkout() {
       return;
     }
 
+    setIsLoadingDialogOpen(true);
     const orderData = {
       selectedItems: selectedItems.map(item => ({ productId: item.productId, quantity: item.quantity })),
       addressId: selectedAddress,
@@ -357,6 +371,11 @@ export default function Checkout() {
             }}
           />
         </BottomDialog>
+
+        <LoadingDialog
+          open={isLoadingDialogOpen}
+          message="Placing your order..."
+        />
       </View>
     </AppContainer>
   );

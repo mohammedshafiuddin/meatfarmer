@@ -2,7 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { MyText, tw, MyButton } from 'common-ui';
+import { MyText, tw, MyButton, useMarkDataFetchers } from 'common-ui';
 import MyFlatList from 'common-ui/src/components/flat-list';
 import { trpc } from '@/src/trpc-client';
 
@@ -10,6 +10,10 @@ export default function Stores() {
   const router = useRouter();
 
   const { data: storesData, isLoading, error, refetch } = trpc.admin.store.getStores.useQuery();
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
 
   const stores = storesData?.stores || [];
 

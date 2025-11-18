@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity, Image, Alert, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { AppContainer, MyText, tw, MyButton, useManualRefresh, MyTextInput, SearchBar } from 'common-ui';
+import { AppContainer, MyText, tw, MyButton, useManualRefresh, MyTextInput, SearchBar, useMarkDataFetchers } from 'common-ui';
 
 import { trpc } from '@/src/trpc-client';
 import { Product } from '@/src/api-hooks/product.api';
@@ -20,6 +20,10 @@ export default function Products() {
   const toggleOutOfStockMutation = trpc.admin.product.toggleOutOfStock.useMutation();
 
   useManualRefresh(refetch);
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
 
   const products = productsData?.products || [];
 

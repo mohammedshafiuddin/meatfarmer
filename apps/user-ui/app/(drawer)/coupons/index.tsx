@@ -1,10 +1,9 @@
 import React from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
-import { AppContainer, MyText, tw } from 'common-ui';
+import { AppContainer, MyText, tw, useMarkDataFetchers } from 'common-ui';
 import { trpc } from '@/src/trpc-client';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import dayjs from 'dayjs';
-import { useFocusCallback } from 'common-ui';
 
 interface CouponCardProps {
   coupon: {
@@ -115,8 +114,7 @@ function CouponSection({
 export default function Coupons() {
   const { data, isLoading, error, refetch } = trpc.user.coupon.getMyCoupons.useQuery();
 
-  // Refetch coupons when screen comes into focus
-  useFocusCallback(() => {
+  useMarkDataFetchers(() => {
     refetch();
   });
 

@@ -3,7 +3,7 @@ import { View, TouchableOpacity, Alert } from "react-native";
 import DraggableFlatList, {
   RenderItemParams,
 } from "react-native-draggable-flatlist";
-import { AppContainer, MyText, tw, useManualRefresh } from "common-ui";
+import { AppContainer, MyText, tw, useManualRefresh, useMarkDataFetchers } from "common-ui";
 import { Order } from "common-ui/shared-types";
 import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -47,6 +47,12 @@ export default function DeliverySequences() {
 
   // Manual refresh functionality
   useManualRefresh(() => {
+    refetchSlots();
+    refetchOrders();
+    refetchSequence();
+  });
+
+  useMarkDataFetchers(() => {
     refetchSlots();
     refetchOrders();
     refetchSequence();

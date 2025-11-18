@@ -1,5 +1,5 @@
 import { View, TouchableOpacity } from 'react-native';
-import { AppContainer, MyText, BottomDropdown, tw, MyFlatList } from 'common-ui';
+import { AppContainer, MyText, BottomDropdown, tw, MyFlatList, useMarkDataFetchers } from 'common-ui';
 import { useRouter } from 'expo-router';
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
@@ -9,7 +9,11 @@ import { trpc } from '@/src/trpc-client';
 export default function ManageOrders() {
   const router = useRouter();
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
-  const { data: slotsData } = trpc.admin.slots.getAll.useQuery();
+  const { data: slotsData, refetch } = trpc.admin.slots.getAll.useQuery();
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
 
   useEffect(() => {
     if (slotsData?.slots && slotsData.slots.length > 0 && !selectedSlotId) {

@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-  import { ImageCarousel, theme, tw, useManualRefresh, AppContainer, MyFlatList } from "common-ui";
+  import { ImageCarousel, theme, tw, useManualRefresh, AppContainer, MyFlatList, useMarkDataFetchers, LoadingDialog } from "common-ui";
     import { useGetAllProductsSummary } from "common-ui/src/common-api-hooks/product.api";
    import dayjs from "dayjs";
    import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -109,41 +109,54 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
   );
 };
 
-     export default function Dashboard() {
-       const router = useRouter();
-       // const { data: productsData, isLoading, error, refetch } = useGetAllProductsSummary();
-       const [inputQuery, setInputQuery] = useState('');
-       const [searchQuery, setSearchQuery] = useState('');
+      export default function Dashboard() {
+        const router = useRouter();
+        // const { data: productsData, isLoading, error, refetch } = useGetAllProductsSummary();
+        const [inputQuery, setInputQuery] = useState('');
+        const [searchQuery, setSearchQuery] = useState('');
+        const [isLoadingDialogOpen, setIsLoadingDialogOpen] = useState(false);
        const { data: productsData, isLoading, error, refetch } = trpc.common.product.getAllProductsSummary.useQuery({ searchQuery });
        
        const products = productsData?.products || [];
       const addToCart = trpc.user.cart.addToCart.useMutation();
     
-     useManualRefresh(() => {
-       refetch();
-     });
+      useManualRefresh(() => {
+        refetch();
+      });
 
-      const handleAddToCart = (productId: number) => {
-        addToCart.mutate({ productId, quantity: 1 }, {
-          onSuccess: () => {
-            Alert.alert('Success', 'Item added to cart!');
-          },
-          onError: (error: any) => {
-            Alert.alert('Error', error.message || 'Failed to add item to cart');
-          },
-        });
-      };
+      useMarkDataFetchers(() => {
+        refetch();
+      });
 
-      const handleBuyNow = (productId: number) => {
-        addToCart.mutate({ productId, quantity: 1 }, {
-          onSuccess: () => {
-            router.push(`/my-cart?select=${productId}`);
-          },
-          onError: (error: any) => {
-            Alert.alert('Error', error.message || 'Failed to add item to cart');
-          },
-        });
-      };
+       const handleAddToCart = (productId: number) => {
+         setIsLoadingDialogOpen(true);
+         addToCart.mutate({ productId, quantity: 1 }, {
+           onSuccess: () => {
+             Alert.alert('Success', 'Item added to cart!');
+           },
+           onError: (error: any) => {
+             Alert.alert('Error', error.message || 'Failed to add item to cart');
+           },
+           onSettled: () => {
+             setIsLoadingDialogOpen(false);
+           },
+         });
+       };
+
+       const handleBuyNow = (productId: number) => {
+         setIsLoadingDialogOpen(true);
+         addToCart.mutate({ productId, quantity: 1 }, {
+           onSuccess: () => {
+             router.push(`/my-cart?select=${productId}`);
+           },
+           onError: (error: any) => {
+             Alert.alert('Error', error.message || 'Failed to add item to cart');
+           },
+           onSettled: () => {
+             setIsLoadingDialogOpen(false);
+           },
+         });
+       };
 
   if (isLoading) {
     return (
@@ -183,8 +196,13 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
               <Text style={tw`text-lg font-semibold mb-2`}>Results for "{searchQuery}"</Text>
             ) : null}
           </View>
-        }
-      />
-    </View>
-  );
-}
+         }
+       />
+
+       <LoadingDialog
+         open={isLoadingDialogOpen}
+         message="Adding to cart..."
+       />
+     </View>
+   );
+ }

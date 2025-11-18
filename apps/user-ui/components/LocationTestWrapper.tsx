@@ -1,16 +1,58 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import * as Location from 'expo-location';
-import { BackHandler } from 'react-native';
+import { BackHandler, Platform } from 'react-native';
 import { ConfirmationDialog } from 'common-ui';
 import { trpc } from '../src/trpc-client';
+
+// Emulator detection utility
+const isEmulator = (): boolean => {
+  try {
+    // Check for common emulator indicators
+    const brand = (Platform.constants as any)?.Brand?.toLowerCase();
+    const model = (Platform.constants as any)?.Model?.toLowerCase();
+    const manufacturer = (Platform.constants as any)?.Manufacturer?.toLowerCase();
+
+    // Android emulator detection
+    if (Platform.OS === 'android') {
+      return (
+        brand?.includes('generic') ||
+        brand?.includes('unknown') ||
+        model?.includes('emulator') ||
+        model?.includes('sdk') ||
+        model?.includes('android sdk') ||
+        manufacturer?.includes('genymotion') ||
+        manufacturer?.includes('unknown')
+      );
+    }
+
+    // iOS simulator detection
+    if (Platform.OS === 'ios') {
+      return (
+        (Platform.constants as any)?.systemName?.includes('Simulator') ||
+        !(Platform.constants as any)?.isDevice || // iOS simulator
+        false
+      );
+    }
+
+    return false;
+  } catch (error) {
+    // If detection fails, assume it's a real device to be safe
+    console.warn('Emulator detection failed:', error);
+    return false;
+  }
+};
 
 interface LocationTestWrapperProps {
   children: ReactNode;
 }
 
 const LocationTestWrapper: React.FC<LocationTestWrapperProps> = ({ children }) => {
+  // Skip location checks entirely for emulators
+  if (isEmulator()) {
+    return <>{children}</>;
+  }
 
-  return <>{children}</>
+  // Enable location functionality for real devices
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [locationErrorDialogOpen, setLocationErrorDialogOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);

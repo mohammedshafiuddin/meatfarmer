@@ -19,6 +19,8 @@ type CreateDeal = {
 export const createProduct = async (req: Request, res: Response) => {
   const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, deals } = req.body;
 
+  console.log({name, unitId, storeId, price})
+  
   // Validate required fields
   if (!name || !unitId || !storeId || !price) {
     throw new ApiError("Name, unitId, storeId, and price are required", 400);

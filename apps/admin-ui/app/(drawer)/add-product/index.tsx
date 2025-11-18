@@ -13,6 +13,7 @@ export default function AddProduct() {
       shortDescription: values.shortDescription,
       longDescription: values.longDescription,
       unitId: parseInt(values.unitId),
+      storeId: parseInt(values.storeId),
       price: parseFloat(values.price),
       marketPrice: values.marketPrice ? parseFloat(values.marketPrice) : undefined,
     };
@@ -55,6 +56,7 @@ export default function AddProduct() {
     longDescription: '',
     unitId: 0,
     price: '',
+    storeId: 1,
     marketPrice: '',
     deals: [{ quantity: '', price: '', validTill: new Date() }],
   };

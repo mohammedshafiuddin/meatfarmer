@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { tw, AppContainer, BottomDialog, MyButton, MyText, SearchBar, MyFlatList } from 'common-ui';
+import { tw, AppContainer, BottomDialog, MyButton, MyText, SearchBar, MyFlatList, useMarkDataFetchers } from 'common-ui';
 import useManualRefresh from 'common-ui/hooks/useManualRefresh';
 import { CreateCouponPayload, Coupon } from 'common-ui/shared-types';
 import CouponForm from '../../../src/components/CouponForm';
@@ -33,6 +33,10 @@ export default function Coupons() {
   }, [refetch]);
 
   useManualRefresh(() => refetch());
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
 
   const handleCreateCoupon = (values: CreateCouponPayload) => {
     createCoupon.mutate(values, {

@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
-import { TabViewWrapper, AppContainer, MyText, tw, useManualRefresh } from 'common-ui';
+import { TabViewWrapper, AppContainer, MyText, tw, useManualRefresh, useMarkDataFetchers } from 'common-ui';
 import { trpc, trpcClient } from '../../../src/trpc-client';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import VendorSnippetForm from '../../../components/VendorSnippetForm';
 import SnippetOrdersView from '../../../components/SnippetOrdersView';
 import { SnippetMenu } from '../../../components/SnippetMenu';
-import useFocusCallback from 'common-ui/hooks/useFocusCallback';
 
 interface VendorSnippet {
   id: number;
@@ -98,6 +97,10 @@ export default function VendorSnippets() {
 
 
   useManualRefresh(refetch);
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
 
   const handleCreate = () => {
     setShowCreateForm(true);

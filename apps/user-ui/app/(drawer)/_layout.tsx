@@ -87,20 +87,27 @@ function CustomDrawerContent() {
           )}
         </View>
       )}
-       <DrawerItem
-         label="My Cart"
-         onPress={() => router.push("/(drawer)/my-cart")}
-         icon={({ color, size }) => (
-           <MaterialIcons name="shopping-cart" size={size} color={color} />
-         )}
-       />
         <DrawerItem
-          label="Me"
-          onPress={() => router.push("/(drawer)/me")}
+          label="My Cart"
+          onPress={() => router.push("/(drawer)/my-cart")}
           icon={({ color, size }) => (
-            <MaterialIcons name="person" size={size} color={color} />
+            <MaterialIcons name="shopping-cart" size={size} color={color} />
           )}
         />
+        <DrawerItem
+          label="Delivery Slots"
+          onPress={() => router.push("/(drawer)/delivery-slots")}
+          icon={({ color, size }) => (
+            <MaterialIcons name="schedule" size={size} color={color} />
+          )}
+        />
+         <DrawerItem
+           label="Me"
+           onPress={() => router.push("/(drawer)/me")}
+           icon={({ color, size }) => (
+             <MaterialIcons name="person" size={size} color={color} />
+           )}
+         />
         <DrawerItem
           label="Logout"
           onPress={handleLogout}
@@ -240,6 +247,12 @@ function CustomDrawerContent() {
           name="my-cart"
           options={{
             title: "My Cart",
+          }}
+        />
+        <Drawer.Screen
+          name="delivery-slots"
+          options={{
+            title: "Delivery Slots",
           }}
         />
         <Drawer.Screen

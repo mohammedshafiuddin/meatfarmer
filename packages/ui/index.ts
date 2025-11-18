@@ -14,6 +14,7 @@ import MyButton, { MyTextButton } from "./src/components/button";
 import { useTheme, Theme } from "./hooks/theme-context";
 import MyTextInput from "./src/components/textinput";
 import BottomDialog, { ConfirmationDialog } from "./src/components/dialog";
+import LoadingDialog from "./src/components/loading-dialog";
 import DatePicker from "./src/components/date-picker";
 import MyText from "./src/components/text";
 import BottomDropdown from "./src/components/bottom-dropdown";
@@ -37,23 +38,23 @@ import { useDrawerTitle } from './hooks/useDrawerTitle';
 import { useMarkDataFetchers } from './hooks/useMarkDataFetchers';
 import { StorageServiceCasual } from './src/services/StorageServiceCasual';
 
-const localhost =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:4000" // Android emulator
-    : "http://localhost:4000"; // iOS simulator / web dev
+// const localhost =
+//   Platform.OS === "android"
+//     ? "http://10.0.2.2:4000" // Android emulator
+//     : "http://localhost:4000"; // iOS simulator / web dev
 
 // const production = "https://technocracy.ovh/mf";
-const production = "http://10.0.2.2:4000";
-// const production = "http://192.168.1.3:4000";
+// // const production = "http://10.0.2.2:4000";
+// // const production = "http://192.168.1.3:4000";
 
-const API_URL =
-  Constants.executionEnvironment === "standalone" ? production : localhost;
+// const API_URL =
+//   Constants.executionEnvironment === "standalone" ? production : localhost;
 
 
 // const BASE_API_URL = API_URL;
 // const BASE_API_URL = 'http://10.0.2.2:4000';
-const BASE_API_URL = 'http://192.168.1.10:4000';
-// const BASE_API_URL = 'https://technocracy.ovh/mf';
+const BASE_API_URL = 'http://192.168.100.97:4000';
+// const BASE_API_URL = 'https://mf.technocracy.ovh';
 export {
   RolesDropdown,
   StorageService,
@@ -69,10 +70,11 @@ export {
   useTheme,
   Theme,
   MyTextInput,
-  BottomDialog,
-  MyText,
-  ConfirmationDialog,
-  DatePicker,
+   BottomDialog,
+   LoadingDialog,
+   MyText,
+   ConfirmationDialog,
+   DatePicker,
 
   BottomDropdown,
   ImageViewerURI,
