@@ -87,6 +87,24 @@ export const productInfo = mf.table('product_info', {
   storeId: integer('store_id').notNull().references(() => storeInfo.id),
 });
 
+export const productTagInfo = mf.table('product_tag_info', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  tagName: varchar('tag_name', { length: 100 }).notNull().unique(),
+  tagDescription: varchar('tag_description', { length: 500 }),
+  imageUrl: varchar('image_url', { length: 500 }),
+  isDashboardTag: boolean('is_dashboard_tag').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const productTags = mf.table('product_tags', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  productId: integer('product_id').notNull().references(() => productInfo.id),
+  tagId: integer('tag_id').notNull().references(() => productTagInfo.id),
+  assignedAt: timestamp('assigned_at').notNull().defaultNow(),
+}, (t) => ({
+  unq_product_tag: unique('unique_product_tag').on(t.productId, t.tagId),
+}));
+
 export const deliverySlotInfo = mf.table('delivery_slot_info', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   deliveryTime: timestamp('delivery_time').notNull(),
@@ -308,6 +326,16 @@ export const productInfoRelations = relations(productInfo, ({ one, many }) => ({
   specialDeals: many(specialDeals),
   orderItems: many(orderItems),
   cartItems: many(cartItems),
+  tags: many(productTags),
+}));
+
+export const productTagInfoRelations = relations(productTagInfo, ({ many }) => ({
+  products: many(productTags),
+}));
+
+export const productTagsRelations = relations(productTags, ({ one }) => ({
+  product: one(productInfo, { fields: [productTags.productId], references: [productInfo.id] }),
+  tag: one(productTagInfo, { fields: [productTags.tagId], references: [productTagInfo.id] }),
 }));
 
 export const deliverySlotInfoRelations = relations(deliverySlotInfo, ({ many }) => ({

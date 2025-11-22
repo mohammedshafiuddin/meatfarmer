@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { db } from "../db/db_index";
-import { productInfo, units, specialDeals } from "../db/schema";
+import { productInfo, units, specialDeals, productTags } from "../db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { ApiError } from "../lib/api-error";
 import { imageUploadS3, getOriginalUrlFromSignedUrl } from "../lib/s3-client";
@@ -17,7 +17,7 @@ type CreateDeal = {
  * Create a new product
  */
 export const createProduct = async (req: Request, res: Response) => {
-  const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, deals } = req.body;
+  const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, deals, tagIds } = req.body;
 
   console.log({name, unitId, storeId, price})
   
@@ -88,6 +88,16 @@ export const createProduct = async (req: Request, res: Response) => {
       .returning();
   }
 
+  // Handle tag assignments if provided
+  if (tagIds && Array.isArray(tagIds)) {
+    const tagAssociations = tagIds.map((tagId: number) => ({
+      productId: newProduct.id,
+      tagId,
+    }));
+
+    await db.insert(productTags).values(tagAssociations);
+  }
+
   return res.status(201).json({
     product: newProduct,
     deals: createdDeals,
@@ -100,7 +110,7 @@ export const createProduct = async (req: Request, res: Response) => {
  */
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, deals:dealsRaw, imagesToDelete:imagesToDeleteRaw } = req.body;
+  const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, deals:dealsRaw, imagesToDelete:imagesToDeleteRaw, tagIds } = req.body;
 
   const deals = dealsRaw ? JSON.parse(dealsRaw) : null;
   const imagesToDelete = imagesToDeleteRaw ? JSON.parse(imagesToDeleteRaw) : [];
@@ -239,6 +249,24 @@ export const updateProduct = async (req: Request, res: Response) => {
           .where(eq(specialDeals.id, existingDeal.id));
       }
     }
+  }
+
+  console.log({tagIds})
+  
+  // Handle tag assignments if provided
+  // if (tagIds && Array.isArray(tagIds)) {
+  if (tagIds && Boolean(tagIds)) {
+    // Remove existing tags
+    await db.delete(productTags).where(eq(productTags.productId, parseInt(id)));
+
+    const tagIdsArray = Array.isArray(tagIds) ? tagIds : [+tagIds]
+    // Add new tags
+    const tagAssociations = tagIdsArray.map((tagId: number) => ({
+      productId: parseInt(id),
+      tagId,
+    }));
+
+    await db.insert(productTags).values(tagAssociations);
   }
 
   return res.status(200).json({

@@ -33,7 +33,7 @@ const OrderItem = ({
             </MyText>
           </TouchableOpacity>
           <OrderMenu
-            orderId={order.orderId}
+            orderId={order.id}
             variant="packaging"
           />
         </View>

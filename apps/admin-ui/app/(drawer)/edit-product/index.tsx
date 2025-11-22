@@ -39,12 +39,17 @@ export default function EditProduct() {
           ? deal.validTill.toISOString().split('T')[0]
           : deal.validTill, // Convert Date to YYYY-MM-DD string
       })),
+      tagIds: values.tagIds,
     };
 
     const formData = new FormData();
     Object.entries(payload).forEach(([key, value]) => {
       if (key === 'deals' && Array.isArray(value)) {
         formData.append(key, JSON.stringify(value));
+      } else if (key === 'tagIds' && Array.isArray(value)) {
+        value.forEach(tagId => {
+          formData.append('tagIds', tagId.toString());
+        });
       } else if (value !== undefined && value !== null) {
         formData.append(key, value as string);
       }
@@ -119,6 +124,7 @@ export default function EditProduct() {
       price: deal.price,
       validTill: deal.validTill ? new Date(deal.validTill) : null, // Convert to Date object
     })) || [{ quantity: '', price: '', validTill: null }],
+    tagIds: productData.tags?.map(tag => tag.id) || [],
   };
 
   return (

@@ -140,6 +140,8 @@ export default function Checkout() {
     },
   });
 
+  const markPaymentFailedMutation = trpc.user.payment.markPaymentFailed.useMutation();
+
   const handleCancel = () => {
     router.back();
   };
@@ -210,9 +212,29 @@ export default function Checkout() {
           razorpay_signature: data.razorpay_signature,
         });
       })
-      .catch((error: any) => {
-        Alert.alert('Payment Failed', error.description || 'Payment was cancelled or failed');
-      });
+       .catch((error: any) => {
+         // Mark payment as failed
+         markPaymentFailedMutation.mutate({ merchantOrderId: razorpayOrderId });
+         Alert.alert(
+           'Payment Failed',
+           'Payment failed or was cancelled. What would you like to do?',
+           [
+             {
+               text: 'Retry Now',
+               onPress: () => {
+                 const orderId = placeOrderMutation.data?.data.id.toString();
+                 if (orderId) {
+                   createRazorpayOrderMutation.mutate({ orderId });
+                 }
+               }
+             },
+             {
+               text: 'Retry Later',
+               onPress: () => router.push('/(drawer)/my-orders')
+             }
+           ]
+         );
+       });
   };
 
   return (

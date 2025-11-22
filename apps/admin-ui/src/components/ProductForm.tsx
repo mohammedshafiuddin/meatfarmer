@@ -6,6 +6,7 @@ import { MyTextInput, BottomDropdown, MyText, ImageUploader, ImageGalleryWithDel
 import usePickImage from 'common-ui/src/components/use-pick-image';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { trpc } from '../trpc-client';
+import { useGetTags } from '../api-hooks/tag.api';
 
 interface ProductFormData {
   name: string;
@@ -16,6 +17,7 @@ interface ProductFormData {
   price: string;
   marketPrice: string;
   deals: Deal[];
+  tagIds: number[];
 }
 
 interface Deal {
@@ -38,9 +40,9 @@ interface ProductFormProps {
 
 const unitOptions = [
   { label: 'Kg', value: 1 },
-  { label: 'Dozen', value: 2 },
-  { label: 'Unit Piece', value: 3 },
-  { label: 'Litre', value: 4 },
+  { label: 'Litre', value: 2 },
+  { label: 'Dozen', value: 3 },
+  { label: 'Unit Piece', value: 4 },
 ];
 
 const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
@@ -60,24 +62,18 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
     value: store.id,
   })) || [];
 
+  const { data: tagsData } = useGetTags();
+  const tagOptions = tagsData?.tags.map(tag => ({
+    label: tag.tagName,
+    value: tag.id.toString(),
+  })) || [];
+
   // Initialize existing images state when existingImages prop changes
   useEffect(() => {
     console.log('changing existing imaes statte')
     
     setExistingImagesState(existingImages);
   }, [existingImages]);
-
-  // Clear newly added images when screen comes into focus
-  const clearImages = useCallback(() => {
-    setImages([]);
-  }, []);
-
-  useFocusCallback(clearImages);
-
-  // Expose clearImages method via ref
-  useImperativeHandle(ref, () => ({
-    clearImages,
-  }), [clearImages]);
 
   const pickImage = usePickImage({
     setFile: (files) => setImages(prev => [...prev, ...files]),
@@ -91,8 +87,23 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
     <Formik
       initialValues={initialValues}
       onSubmit={(values) => onSubmit(values, images, deletedImages)}
+      enableReinitialize
     >
-      {({ handleChange, handleSubmit, values, setFieldValue }) => {
+      {({ handleChange, handleSubmit, values, setFieldValue, resetForm }) => {
+        // Clear form when screen comes into focus
+        const clearForm = useCallback(() => {
+          setImages([]);
+          setExistingImagesState([]);
+          resetForm();
+        }, [resetForm]);
+
+        useFocusCallback(clearForm);
+
+        // Update ref with current clearForm function
+        useImperativeHandle(ref, () => ({
+          clearImages: clearForm,
+        }), [clearForm]);
+
         const submit = () => handleSubmit();
 
         return (
@@ -170,6 +181,15 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
               options={storeOptions}
               onValueChange={(value) => setFieldValue('storeId', value)}
               placeholder="Select store"
+              style={{ marginBottom: 16 }}
+            />
+            <BottomDropdown
+              label="Tags"
+              value={values.tagIds.map(id => id.toString())}
+              options={tagOptions}
+              onValueChange={(value) => setFieldValue('tagIds', (value as string[]).map(id => parseInt(id)))}
+              multiple={true}
+              placeholder="Select tags"
               style={{ marginBottom: 16 }}
             />
             <MyTextInput

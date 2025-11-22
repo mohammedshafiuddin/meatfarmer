@@ -302,9 +302,25 @@ export const authRouter = router({
 
       const hashedPassword = await bcrypt.hash(input.password, 10);
 
-      await db.update(userCreds).set({
-        userPassword: hashedPassword,
-      }).where(eq(userCreds.userId, userId));
+      // Insert if not exists, then update if exists
+      try {
+        await db.insert(userCreds).values({
+          userId: userId,
+          userPassword: hashedPassword,
+        });
+        // Insert succeeded - new credentials created
+      } catch (error: any) {
+        // Insert failed - check if it's a unique constraint violation
+        if (error.code === '23505') { // PostgreSQL unique constraint violation
+          // Update existing credentials
+          await db.update(userCreds).set({
+            userPassword: hashedPassword,
+          }).where(eq(userCreds.userId, userId));
+        } else {
+          // Re-throw if it's a different error
+          throw error;
+        }
+      }
 
       return { success: true, message: 'Password updated successfully' };
     }),

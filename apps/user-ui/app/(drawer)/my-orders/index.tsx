@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, Image, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Entypo, MaterialIcons } from '@expo/vector-icons';
-import { tw, useManualRefresh, MyText, MyFlatList, useMarkDataFetchers } from 'common-ui';
+import { tw, useManualRefresh, MyText, MyFlatList, useMarkDataFetchers, REFUND_STATUS } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 
 import { trpc } from '@/src/trpc-client';
@@ -24,7 +24,7 @@ export default function MyOrders() {
     },
   });
 
-  const retryPaymentMutation = trpc.user.payment.retryPayment.useMutation({
+  const createRazorpayOrderMutation = trpc.user.payment.createRazorpayOrder.useMutation({
     onSuccess: (paymentData) => {
       const order = orders.find(o => o.id === retryOrderId);
       if (order) {
@@ -33,7 +33,7 @@ export default function MyOrders() {
       }
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.message || 'Failed to retry payment');
+      Alert.alert('Error', error.message || 'Failed to create payment order');
     },
   });
 
@@ -89,6 +89,21 @@ export default function MyOrders() {
         return { bg: 'bg-green-100', text: 'text-green-800', icon: 'check-circle', color: '#16A34A' };
       case 'failed':
         return { bg: 'bg-red-100', text: 'text-red-800', icon: 'error', color: '#DC2626' };
+      default:
+        return { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'info', color: '#6B7280' };
+    }
+  };
+
+  const getRefundStatusColor = (status: string) => {
+    switch (status) {
+      case REFUND_STATUS.SUCCESS:
+        return { bg: 'bg-green-100', text: 'text-green-800', icon: 'check-circle', color: '#16A34A' };
+      case REFUND_STATUS.PROCESSING:
+        return { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'hourglass-empty', color: '#2563EB' };
+      case REFUND_STATUS.PENDING:
+        return { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'schedule', color: '#D97706' };
+      case REFUND_STATUS.NOT_APPLICABLE:
+        return { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'info', color: '#6B7280' };
       default:
         return { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'info', color: '#6B7280' };
     }
@@ -166,13 +181,13 @@ export default function MyOrders() {
                 </MyText>
               </View>
             </View>
-            {(item.paymentStatus === 'pending' || item.paymentStatus === 'failed') && (
-              <TouchableOpacity onPress={() => handleRetryPayment(item.id)} disabled={retryPaymentMutation.isPending}>
-                <MyText style={tw`text-pink1 font-medium ${retryPaymentMutation.isPending ? 'opacity-50' : ''}`}>
-                  {retryPaymentMutation.isPending ? 'Retrying...' : 'Retry'}
-                </MyText>
-              </TouchableOpacity>
-            )}
+             {(item.paymentStatus === 'pending' || item.paymentStatus === 'failed') && (
+               <TouchableOpacity onPress={() => handleRetryPayment(item.id)} disabled={createRazorpayOrderMutation.isPending}>
+                 <MyText style={tw`text-pink1 font-medium ${createRazorpayOrderMutation.isPending ? 'opacity-50' : ''}`}>
+                   {createRazorpayOrderMutation.isPending ? 'Retrying...' : 'Retry'}
+                 </MyText>
+               </TouchableOpacity>
+             )}
           </View>
         )}
 
@@ -189,10 +204,14 @@ export default function MyOrders() {
           <View style={tw`bg-red-50 p-3 rounded-lg mb-4`}>
             <MyText style={tw`text-sm text-red-700 font-medium`}>Cancel Reason:</MyText>
             <MyText style={tw`text-sm text-red-600 mt-1`}>{item.cancelReason}</MyText>
-            {item.orderStatus === 'cancelled' && item.isRefundDone && (
+            {item.orderStatus === 'cancelled' && item.refundStatus && (
               <View style={tw`flex-row items-center mt-2`}>
-                <MaterialIcons name="check-circle" size={14} color="#16A34A" />
-                <MyText style={tw`text-sm text-green-700 ml-1`}>Refund Processed</MyText>
+                <View style={tw`flex-row items-center ${getRefundStatusColor(item.refundStatus).bg} px-2 py-1 rounded-full`}>
+                  <MaterialIcons name={getRefundStatusColor(item.refundStatus).icon as any} size={12} color={getRefundStatusColor(item.refundStatus).color} />
+                  <MyText style={tw`text-xs font-semibold ${getRefundStatusColor(item.refundStatus).text} ml-1 capitalize`}>
+                    Refund {item.refundStatus === REFUND_STATUS.PENDING ? 'Pending' : item.refundStatus === REFUND_STATUS.NOT_APPLICABLE ? 'N/A' : item.refundStatus === REFUND_STATUS.PROCESSING ? 'Processing' : 'Success'}
+                  </MyText>
+                </View>
               </View>
             )}
           </View>
@@ -291,7 +310,7 @@ export default function MyOrders() {
 
   const handleRetryPayment = (orderId: number) => {
     setRetryOrderId(orderId);
-    retryPaymentMutation.mutate({ orderId });
+    createRazorpayOrderMutation.mutate({ orderId: orderId.toString() });
   };
 
   const initiateRazorpayPayment = (razorpayOrderId: string, key: string, amount: number) => {
@@ -317,7 +336,7 @@ export default function MyOrders() {
         });
       })
       .catch((error: any) => {
-        Alert.alert('Payment Failed', error.description || 'Payment was cancelled or failed');
+        Alert.alert('Payment Failed', 'Payment failed. Please try again.');
         refetch();
       });
   };

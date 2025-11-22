@@ -1,5 +1,6 @@
 import React from 'react';
 import { FlatList, FlatListProps, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MyFlatList = <T,>(props: FlatListProps<T>) => {
   return (

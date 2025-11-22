@@ -44,13 +44,20 @@ function CustomDrawerContent() {
            <MaterialIcons name="add" size={size} color={color} />
          )}
        /> */}
-       <DrawerItem
-         label="Products"
-         onPress={() => router.push("/(drawer)/products" as any)}
-         icon={({ color, size }) => (
-           <MaterialIcons name="inventory" size={size} color={color} />
-         )}
-       />
+        <DrawerItem
+          label="Products"
+          onPress={() => router.push("/(drawer)/products" as any)}
+          icon={({ color, size }) => (
+            <MaterialIcons name="inventory" size={size} color={color} />
+          )}
+        />
+        <DrawerItem
+          label="Product Tags"
+          onPress={() => router.push("/(drawer)/product-tags" as any)}
+          icon={({ color, size }) => (
+            <MaterialIcons name="label" size={size} color={color} />
+          )}
+        />
        <DrawerItem
          label="Slots"
          onPress={() => router.push("/(drawer)/slots" as any)}
@@ -189,6 +196,9 @@ export default function Layout() {
        <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
         <Drawer.Screen name="vendor-snippets" options={{ title: "Vendor Snippets" }} />
         <Drawer.Screen name="stores" options={{ title: "Stores" }} />
-     </Drawer>
+        <Drawer.Screen name="product-tags" options={{ title: "Product Tags" }} />
+        <Drawer.Screen name="add-tag" options={{ title: "Add Tag" }} />
+        <Drawer.Screen name="edit-tag" options={{ title: "Edit Tag" }} />
+      </Drawer>
   );
 }

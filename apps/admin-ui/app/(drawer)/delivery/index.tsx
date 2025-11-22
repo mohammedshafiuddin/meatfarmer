@@ -44,7 +44,7 @@ const DeliveryOrderItem = ({
               {isDeliveredTab ? "Mark not delivered" : "Mark Delivered"}
             </MyText>
           </TouchableOpacity>
-          <OrderMenu orderId={order.orderId} variant="delivery" />
+          <OrderMenu orderId={order.id} variant="delivery" />
         </View>
       </View>
       <MyText style={tw`text-gray-600 mb-1`} numberOfLines={1}>

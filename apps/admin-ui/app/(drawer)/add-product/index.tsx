@@ -25,6 +25,13 @@ export default function AddProduct() {
       }
     });
 
+    // Append tag IDs
+    if (values.tagIds && values.tagIds.length > 0) {
+      values.tagIds.forEach(tagId => {
+        formData.append('tagIds', tagId.toString());
+      });
+    }
+
     // Append images
     if (images) {
       images.forEach((image, index) => {
@@ -59,6 +66,7 @@ export default function AddProduct() {
     storeId: 1,
     marketPrice: '',
     deals: [{ quantity: '', price: '', validTill: new Date() }],
+    tagIds: [],
   };
 
   return (

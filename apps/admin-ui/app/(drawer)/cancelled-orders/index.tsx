@@ -15,14 +15,14 @@ interface CancelledOrderItem {
 
 interface CancelledOrder {
   id: number;
-  readableId: number;
+  readableId?: number | string; 
   customerName: string;
   address: string;
   totalAmount: string;
   cancellationReviewed: boolean;
   isRefundDone: boolean;
-  adminNotes?: string;
-  cancelReason?: string;
+  adminNotes?: string | null;
+  cancelReason?: string | null;
   items: CancelledOrderItem[];
   createdAt: string;
 }

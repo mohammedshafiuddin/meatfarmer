@@ -14,7 +14,7 @@ export interface MenuOption {
 }
 
 export interface OrderMenuProps {
-  orderId: string | number;
+  orderId: number;
   variant: 'packaging' | 'delivery' | 'cancelled';
   triggerStyle?: any;
   iconSize?: number;

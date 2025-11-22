@@ -1,7 +1,7 @@
-import { eq, gt, and, sql } from "drizzle-orm";
+import { eq, gt, and, sql, inArray } from "drizzle-orm";
 import { Request, Response } from "express";
 import { db } from "../db/db_index";
-import { productInfo, units, productSlots, deliverySlotInfo } from "../db/schema";
+import { productInfo, units, productSlots, deliverySlotInfo, productTags } from "../db/schema";
 import { generateSignedUrlsFromS3Urls } from "../lib/s3-client";
 
 /**
@@ -30,8 +30,35 @@ const getNextDeliveryDate = async (productId: number): Promise<Date | null> => {
  * Get all products summary for dropdown
  */
 export const getAllProductsSummary = async (req: Request, res: Response) => {
-
   try {
+    const { tagId } = req.query;
+    const tagIdNum = tagId ? parseInt(tagId as string) : null;
+
+    let productIds: number[] | null = null;
+
+    // If tagId is provided, get products that have this tag
+    if (tagIdNum) {
+      const taggedProducts = await db
+        .select({ productId: productTags.productId })
+        .from(productTags)
+        .where(eq(productTags.tagId, tagIdNum));
+
+      productIds = taggedProducts.map(tp => tp.productId);
+    }
+
+    let whereCondition = undefined;
+
+    // Filter by product IDs if tag filtering is applied
+    if (productIds && productIds.length > 0) {
+      whereCondition = inArray(productInfo.id, productIds);
+    } else if (tagIdNum) {
+      // If tagId was provided but no products found, return empty array
+      return res.status(200).json({
+        products: [],
+        count: 0,
+      });
+    }
+
     const productsWithUnits = await db
       .select({
         id: productInfo.id,
@@ -43,7 +70,8 @@ export const getAllProductsSummary = async (req: Request, res: Response) => {
         unitShortNotation: units.shortNotation,
       })
       .from(productInfo)
-      .innerJoin(units, eq(productInfo.unitId, units.id));
+      .innerJoin(units, eq(productInfo.unitId, units.id))
+      .where(whereCondition);
 
     // Generate signed URLs for product images
     const formattedProducts = await Promise.all(

@@ -1,8 +1,8 @@
 import { router, publicProcedure } from '../trpc-index';
 import { db } from '../../db/db_index';
-import { productInfo, units, productSlots, deliverySlotInfo, storeInfo } from '../../db/schema';
-import { eq, gt, and, sql } from 'drizzle-orm';
-import { generateSignedUrlsFromS3Urls } from '../../lib/s3-client';
+import { productInfo, units, productSlots, deliverySlotInfo, storeInfo, productTags, productTagInfo } from '../../db/schema';
+import { eq, gt, and, sql, inArray } from 'drizzle-orm';
+import { generateSignedUrlsFromS3Urls, generateSignedUrlFromS3Url } from '../../lib/s3-client';
 import { z } from 'zod';
 
 const getNextDeliveryDate = async (productId: number): Promise<Date | null> => {
@@ -29,10 +29,67 @@ const getNextDeliveryDate = async (productId: number): Promise<Date | null> => {
 
 
 export const commonRouter = router({
+  getDashboardTags: publicProcedure
+    .query(async () => {
+      const tags = await db
+        .select()
+        .from(productTagInfo)
+        .where(eq(productTagInfo.isDashboardTag, true))
+        .orderBy(productTagInfo.tagName);
+
+      // Generate signed URLs for tag images
+      const tagsWithSignedUrls = await Promise.all(
+        tags.map(async (tag) => ({
+          ...tag,
+          imageUrl: tag.imageUrl ? await generateSignedUrlFromS3Url(tag.imageUrl) : null,
+        }))
+      );
+
+      return {
+        tags: tagsWithSignedUrls,
+      };
+    }),
+
   getAllProductsSummary: publicProcedure
-    .input(z.object({ searchQuery: z.string().optional() }))
+    .input(z.object({
+      searchQuery: z.string().optional(),
+      tagId: z.number().optional()
+    }))
     .query(async ({ input }) => {
-      const { searchQuery } = input;
+      const { searchQuery, tagId } = input;
+
+      let productIds: number[] | null = null;
+
+      // If tagId is provided, get products that have this tag
+      if (tagId) {
+        const taggedProducts = await db
+          .select({ productId: productTags.productId })
+          .from(productTags)
+          .where(eq(productTags.tagId, tagId));
+
+        productIds = taggedProducts.map(tp => tp.productId);
+      }
+
+      let whereConditions = [];
+
+      // Add tag filtering
+      if (productIds && productIds.length > 0) {
+        whereConditions.push(inArray(productInfo.id, productIds));
+      } else if (tagId) {
+        // If tagId was provided but no products found, return empty array
+        return {
+          products: [],
+          count: 0,
+        };
+      }
+
+      // Add search filtering
+      if (searchQuery) {
+        whereConditions.push(sql`LOWER(${productInfo.name}) LIKE LOWER(${ '%' + searchQuery + '%' })`);
+      }
+
+      const whereCondition = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
       const productsWithUnits = await db
         .select({
           id: productInfo.id,
@@ -45,7 +102,7 @@ export const commonRouter = router({
         })
         .from(productInfo)
         .innerJoin(units, eq(productInfo.unitId, units.id))
-        .where(searchQuery ? sql`LOWER(${productInfo.name}) LIKE LOWER(${ '%' + searchQuery + '%' })` : undefined);
+        .where(whereCondition);
 
       // Generate signed URLs for product images
       const formattedProducts = await Promise.all(

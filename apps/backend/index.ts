@@ -14,6 +14,7 @@ import jwt from 'jsonwebtoken'
 import signedUrlCache from 'src/lib/signed-url-cache';
 import { seed } from 'src/db/seed';
 // import { seed } from 'src/db/seed';
+import './src/jobs/jobs-index';
 
 
 const app = express();

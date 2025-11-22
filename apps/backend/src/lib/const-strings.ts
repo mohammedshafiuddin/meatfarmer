@@ -19,3 +19,10 @@ export const ORDER_DELIVERED_MESSAGE = 'Your order has been delivered.';
 export const ORDER_CANCELLED_MESSAGE = 'Your order has been cancelled.';
 export const REFUND_INITIATED_MESSAGE = 'Refund has been initiated for your order.';
 export const WELCOME_MESSAGE = 'Welcome to Farm2Door! Thank you for joining us.';
+
+export const REFUND_STATUS = {
+  PENDING: 'none',
+  NOT_APPLICABLE: 'na',
+  PROCESSING: 'initiated',
+  SUCCESS: 'success',
+};

@@ -1,11 +1,32 @@
 import { router, publicProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { productInfo, units, productSlots, deliverySlotInfo, specialDeals, storeInfo } from '../../db/schema';
-import { generateSignedUrlsFromS3Urls } from '../../lib/s3-client';
-import { eq, and, gt, sql } from 'drizzle-orm';
+import { productInfo, units, productSlots, deliverySlotInfo, specialDeals, storeInfo, productTagInfo, productTags } from '../../db/schema';
+import { generateSignedUrlsFromS3Urls, generateSignedUrlFromS3Url } from '../../lib/s3-client';
+import { eq, and, gt, sql, inArray } from 'drizzle-orm';
 
 export const productRouter = router({
+  getDashboardTags: publicProcedure
+    .query(async () => {
+      const tags = await db
+        .select()
+        .from(productTagInfo)
+        .where(eq(productTagInfo.isDashboardTag, true))
+        .orderBy(productTagInfo.tagName);
+
+      // Generate signed URLs for tag images
+      const tagsWithSignedUrls = await Promise.all(
+        tags.map(async (tag) => ({
+          ...tag,
+          imageUrl: tag.imageUrl ? await generateSignedUrlFromS3Url(tag.imageUrl) : null,
+        }))
+      );
+
+      return {
+        tags: tagsWithSignedUrls,
+      };
+    }),
+
   getProductDetails: publicProcedure
     .input(z.object({
       id: z.string().regex(/^\d+$/, 'Invalid product ID'),

@@ -5,6 +5,13 @@ export const SESSION_EXPIRED_MSG = 'session_expired';
 export const NOTIF_PERMISSION_DENIED = "Permission not granted to get push token for push notification!";
 export const REFRESH_EVENT = 'refresh_event';
 
+export const REFUND_STATUS = {
+  PENDING: 'none',
+  NOT_APPLICABLE: 'na',
+  PROCESSING: 'initiated',
+  SUCCESS: 'success',
+};
+
 
 
 //copy pasted from backend

@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import { tw } from 'common-ui';
 import { Checkbox } from 'common-ui';
 import { MyTextInput } from 'common-ui';
+import { LoadingDialog } from 'common-ui';
 import { trpc } from '../trpc-client';
 
 interface AddressFormProps {
@@ -27,8 +28,18 @@ interface AddressFormProps {
 const AddressForm: React.FC<AddressFormProps> = ({ onSuccess, initialValues, isEdit = false }) => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const createAddressMutation = trpc.user.address.createAddress.useMutation();
+  const createAddressMutation = trpc.user.address.createAddress.useMutation({
+    onSuccess: () => {
+      setIsSubmitting(false);
+      onSuccess();
+    },
+    onError: (error: any) => {
+      setIsSubmitting(false);
+      Alert.alert('Error', error.message || 'Failed to save address');
+    },
+  });
 
   const attachCurrentLocation = async (setFieldValue: (field: string, value: any) => void) => {
     setLocationLoading(true);
@@ -93,15 +104,16 @@ const AddressForm: React.FC<AddressFormProps> = ({ onSuccess, initialValues, isE
           phone: '',
           addressLine1: '',
           addressLine2: '',
-          city: '',
-          state: '',
-          pincode: '',
+          city: 'Mahabubnagar',
+          state: 'Telangana',
+          pincode: '509001',
           isDefault: false,
         }}
         validationSchema={validationSchema}
         onSubmit={(values) => {
-          createAddressMutation.mutate(values);
-        }}
+           setIsSubmitting(true);
+           createAddressMutation.mutate(values);
+         }}
       >
         {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
           <View style={tw`flex-col gap-2`}>
@@ -178,17 +190,22 @@ const AddressForm: React.FC<AddressFormProps> = ({ onSuccess, initialValues, isE
             </View>
 
             <TouchableOpacity
-              style={tw`bg-indigo-600 p-3 rounded ${createAddressMutation.isPending ? 'opacity-50' : ''}`}
+              style={tw`bg-indigo-600 p-3 rounded ${isSubmitting ? 'opacity-50' : ''}`}
               onPress={() => handleSubmit()}
-              disabled={createAddressMutation.isPending}
+              disabled={isSubmitting}
             >
               <Text style={tw`text-white text-center font-bold`}>
-                {createAddressMutation.isPending ? (isEdit ? 'Updating...' : 'Adding...') : (isEdit ? 'Update Address' : 'Add Address')}
+                {isSubmitting ? (isEdit ? 'Updating...' : 'Adding...') : (isEdit ? 'Update Address' : 'Add Address')}
               </Text>
             </TouchableOpacity>
           </View>
         )}
       </Formik>
+
+      <LoadingDialog
+        open={isSubmitting}
+        message={isEdit ? "Updating address..." : "Adding address..."}
+      />
     </ScrollView>
   );
 };

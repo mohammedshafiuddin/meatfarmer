@@ -6,15 +6,24 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
-  import { ImageCarousel, theme, tw, useManualRefresh, AppContainer, MyFlatList, useMarkDataFetchers, LoadingDialog } from "common-ui";
-    import { useGetAllProductsSummary } from "common-ui/src/common-api-hooks/product.api";
-   import dayjs from "dayjs";
-   import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import {
+  ImageCarousel,
+  theme,
+  tw,
+  useManualRefresh,
+  AppContainer,
+  MyFlatList,
+  useMarkDataFetchers,
+  LoadingDialog,
+} from "common-ui";
+import { useGetAllProductsSummary } from "common-ui/src/common-api-hooks/product.api";
+import dayjs from "dayjs";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import SearchBar from "common-ui/src/components/search-bar";
 import { trpc } from "@/src/trpc-client";
-
 
 const { width: screenWidth } = Dimensions.get("window");
 const imageWidth = screenWidth * 0.8;
@@ -27,136 +36,180 @@ const demoImages = [
   "https://picsum.photos/800/400?random=3",
 ];
 
-const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: any; router: any; handleAddToCart: any; handleBuyNow: any }) => {
-  
+const renderProduct = ({
+  item,
+  router,
+  handleAddToCart,
+  handleBuyNow,
+}: {
+  item: any;
+  router: any;
+  handleAddToCart: any;
+  handleBuyNow: any;
+}) => {
   return (
-     <TouchableOpacity
-       style={[tw`flex-1 bg-white rounded-lg items-center shadow-md`,]}
-        onPress={() => router.push(`/product-detail?id=${item.id}`)}
-     >
-        <Image
-          source={{ uri: item.images?.[0] }}
-          style={[{ width: itemWidth, height: itemWidth }, tw`rounded-t-lg`]}
-        />
-        <View style={tw`p-2.5 w-full`}>
-          <Text style={tw`text-base font-medium`} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={tw`text-sm text-black mt-1`}>
-            ₹{item.price} per {item.unit || "unit"}
-          </Text>
-           {item.nextDeliveryDate && (
-             <View style={tw`flex-row items-center mt-1`}>
-               <MaterialIcons name="local-shipping" size={12} color="#6b7280" />
-               <Text style={tw`text-xs text-gray-500 ml-1`}>
-                 {dayjs(item.nextDeliveryDate).format('ddd DD MMM, h a')}
-               </Text>
-             </View>
-           )}
-          {item.isOutOfStock ? (
-            <View style={tw`mt-2 items-center`}>
-              <Text style={[tw`text-sm font-medium`, { color: theme.colors.red1 }]}>
-                Out of Stock
-              </Text>
-            </View>
-          ) : (
-            <View style={tw`flex-row mt-2 justify-end w-full`}>
-              <TouchableOpacity
+    <TouchableOpacity
+      style={[tw`flex-1 bg-white rounded-lg items-center shadow-md`]}
+      onPress={() => router.push(`/product-detail?id=${item.id}`)}
+    >
+      <Image
+        source={{ uri: item.images?.[0] }}
+        style={[{ width: itemWidth, height: itemWidth }, tw`rounded-t-lg`]}
+      />
+      <View style={tw`p-2.5 w-full`}>
+        <Text style={tw`text-base font-medium`} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text style={tw`text-sm text-black mt-1`}>
+          ₹{item.price} per {item.unit || "unit"}
+        </Text>
+        {item.nextDeliveryDate && (
+          <View style={tw`flex-row items-center mt-1`}>
+            <MaterialIcons name="local-shipping" size={12} color="#6b7280" />
+            <Text style={tw`text-xs text-gray-500 ml-1`}>
+              {dayjs(item.nextDeliveryDate).format("ddd DD MMM, h a")}
+            </Text>
+          </View>
+        )}
+        {item.isOutOfStock ? (
+          <View style={tw`mt-2 items-center`}>
+            <Text
+              style={[tw`text-sm font-medium`, { color: theme.colors.red1 }]}
+            >
+              Out of Stock
+            </Text>
+          </View>
+        ) : (
+          <View style={tw`flex-row mt-2 justify-end w-full`}>
+            <TouchableOpacity
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 8,
+              }}
+              onPress={() => handleBuyNow(item.id)}
+            >
+              <View
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginRight: 8,
-                }}
-                onPress={() => handleBuyNow(item.id)}
-              >
-                <View style={{
-                  position: 'absolute',
+                  position: "absolute",
                   width: 40,
                   height: 40,
                   borderRadius: 20,
                   backgroundColor: theme.colors.pink1,
                   opacity: 0.7,
-                }} />
-                <MaterialIcons name="flash-on" size={24} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  justifyContent: 'center',
-                  alignItems: 'center',
                 }}
-                onPress={() => handleAddToCart(item.id)}
-              >
-                <View style={{
-                  position: 'absolute',
+              />
+              <MaterialIcons name="flash-on" size={24} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              onPress={() => handleAddToCart(item.id)}
+            >
+              <View
+                style={{
+                  position: "absolute",
                   width: 40,
                   height: 40,
                   borderRadius: 20,
                   backgroundColor: theme.colors.pink1,
                   opacity: 0.7,
-                }} />
-                <MaterialIcons name="shopping-cart" size={24} color="white" />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-     </TouchableOpacity>
+                }}
+              />
+              <MaterialIcons name="shopping-cart" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
   );
 };
 
-      export default function Dashboard() {
-        const router = useRouter();
-        // const { data: productsData, isLoading, error, refetch } = useGetAllProductsSummary();
-        const [inputQuery, setInputQuery] = useState('');
-        const [searchQuery, setSearchQuery] = useState('');
-        const [isLoadingDialogOpen, setIsLoadingDialogOpen] = useState(false);
-       const { data: productsData, isLoading, error, refetch } = trpc.common.product.getAllProductsSummary.useQuery({ searchQuery });
-       
-       const products = productsData?.products || [];
-      const addToCart = trpc.user.cart.addToCart.useMutation();
-    
-      useManualRefresh(() => {
-        refetch();
-      });
+export default function Dashboard() {
+  const router = useRouter();
+  // const { data: productsData, isLoading, error, refetch } = useGetAllProductsSummary();
+  const [inputQuery, setInputQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
+  const [isLoadingDialogOpen, setIsLoadingDialogOpen] = useState(false);
 
-      useMarkDataFetchers(() => {
-        refetch();
-      });
+  const {
+    data: productsData,
+    isLoading,
+    error,
+    refetch,
+  } = trpc.common.product.getAllProductsSummary.useQuery({
+    searchQuery: searchQuery || undefined,
+    tagId: selectedTagId || undefined,
+  });
 
-       const handleAddToCart = (productId: number) => {
-         setIsLoadingDialogOpen(true);
-         addToCart.mutate({ productId, quantity: 1 }, {
-           onSuccess: () => {
-             Alert.alert('Success', 'Item added to cart!');
-           },
-           onError: (error: any) => {
-             Alert.alert('Error', error.message || 'Failed to add item to cart');
-           },
-           onSettled: () => {
-             setIsLoadingDialogOpen(false);
-           },
-         });
+  const { data: tagsData } = trpc.common.product.getDashboardTags.useQuery();
+
+  const products = productsData?.products || [];
+  const dashboardTags = tagsData?.tags || [];
+  const addToCart = trpc.user.cart.addToCart.useMutation();
+
+       const handleTagSelect = (tagId: number) => {
+         if (selectedTagId === tagId) {
+           // If same tag is selected, clear selection
+           setSelectedTagId(null);
+         } else {
+           setSelectedTagId(tagId);
+         }
+         setSearchQuery(''); // Clear search when selecting a tag
        };
 
-       const handleBuyNow = (productId: number) => {
-         setIsLoadingDialogOpen(true);
-         addToCart.mutate({ productId, quantity: 1 }, {
-           onSuccess: () => {
-             router.push(`/my-cart?select=${productId}`);
-           },
-           onError: (error: any) => {
-             Alert.alert('Error', error.message || 'Failed to add item to cart');
-           },
-           onSettled: () => {
-             setIsLoadingDialogOpen(false);
-           },
-         });
-       };
+  useManualRefresh(() => {
+    refetch();
+  });
+
+  useMarkDataFetchers(() => {
+    refetch();
+  });
+
+  const handleAddToCart = (productId: number) => {
+    setIsLoadingDialogOpen(true);
+    addToCart.mutate(
+      { productId, quantity: 1 },
+      {
+        onSuccess: () => {
+          Alert.alert("Success", "Item added to cart!");
+        },
+        onError: (error: any) => {
+          Alert.alert("Error", error.message || "Failed to add item to cart");
+        },
+        onSettled: () => {
+          setIsLoadingDialogOpen(false);
+        },
+      }
+    );
+  };
+
+  const handleBuyNow = (productId: number) => {
+    setIsLoadingDialogOpen(true);
+    addToCart.mutate(
+      { productId, quantity: 1 },
+      {
+        onSuccess: () => {
+          router.push(`/my-cart?select=${productId}`);
+        },
+        onError: (error: any) => {
+          Alert.alert("Error", error.message || "Failed to add item to cart");
+        },
+        onSettled: () => {
+          setIsLoadingDialogOpen(false);
+        },
+      }
+    );
+  };
 
   if (isLoading) {
     return (
@@ -179,30 +232,79 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
       <MyFlatList
         data={products}
         numColumns={2}
-        renderItem={({ item }) => renderProduct({ item, router, handleAddToCart, handleBuyNow })}
+        renderItem={({ item }) =>
+          renderProduct({ item, router, handleAddToCart, handleBuyNow })
+        }
         keyExtractor={(item, index) => index.toString()}
         columnWrapperStyle={{ gap: 12 }} // horizontal gap between items
-        contentContainerStyle={[tw`px-4`,{ gap: 12 }]} // vertical gap
+        contentContainerStyle={[tw`px-4`, { gap: 12 }]} // vertical gap
         ListHeaderComponent={
           <View style={tw`pt-5 pb-3`}>
+            {/* Dashboard Tags */}
+            {dashboardTags.length > 0 && (
+              <View style={tw`mb-4`}>
+                 <ScrollView
+                   horizontal
+                   showsHorizontalScrollIndicator={false}
+                   contentContainerStyle={tw`px-1`}
+                 >
+                   {/* Tag Chips */}
+                  {dashboardTags.map((tag) => (
+                    <TouchableOpacity
+                      key={tag.id}
+                      onPress={() => handleTagSelect(tag.id)}
+                      style={tw`flex-row items-center px-3 py-2 mr-2 rounded-full border ${
+                        selectedTagId === tag.id
+                          ? "bg-pink1 border-pink1"
+                          : "bg-white border-gray-300"
+                      }`}
+                    >
+                      {tag.imageUrl && (
+                        <Image
+                          source={{ uri: tag.imageUrl }}
+                          style={tw`w-4 h-4 rounded mr-2`}
+                          resizeMode="cover"
+                        />
+                      )}
+                      <Text
+                        style={tw`text-sm font-medium ${
+                          selectedTagId === tag.id
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        {tag.tagName}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
             <SearchBar
               value={inputQuery}
               onChangeText={setInputQuery}
-              onSearch={() => setSearchQuery(inputQuery)}
+              onSearch={() => {
+                setSearchQuery(inputQuery);
+                setSelectedTagId(null); // Clear tag selection when searching
+              }}
               placeholder="Search products..."
               containerStyle={tw`mb-3`}
             />
-            {searchQuery ? (
-              <Text style={tw`text-lg font-semibold mb-2`}>Results for "{searchQuery}"</Text>
-            ) : null}
+             {searchQuery ? (
+               <Text style={tw`text-lg font-semibold mb-2`}>Results for "{searchQuery}"</Text>
+             ) : selectedTagId ? (
+               <Text style={tw`text-lg font-semibold mb-2`}>
+                 Products tagged "{dashboardTags.find(t => t.id === selectedTagId)?.tagName}"
+               </Text>
+             ) : (
+               <Text style={tw`text-lg font-semibold mb-2`}>All Products</Text>
+             )}
           </View>
-         }
-       />
+        }
+      />
 
-       <LoadingDialog
-         open={isLoadingDialogOpen}
-         message="Adding to cart..."
-       />
-     </View>
-   );
- }
+      <LoadingDialog open={isLoadingDialogOpen} message="Adding to cart..." />
+    </View>
+  );
+}

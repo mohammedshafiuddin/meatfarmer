@@ -1,7 +1,7 @@
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { productInfo, units, specialDeals, productSlots } from '../../db/schema';
+import { productInfo, units, specialDeals, productSlots, productTags } from '../../db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { ApiError } from '../../lib/api-error';
 import { imageUploadS3, generateSignedUrlsFromS3Urls, getOriginalUrlFromSignedUrl } from '../../lib/s3-client';
@@ -61,11 +61,20 @@ export const productRouter = router({
         orderBy: specialDeals.quantity,
       });
 
+      // Fetch associated tags for this product
+      const productTagsData = await db.query.productTags.findMany({
+        where: eq(productTags.productId, id),
+        with: {
+          tag: true,
+        },
+      });
+
       // Generate signed URLs for product images
       const productWithSignedUrls = {
         ...product,
         images: await generateSignedUrlsFromS3Urls((product.images as string[]) || []),
         deals,
+        tags: productTagsData.map(pt => pt.tag),
       };
 
       return {

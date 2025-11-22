@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MyFlatList, MyText, tw, useMarkDataFetchers, BottomDialog } from 'common-ui';
+import { MyFlatList, MyText, tw, useMarkDataFetchers, BottomDialog, theme } from 'common-ui';
 import { trpc } from '@/src/trpc-client';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import dayjs from 'dayjs';
@@ -76,31 +76,39 @@ export default function DeliverySlots() {
     <MyFlatList
       data={slots}
       keyExtractor={(item) => item.id.toString()}
-      ListHeaderComponent={() => (
-        <View style={tw`p-4 pb-2`}>
-          <Text style={tw`text-2xl font-bold text-gray-800`}>Delivery Slots</Text>
-          <Text style={tw`text-gray-600 mt-1`}>
-            Choose your preferred delivery time
-          </Text>
-        </View>
-      )}
+      // ListHeaderComponent={() => (
+      //   <View style={tw`p-4 pb-2`}>
+      //     <Text style={tw`text-2xl font-bold text-gray-800`}>Delivery Slots</Text>
+      //     <Text style={tw`text-gray-600 mt-1`}>
+      //       Choose your preferred delivery time
+      //     </Text>
+      //   </View>
+      // )}
       renderItem={({ item: slot }) => (
         <View style={tw`mx-4 mb-4 bg-white rounded-xl shadow-md overflow-hidden`}>
           {/* Slot Header */}
-          <View style={tw`bg-blue-50 p-4 border-b border-blue-100`}>
+          <View style={tw`bg-pink-50 p-4 border-b border-pink-100`}>
             <View style={tw`flex-row items-center justify-between`}>
               <View>
                 <Text style={tw`text-lg font-bold text-gray-800`}>
                   {dayjs(slot.deliveryTime).format('ddd DD MMM, h:mm a')}
                 </Text>
                 <Text style={tw`text-sm text-gray-600 mt-1`}>
-                  Freeze by: {dayjs(slot.freezeTime).format('h:mm a')}
+                  Orders close by: {dayjs(slot.freezeTime).format('h:mm a')}
                 </Text>
               </View>
-              <View style={tw`bg-blue-500 px-3 py-1 rounded-full`}>
-                <Text style={tw`text-white text-sm font-semibold`}>
-                  {slot.products.length} items
-                </Text>
+              <View style={tw`flex-row items-center`}>
+                <View style={tw`bg-pink-500 px-3 py-1 rounded-full mr-3`}>
+                  <Text style={tw`text-white text-sm font-semibold`}>
+                    {slot.products.length} items
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => router.push(`/my-cart?slot=${slot.id}`)}
+                  style={tw`bg-pink-500 p-2 rounded-full`}
+                >
+                  <MaterialIcons name="flash-on" size={16} color="white" />
+                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -145,12 +153,12 @@ export default function DeliverySlots() {
               {slot.products.length > 2 && (
                 <TouchableOpacity
                   onPress={() => setSelectedSlotForDialog(slot)}
-                  style={tw`bg-blue-50 rounded-lg p-3 flex-row items-center justify-center border border-blue-200`}
+                  style={tw`bg-pink-50 rounded-lg p-3 flex-row items-center justify-center border border-pink-200`}
                 >
-                  <Text style={tw`text-sm font-medium text-blue-700`}>
+                  <Text style={tw`text-sm font-medium text-pink-700`}>
                     +{slot.products.length - 2} more products
                   </Text>
-                  <MaterialIcons name="chevron-right" size={16} color="#3B82F6" style={tw`ml-1`} />
+                  <MaterialIcons name="chevron-right" size={16} color={theme.colors.pink1} style={tw`ml-1`} />
                 </TouchableOpacity>
               )}
             </View>

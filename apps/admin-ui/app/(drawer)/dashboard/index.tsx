@@ -44,6 +44,12 @@
         color: 'bg-indigo-500',
         onPress: () => router.push('/(drawer)/products'),
       },
+      {
+        title: 'Product Tags',
+        icon: 'label',
+        color: 'bg-pink-500',
+        onPress: () => router.push('/(drawer)/product-tags'),
+      },
    ];
 
     return (

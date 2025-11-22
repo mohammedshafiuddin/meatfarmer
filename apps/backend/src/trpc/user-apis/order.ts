@@ -20,6 +20,7 @@ import { READABLE_ORDER_ID_KEY } from "../../lib/const-strings";
 import { generateSignedUrlsFromS3Urls } from "../../lib/s3-client";
 import { ApiError } from "../../lib/api-error";
 import { sendOrderPlacedNotification, sendOrderCancelledNotification } from "../../lib/notif-job";
+import { createRazorpayOrder, insertPaymentRecord } from "../../lib/payments-utils";
 
 export const orderRouter = router({
   placeOrder: protectedProcedure
@@ -132,91 +133,97 @@ export const orderRouter = router({
         appliedCoupon = coupon;
       }
 
-      const finalAmount = totalAmount - discountAmount;
+       const finalAmount = totalAmount - discountAmount;
 
-      // Create order in transaction
-      const newOrder = await db.transaction(async (tx) => {
-        // Get and increment readable order ID
-        let currentReadableId = 1;
-        const existing = await tx.query.keyValStore.findFirst({
-          where: eq(keyValStore.key, READABLE_ORDER_ID_KEY),
-        });
-        if (existing) {
-          currentReadableId = (existing.value as { value: number }).value + 1;
-        }
-        await tx
-          .insert(keyValStore)
-          .values({
-            key: READABLE_ORDER_ID_KEY,
-            value: { value: currentReadableId },
-          })
-          .onConflictDoUpdate({
-            target: keyValStore.key,
-            set: { value: { value: currentReadableId } },
-          });
+       // Create order in transaction
+       const newOrder = await db.transaction(async (tx) => {
+         // Get and increment readable order ID
+         let currentReadableId = 1;
+         const existing = await tx.query.keyValStore.findFirst({
+           where: eq(keyValStore.key, READABLE_ORDER_ID_KEY),
+         });
+         if (existing) {
+           currentReadableId = (existing.value as { value: number }).value + 1;
+         }
+         await tx
+           .insert(keyValStore)
+           .values({
+             key: READABLE_ORDER_ID_KEY,
+             value: { value: currentReadableId },
+           })
+           .onConflictDoUpdate({
+             target: keyValStore.key,
+             set: { value: { value: currentReadableId } },
+           });
 
-        let paymentInfoId: number | null = null;
+         let paymentInfoId: number | null = null;
 
-        if (paymentMethod === "online") {
-          // Create payment info for online payment
-          const [paymentInfo] = await tx
-            .insert(paymentInfoTable)
-            .values({
-              status: "pending",
-              gateway: "phonepe", // or whatever
-              merchantOrderId: `order_${Date.now()}`, // generate unique
-              // other fields as needed
-            })
-            .returning();
-          paymentInfoId = paymentInfo.id;
-        }
+         if (paymentMethod === "online") {
+           // Create payment info for online payment
+           const [paymentInfo] = await tx
+             .insert(paymentInfoTable)
+             .values({
+               status: "pending",
+               gateway: "phonepe", // or whatever
+               merchantOrderId: `order_${Date.now()}`, // generate unique
+               // other fields as needed
+             })
+             .returning();
+           paymentInfoId = paymentInfo.id;
+         }
 
-        const [order] = await tx
-          .insert(orders)
-          .values({
-            userId,
-            addressId,
-            slotId,
-            isCod: paymentMethod === "cod",
-            isOnlinePayment: paymentMethod === "online",
-            paymentInfoId,
-            totalAmount: finalAmount.toString(),
-            readableId: currentReadableId,
-            userNotes: userNotes || null,
-          })
-          .returning();
+         const [order] = await tx
+           .insert(orders)
+           .values({
+             userId,
+             addressId,
+             slotId,
+             isCod: paymentMethod === "cod",
+             isOnlinePayment: paymentMethod === "online",
+             paymentInfoId,
+             totalAmount: finalAmount.toString(),
+             readableId: currentReadableId,
+             userNotes: userNotes || null,
+           })
+           .returning();
 
-        for (const item of orderItemsData) {
-          await tx.insert(orderItems).values({
-            orderId: order.id,
-            ...item,
-          });
-        }
+         for (const item of orderItemsData) {
+           await tx.insert(orderItems).values({
+             orderId: order.id,
+             ...item,
+           });
+         }
 
-        try {
+         try {
 
-          await tx.insert(orderStatus).values({
-            userId,
-            orderId: order.id,
-            paymentStatus: paymentMethod === 'cod' ? 'cod' : 'pending',
-            // no payment fields here
-          });
-        }
-        catch(e) {
-          console.log(e)
-          
-        }
+           await tx.insert(orderStatus).values({
+             userId,
+             orderId: order.id,
+             paymentStatus: paymentMethod === 'cod' ? 'cod' : 'pending',
+             // no payment fields here
+           });
+         }
+         catch(e) {
+           console.log(e)
 
-        // Remove ordered items from cart
-        await tx.delete(cartItems).where(
-          and(
-            eq(cartItems.userId, userId),
-            inArray(cartItems.productId, selectedItems.map(item => item.productId))
-          )
-        );
+         }
 
-        return order;
-      });
+         // Insert payment record for online payment
+         if (paymentMethod === "online") {
+           const razorpayOrder = await createRazorpayOrder(order.id, finalAmount.toString());
+           await insertPaymentRecord(order.id, razorpayOrder, tx);
+         }
+
+         // Remove ordered items from cart
+         await tx.delete(cartItems).where(
+           and(
+             eq(cartItems.userId, userId),
+             inArray(cartItems.productId, selectedItems.map(item => item.productId))
+           )
+         );
+
+         return order;
+       });
 
       // Add coupon usage record if coupon was applied
       if (appliedCoupon) {
@@ -263,7 +270,7 @@ export const orderRouter = router({
         const orderStatus = status?.isCancelled ? "cancelled" : "success";
         const paymentMode = order.isCod ? "CoD" : "Online";
         const paymentStatus = status?.paymentStatus || "pending";
-        const isRefundDone = cancellation?.refundStatus === 'processed' || false;
+        const refundStatus = cancellation?.refundStatus || 'none';
 
         const items = await Promise.all(
           order.orderItems.map(async (item) => {
@@ -293,7 +300,7 @@ export const orderRouter = router({
           cancelReason: status?.cancelReason || null,
           paymentMode,
           paymentStatus,
-          isRefundDone,
+          refundStatus,
           userNotes: order.userNotes || null,
           items,
         };

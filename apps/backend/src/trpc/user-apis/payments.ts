@@ -1,5 +1,4 @@
-import Razorpay from "razorpay";
-import { razorpayId, razorpaySecret } from "../../lib/env-exporter";
+
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
@@ -7,16 +6,15 @@ import { orders, payments, orderStatus, orderCancellationsTable } from '../../db
 import { eq } from 'drizzle-orm';
 import { ApiError } from '../../lib/api-error';
 import crypto from 'crypto';
+import { razorpayId, razorpaySecret } from "../../lib/env-exporter";
 import { DiskPersistedSet } from "src/lib/disk-persisted-set";
+import { createRazorpayOrder, insertPaymentRecord, razorpayInstance } from "../../lib/payments-utils";
 
-const razorpayInstance = new Razorpay({
-    key_id: razorpayId,
-    key_secret: razorpaySecret
-});
+
 
 
 export const paymentRouter = router({
-  createRazorpayOrder: protectedProcedure
+  createRazorpayOrder: protectedProcedure //either create a new payment order or return the existing one
     .input(z.object({
       orderId: z.string(),
     }))
@@ -33,29 +31,25 @@ export const paymentRouter = router({
         throw new ApiError("Order not found", 404);
       }
 
-      if (order.userId !== userId) {
-        throw new ApiError("Order does not belong to user", 403);
-      }
+       if (order.userId !== userId) {
+         throw new ApiError("Order does not belong to user", 403);
+       }
 
-      // Create Razorpay order
-      const razorpayOrder = await razorpayInstance.orders.create({
-        amount: parseFloat(order.totalAmount) * 100, // Convert to paisa
-        currency: 'INR',
-        receipt: `order_${orderId}`,
-        notes: {
-          customerOrderId: orderId,
-        },
-      });
+       // Check for existing pending payment
+       const existingPayment = await db.query.payments.findFirst({
+         where: eq(payments.orderId, parseInt(orderId)),
+       });
 
-      // Store payment info
-      await db.insert(payments).values({
-        status: 'pending',
-        gateway: 'razorpay',
-        orderId: parseInt(orderId),
-        token: orderId,
-        merchantOrderId: razorpayOrder.id,
-        payload: razorpayOrder,
-      });
+       if (existingPayment && existingPayment.status === 'pending') {
+         return {
+           razorpayOrderId: existingPayment.merchantOrderId,
+           key: razorpayId,
+         };
+       }
+
+        // Create Razorpay order and insert payment record
+        const razorpayOrder = await createRazorpayOrder(parseInt(orderId), order.totalAmount);
+        await insertPaymentRecord(parseInt(orderId), razorpayOrder);
 
       return {
         razorpayOrderId: razorpayOrder.id,
@@ -63,88 +57,7 @@ export const paymentRouter = router({
       };
     }),
 
-  retryPayment: protectedProcedure
-    .input(z.object({
-      orderId: z.number(),
-    }))
-    .mutation(async ({ input, ctx }) => {
-      const userId = ctx.user.userId;
-      const { orderId } = input;
-      // Validate order exists and belongs to user
-      const order = await db.query.orders.findFirst({
-        where: eq(orders.id, orderId),
-      });
 
-      if (!order) {
-        throw new ApiError("Order not found", 404);
-      }
-
-      if (order.userId !== userId) {
-        throw new ApiError("Order does not belong to user", 403);
-      }
-
-      // Check if order is already paid
-      const orderStatusRecord = await db.query.orderStatus.findFirst({
-        where: eq(orderStatus.orderId, orderId),
-      });
-
-      if (!orderStatusRecord) {
-        throw new ApiError("Order status not found", 404);
-      }
-
-      if (orderStatusRecord.paymentStatus === 'success') {
-        throw new ApiError("Order is already paid", 400);
-      }
-
-      // Get existing payment record
-      const existingPayment = await db.query.payments.findFirst({
-        where: eq(payments.orderId, orderId),
-      });
-
-      if (existingPayment) {
-        // Update existing payment status to failed if it was pending
-        if (existingPayment.status === 'pending') {
-          await db
-            .update(payments)
-            .set({ status: 'failed' })
-            .where(eq(payments.id, existingPayment.id));
-        }
-      }
-
-      // Create new Razorpay order
-      const razorpayOrder = await razorpayInstance.orders.create({
-        amount: parseFloat(order.totalAmount) * 100, // Convert to paisa
-        currency: 'INR',
-        receipt: `order_${orderId}_retry`,
-        notes: {
-          customerOrderId: orderId.toString(),
-          retry: 'true',
-        },
-      });
-
-      // Store new payment info
-      await db.insert(payments).values({
-        status: 'pending',
-        gateway: 'razorpay',
-        orderId: orderId,
-        token: orderId.toString(),
-        merchantOrderId: razorpayOrder.id,
-        payload: razorpayOrder,
-      });
-
-      // Update order status to pending
-      await db
-        .update(orderStatus)
-        .set({
-          paymentStatus: 'pending',
-        })
-        .where(eq(orderStatus.orderId, orderId));
-
-      return {
-        razorpayOrderId: razorpayOrder.id,
-        key: razorpayId,
-      };
-    }),
 
   verifyPayment: protectedProcedure
     .input(z.object({
@@ -198,90 +111,49 @@ export const paymentRouter = router({
         })
         .where(eq(orderStatus.orderId, updatedPayment.orderId));
 
-      return {
+       return {
         success: true,
         message: "Payment verified successfully",
       };
     }),
 
-  initiateRefund: protectedProcedure
+  markPaymentFailed: protectedProcedure
     .input(z.object({
-      orderId: z.number(),
-      refundPercent: z.number().min(0).max(100).optional(),
-      refundAmount: z.number().min(0).optional(),
-    }).refine((data) => {
-      const hasPercent = data.refundPercent !== undefined;
-      const hasAmount = data.refundAmount !== undefined;
-      return (hasPercent && !hasAmount) || (!hasPercent && hasAmount);
-    }, { message: "Provide either refundPercent or refundAmount, not both or neither" }))
+      merchantOrderId: z.string(),
+    }))
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.user.userId;
-      const { orderId, refundPercent, refundAmount } = input;
+      const { merchantOrderId } = input;
 
-      // Validate order exists and belongs to user
-      const order = await db.query.orders.findFirst({
-        where: eq(orders.id, orderId),
-      });
-
-      if (!order) {
-        throw new ApiError("Order not found", 404);
-      }
-
-      if (order.userId !== userId) {
-        throw new ApiError("Order does not belong to user", 403);
-      }
-
-      // Check if order is paid
-      const orderStatusRecord = await db.query.orderStatus.findFirst({
-        where: eq(orderStatus.orderId, orderId),
-      });
-
-      if (!orderStatusRecord || orderStatusRecord.paymentStatus !== 'success') {
-        throw new ApiError("Order is not paid or payment not verified", 400);
-      }
-
-      // Get payment record
+      // Find payment by merchantOrderId
       const payment = await db.query.payments.findFirst({
-        where: eq(payments.orderId, orderId),
+        where: eq(payments.merchantOrderId, merchantOrderId),
       });
 
-      if (!payment || payment.status !== 'success') {
-        throw new ApiError("Payment not found or not successful", 404);
+      if (!payment) {
+        throw new ApiError("Payment not found", 404);
       }
 
-      // Calculate refund amount
-      let calculatedRefundAmount: number;
-      if (refundPercent !== undefined) {
-        calculatedRefundAmount = (parseFloat(order.totalAmount) * refundPercent) / 100;
-      } else if (refundAmount !== undefined) {
-        calculatedRefundAmount = refundAmount;
-        if (calculatedRefundAmount > parseFloat(order.totalAmount)) {
-          throw new ApiError("Refund amount cannot exceed order total", 400);
-        }
-      } else {
-        throw new ApiError("Invalid refund parameters", 400);
+      // Check if payment belongs to user's order
+      const order = await db.query.orders.findFirst({
+        where: eq(orders.id, payment.orderId),
+      });
+
+      if (!order || order.userId !== userId) {
+        throw new ApiError("Payment does not belong to user", 403);
       }
 
-      // Initiate Razorpay refund
-      const razorpayRefund = await razorpayInstance.payments.refund(payment.merchantOrderId, {
-        amount: Math.round(calculatedRefundAmount * 100), // Convert to paisa
-      });
-
-      // Insert refund record
-      await db.insert(orderCancellationsTable).values({
-        orderId,
-        userId,
-        refundAmount: calculatedRefundAmount.toString(),
-        refundStatus: 'initiated',
-        razorpayRefundId: razorpayRefund.id,
-      });
+      // Update payment status to failed
+      await db
+        .update(payments)
+        .set({ status: 'failed' })
+        .where(eq(payments.id, payment.id));
 
       return {
-        refundId: razorpayRefund.id,
-        amount: calculatedRefundAmount,
-        status: 'initiated',
-        message: "Refund initiated successfully",
+        success: true,
+        message: "Payment marked as failed",
       };
     }),
+
 });
 

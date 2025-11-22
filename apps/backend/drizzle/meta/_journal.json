@@ -232,6 +232,13 @@
       "when": 1763281196495,
       "tag": "0032_tricky_baron_zemo",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1763794531144,
+      "tag": "0033_brainy_skullbuster",
+      "breakpoints": true
     }
   ]
 }

@@ -2,7 +2,7 @@ import { router, protectedProcedure } from '../trpc-index';
 import jwt from 'jsonwebtoken';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db/db_index';
-import { users, userDetails } from '../../db/schema';
+import { users, userDetails, userCreds } from '../../db/schema';
 import { ApiError } from '../../lib/api-error';
 import { jwtSecret } from 'src/lib/env-exporter';
 import { generateSignedUrlFromS3Url } from '../../lib/s3-client';
@@ -79,6 +79,32 @@ export const userRouter = router({
       return {
         success: true,
         data: response,
+      };
+    }),
+
+  checkProfileComplete: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.user.userId;
+
+      if (!userId) {
+        throw new ApiError('User not authenticated', 401);
+      }
+
+      const result = await db
+        .select()
+        .from(users)
+        .leftJoin(userCreds, eq(users.id, userCreds.userId))
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (result.length === 0) {
+        throw new ApiError('User not found', 404);
+      }
+
+      const { users: user, user_creds: creds } = result[0];
+
+      return {
+        isComplete: !!(user.name && user.email && creds),
       };
     }),
 });

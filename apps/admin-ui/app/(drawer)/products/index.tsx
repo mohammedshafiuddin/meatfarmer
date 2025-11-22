@@ -63,7 +63,7 @@ export default function Products() {
         {
           text: 'Confirm',
           onPress: () => {
-            toggleOutOfStockMutation.mutate({ id: product.id.toString() }, {
+            toggleOutOfStockMutation.mutate({ id: product.id }, {
               onSuccess: (data) => {
                 Alert.alert('Success', data.message);
                 refetch(); // Refresh the list

@@ -230,6 +230,7 @@ export interface GetSlotsProductIdsResponse {
 }
 
 export interface Order {
+  id: string;
   orderId: string;
   readableId: string;
   customerName: string;

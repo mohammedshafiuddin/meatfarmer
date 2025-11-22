@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
+import { View, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AppContainer, MyText, tw, useMarkDataFetchers } from 'common-ui';
+import { AppContainer, MyText, tw, useMarkDataFetchers, MyFlatList } from 'common-ui';
 import { trpc } from '@/src/trpc-client';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import AddressForm from '@/src/components/AddressForm';
@@ -181,85 +181,86 @@ export default function Addresses() {
   }
 
   return (
-    <AppContainer>
-      <View style={tw`flex-1`}>
-        <View style={tw`flex-row justify-between items-center p-4 pb-2`}>
-          <MyText weight="bold" style={tw`text-2xl text-gray-800`}>
-            My Addresses
-          </MyText>
-          <TouchableOpacity
-            style={tw`bg-blue-500 p-2 rounded-full`}
-            onPress={handleAddAddress}
-          >
-            <MaterialIcons name="add" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={tw`flex-1 p-4 pt-0`} showsVerticalScrollIndicator={false}>
-          {addresses.length === 0 ? (
-            <View style={tw`flex-1 justify-center items-center py-12`}>
-              <MaterialIcons name="location-off" size={64} color="#9CA3AF" />
-              <MyText style={tw`text-gray-500 text-center mt-4 mb-2`}>
-                No addresses found
-              </MyText>
-              <MyText style={tw`text-gray-400 text-center mb-6`}>
-                Add your first delivery address
-              </MyText>
-              <TouchableOpacity
-                style={tw`bg-blue-500 px-6 py-3 rounded-lg`}
-                onPress={handleAddAddress}
-              >
-                <MyText style={tw`text-white font-medium`}>Add Address</MyText>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            addresses.map((address) => (
-              <AddressCard
-                key={address.id}
-                address={address}
-                onEdit={handleEditAddress}
-                onDelete={handleDeleteAddress}
-                onSetDefault={handleSetDefault}
-              />
-            ))
-          )}
-        </ScrollView>
-
-        <Modal
-          visible={modalVisible}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={tw`flex-1 bg-white`}>
-            <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
-              <MyText weight="semibold" style={tw`text-lg text-gray-800`}>
-                {editingAddress ? 'Edit Address' : 'Add Address'}
-              </MyText>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                style={tw`p-1`}
-              >
-                <MaterialIcons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-            <AddressForm
-              onSuccess={handleAddressSubmit}
-              initialValues={editingAddress ? {
-                name: editingAddress.name,
-                phone: editingAddress.phone,
-                addressLine1: editingAddress.addressLine1,
-                addressLine2: editingAddress.addressLine2 || '',
-                city: editingAddress.city,
-                state: editingAddress.state,
-                pincode: editingAddress.pincode,
-                isDefault: editingAddress.isDefault,
-              } : undefined}
-              isEdit={!!editingAddress}
-            />
+    <>
+    <MyFlatList
+        data={addresses}
+        renderItem={({ item }) => (
+          <AddressCard
+            address={item}
+            onEdit={handleEditAddress}
+            onDelete={handleDeleteAddress}
+            onSetDefault={handleSetDefault}
+          />
+        )}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={() => (
+          <View style={tw`flex-row justify-between items-center p-4 pb-2`}>
+            <MyText weight="bold" style={tw`text-2xl text-gray-800`}>
+              My Addresses
+            </MyText>
+            <TouchableOpacity
+              style={tw`bg-blue-500 p-2 rounded-full`}
+              onPress={handleAddAddress}
+            >
+              <MaterialIcons name="add" size={24} color="white" />
+            </TouchableOpacity>
           </View>
-        </Modal>
-      </View>
-    </AppContainer>
+        )}
+        ListEmptyComponent={() => (
+          <View style={tw`justify-center items-center py-12`}>
+            <MaterialIcons name="location-off" size={64} color="#9CA3AF" />
+            <MyText style={tw`text-gray-500 text-center mt-4 mb-2`}>
+              No addresses found
+            </MyText>
+            <MyText style={tw`text-gray-400 text-center mb-6`}>
+              Add your first delivery address
+            </MyText>
+            <TouchableOpacity
+              style={tw`bg-blue-500 px-6 py-3 rounded-lg`}
+              onPress={handleAddAddress}
+            >
+              <MyText style={tw`text-white font-medium`}>Add Address</MyText>
+            </TouchableOpacity>
+          </View>
+        )}
+        contentContainerStyle={tw`p-4`}
+        showsVerticalScrollIndicator={false}
+      />
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <AppContainer>
+          <View style={tw`flex-row justify-between items-center pb-2`}>
+            <MyText weight="semibold" style={tw`text-lg text-gray-800`}>
+              {editingAddress ? 'Edit Address' : 'Add Address'}
+            </MyText>
+            <TouchableOpacity
+              onPress={() => setModalVisible(false)}
+              style={tw`p-1`}
+            >
+              <MaterialIcons name="close" size={24} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+          <AddressForm
+            onSuccess={handleAddressSubmit}
+            initialValues={editingAddress ? {
+              name: editingAddress.name,
+              phone: editingAddress.phone,
+              addressLine1: editingAddress.addressLine1,
+              addressLine2: editingAddress.addressLine2 || '',
+              city: editingAddress.city,
+              state: editingAddress.state,
+              pincode: editingAddress.pincode,
+              isDefault: editingAddress.isDefault,
+            } : undefined}
+            isEdit={!!editingAddress}
+          />
+        </AppContainer>
+      </Modal>
+    </>
   );
 }

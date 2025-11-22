@@ -3,6 +3,8 @@ export class ApiError extends Error {
   public details?: any;
 
   constructor(message: string, statusCode: number = 500, details?: any) {
+    console.log(message)
+    
     super(message);
     this.name = 'ApiError';
     this.statusCode = statusCode;
