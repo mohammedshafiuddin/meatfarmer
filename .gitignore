@@ -33,6 +33,7 @@ coverage/
 android/
 ios/
 
+*.apk
 # React Native specific
 *.xcuserstate
 *.xcuserdatad
