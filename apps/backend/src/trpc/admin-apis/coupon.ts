@@ -2,7 +2,7 @@ import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { coupons, users, staffUsers, orders } from '../../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, like, or } from 'drizzle-orm';
 
 const createCouponBodySchema = z.object({
   couponCode: z.string().optional(),
@@ -363,6 +363,42 @@ export const couponRouter = router({
            isApplyForAll: false,
          }).returning();
 
-         return result[0];
-       }),
- });
+          return result[0];
+        }),
+
+  getUsersMiniInfo: protectedProcedure
+    .input(z.object({
+      search: z.string().optional(),
+      limit: z.number().min(1).max(50).default(20),
+    }))
+    .query(async ({ input }) => {
+      const { search, limit } = input;
+
+      let whereCondition = undefined;
+      if (search && search.trim()) {
+        whereCondition = or(
+          like(users.name, `%${search}%`),
+          like(users.mobile, `%${search}%`)
+        );
+      }
+
+      const userList = await db.query.users.findMany({
+        where: whereCondition,
+        columns: {
+          id: true,
+          name: true,
+          mobile: true,
+        },
+        limit: limit,
+        orderBy: (users, { asc }) => [asc(users.name)],
+      });
+
+      return {
+        users: userList.map(user => ({
+          id: user.id,
+          name: user.name || 'Unknown',
+          mobile: user.mobile,
+        }))
+      };
+    }),
+});

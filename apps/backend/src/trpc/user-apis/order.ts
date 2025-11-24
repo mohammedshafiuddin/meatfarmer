@@ -239,24 +239,37 @@ export const orderRouter = router({
       return { success: true, data: newOrder };
     }),
 
-  getOrders: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.user.userId;
+  getOrders: protectedProcedure
+    .input(z.object({
+      page: z.number().min(1).default(1),
+      pageSize: z.number().min(1).max(50).default(10),
+    }).optional())
+    .query(async ({ input, ctx }) => {
+      const { page = 1, pageSize = 10 } = input || {};
+      const userId = ctx.user.userId;
+      const offset = (page - 1) * pageSize;
 
-    const userOrders = await db.query.orders.findMany({
-      where: eq(orders.userId, userId),
-      with: {
-        orderItems: {
-          with: {
-            product: true,
+      // Get total count for pagination
+      const totalCountResult = await db.$count(orders, eq(orders.userId, userId));
+      const totalCount = totalCountResult;
+
+      const userOrders = await db.query.orders.findMany({
+        where: eq(orders.userId, userId),
+        with: {
+          orderItems: {
+            with: {
+              product: true,
+            },
           },
+          slot: true,
+          paymentInfo: true,
+          orderStatus: true,
+          orderCancellations: true,
         },
-        slot: true,
-        paymentInfo: true,
-        orderStatus: true,
-        orderCancellations: true,
-      },
-      orderBy: (orders, { desc }) => [desc(orders.createdAt)],
-    });
+        orderBy: (orders, { desc }) => [desc(orders.createdAt)],
+        limit: pageSize,
+        offset: offset,
+      });
 
     const mappedOrders = await Promise.all(
       userOrders.map(async (order) => {
@@ -271,6 +284,7 @@ export const orderRouter = router({
         const paymentMode = order.isCod ? "CoD" : "Online";
         const paymentStatus = status?.paymentStatus || "pending";
         const refundStatus = cancellation?.refundStatus || 'none';
+        const refundAmount = cancellation?.refundAmount ? parseFloat(cancellation.refundAmount.toString()) : null;
 
         const items = await Promise.all(
           order.orderItems.map(async (item) => {
@@ -301,14 +315,97 @@ export const orderRouter = router({
           paymentMode,
           paymentStatus,
           refundStatus,
+          refundAmount,
           userNotes: order.userNotes || null,
           items,
         };
       })
     );
 
-    return { success: true, data: mappedOrders };
+    return {
+      success: true,
+      data: mappedOrders,
+      pagination: {
+        page,
+        pageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / pageSize)
+      }
+    };
   }),
+
+  getOrderById: protectedProcedure
+    .input(z.object({ orderId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const { orderId } = input;
+      const userId = ctx.user.userId;
+
+      const order = await db.query.orders.findFirst({
+        where: and(eq(orders.id, parseInt(orderId)), eq(orders.userId, userId)),
+        with: {
+          orderItems: {
+            with: {
+              product: true,
+            },
+          },
+          slot: true,
+          paymentInfo: true,
+          orderStatus: true,
+          orderCancellations: true,
+        },
+      });
+
+      if (!order) {
+        throw new Error("Order not found");
+      }
+
+      const status = order.orderStatus[0]; // assuming one status per order
+      const cancellation = order.orderCancellations[0]; // assuming one cancellation per order
+      const deliveryStatus = status?.isCancelled
+        ? "cancelled"
+        : status?.isDelivered
+        ? "success"
+        : "pending";
+      const orderStatus = status?.isCancelled ? "cancelled" : "success";
+      const paymentMode = order.isCod ? "CoD" : "Online";
+      const paymentStatus = status?.paymentStatus || "pending";
+      const refundStatus = cancellation?.refundStatus || 'none';
+      const refundAmount = cancellation?.refundAmount ? parseFloat(cancellation.refundAmount.toString()) : null;
+
+      const items = await Promise.all(
+        order.orderItems.map(async (item) => {
+          const signedImages = item.product.images
+            ? await generateSignedUrlsFromS3Urls(
+                item.product.images as string[]
+              )
+            : [];
+          return {
+            productName: item.product.name,
+            quantity: parseFloat(item.quantity),
+            price: parseFloat(item.price.toString()),
+            amount:
+              parseFloat(item.price.toString()) * parseFloat(item.quantity),
+            image: signedImages[0] || null,
+          };
+        })
+      );
+
+      return {
+        id: order.id,
+        orderId: `ORD${order.readableId.toString().padStart(3, "0")}`,
+        orderDate: order.createdAt.toISOString(),
+        deliveryStatus,
+        deliveryDate: order.slot?.deliveryTime.toISOString(),
+        orderStatus,
+        cancelReason: status?.cancelReason || null,
+        paymentMode,
+        paymentStatus,
+        refundStatus,
+        refundAmount,
+        userNotes: order.userNotes || null,
+        items,
+      };
+    }),
 
   cancelOrder: protectedProcedure
     .input(
@@ -367,25 +464,35 @@ export const orderRouter = router({
         throw new ApiError("Cannot cancel delivered order", 400);
       }
 
-      // Update order status
-      await db
-        .update(orderStatus)
-        .set({
-          isCancelled: true,
-          cancelReason: reason,
-        })
-        .where(eq(orderStatus.id, status.id));
+       // Perform database operations in transaction
+       const result = await db.transaction(async (tx) => {
+         // Update order status
+         await tx
+           .update(orderStatus)
+           .set({
+             isCancelled: true,
+             cancelReason: reason,
+           })
+           .where(eq(orderStatus.id, status.id));
 
-      // Insert cancellation record
-      await db.insert(orderCancellationsTable).values({
-        orderId: order.id,
-        userId,
-        reason,
-        cancellationUserNotes: reason,
-        cancellationReviewed: false,
-      });
+         // Determine refund status based on payment method
+         const refundStatus = order.isCod ? 'na' : 'pending';
 
-      await sendOrderCancelledNotification(userId, order.id.toString());
+         // Insert cancellation record
+         await tx.insert(orderCancellationsTable).values({
+           orderId: order.id,
+           userId,
+           reason,
+           cancellationUserNotes: reason,
+           cancellationReviewed: false,
+           refundStatus,
+         });
+
+         return { orderId: order.id, userId };
+       });
+
+       // Send notification outside transaction (idempotent operation)
+       await sendOrderCancelledNotification(result.userId, result.orderId.toString());
 
       return { success: true, message: "Order cancelled successfully" };
      }),

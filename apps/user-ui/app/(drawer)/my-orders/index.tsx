@@ -1,14 +1,53 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, FlatList, Image, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Entypo, MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { tw, useManualRefresh, MyText, MyFlatList, useMarkDataFetchers, REFUND_STATUS } from 'common-ui';
 import { BottomDialog } from 'common-ui';
 
 import { trpc } from '@/src/trpc-client';
 import RazorpayCheckout from 'react-native-razorpay';
 
+// Type definitions
+interface OrderItem {
+  productName: string;
+  quantity: number;
+  price: number;
+  amount: number;
+  image: string | null;
+}
+
+interface Order {
+  id: number;
+  orderId: string;
+  orderDate: string;
+  deliveryStatus: string;
+  deliveryDate?: string;
+  orderStatus: string;
+  cancelReason: string | null;
+  paymentMode: string;
+  paymentStatus: string;
+  refundStatus: string;
+  refundAmount: number | null;
+  userNotes: string | null;
+  items: OrderItem[];
+}
+
 export default function MyOrders() {
-  const { data: ordersData, isLoading, error, refetch } = trpc.user.order.getOrders.useQuery();
+  const router = useRouter();
+
+  // Infinite scroll state
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [hasNextPage, setHasNextPage] = useState<boolean>(true);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const pageSize = 10;
+
+  const { data: ordersData, isLoading, error, refetch } = trpc.user.order.getOrders.useQuery({
+    page: currentPage,
+    pageSize: pageSize,
+  });
   
   const cancelOrderMutation = trpc.user.order.cancelOrder.useMutation();
   const raiseComplaintMutation = trpc.user.complaint.raise.useMutation();
@@ -26,7 +65,7 @@ export default function MyOrders() {
 
   const createRazorpayOrderMutation = trpc.user.payment.createRazorpayOrder.useMutation({
     onSuccess: (paymentData) => {
-      const order = orders.find(o => o.id === retryOrderId);
+      const order = allOrders.find(o => o.id === retryOrderId);
       if (order) {
         const totalAmount = order.items.reduce((sum, p) => sum + p.amount, 0);
         initiateRazorpayPayment(paymentData.razorpayOrderId, paymentData.key, totalAmount);
@@ -47,33 +86,118 @@ export default function MyOrders() {
       refetch();
     },
   });
-  const orders = ordersData?.data || [];
+  // Handle data accumulation for infinite scroll
+  useEffect(() => {
+    if (ordersData?.data) {
+      if (currentPage === 1) {
+        // First page - replace all orders
+        setAllOrders(ordersData.data);
+      } else {
+        // Subsequent pages - append to existing orders
+        setAllOrders(prev => [...prev, ...ordersData.data]);
+      }
 
-  useManualRefresh(() => refetch());
+      // Check if there are more pages
+      const totalPages = ordersData.pagination?.totalPages || 1;
+      setHasNextPage(currentPage < totalPages);
+      setIsLoadingMore(false);
+      setLoadMoreError(null); // Clear any previous errors
+    }
+  }, [ordersData, currentPage]);
 
-  useMarkDataFetchers(() => {
+  // Handle errors during infinite scroll loading
+  useEffect(() => {
+    if (error && currentPage > 1) {
+      // If there's an error loading more pages, show error state
+      setIsLoadingMore(false);
+      setLoadMoreError('Failed to load more orders. Please try again.');
+    }
+  }, [error, currentPage]);
+
+  // Reset to first page on manual refresh
+  useManualRefresh(() => {
+    setCurrentPage(1);
+    setAllOrders([]);
+    setHasNextPage(true);
+    setIsLoadingMore(false);
+    setLoadMoreError(null);
     refetch();
   });
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogItems, setDialogItems] = useState<typeof orders[0]['items']>([]);
-  const [menuDialogOpen, setMenuDialogOpen] = useState(false);
+  useMarkDataFetchers(() => {
+    setCurrentPage(1);
+    setAllOrders([]);
+    setHasNextPage(true);
+    setIsLoadingMore(false);
+    setLoadMoreError(null);
+    refetch();
+  });
+
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [dialogItems, setDialogItems] = useState<OrderItem[]>([]);
+  const [menuDialogOpen, setMenuDialogOpen] = useState<boolean>(false);
   const [menuOrderId, setMenuOrderId] = useState<string>('');
-  const [complaintDialogOpen, setComplaintDialogOpen] = useState(false);
+  const [complaintDialogOpen, setComplaintDialogOpen] = useState<boolean>(false);
   const [complaintOrderId, setComplaintOrderId] = useState<string>('');
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState<boolean>(false);
   const [cancelOrderId, setCancelOrderId] = useState<string>('');
   const [cancelReason, setCancelReason] = useState<string>('');
   const [complaintBody, setComplaintBody] = useState<string>('');
-  const [editNotesDialogOpen, setEditNotesDialogOpen] = useState(false);
+  const [editNotesDialogOpen, setEditNotesDialogOpen] = useState<boolean>(false);
   const [editNotesOrderId, setEditNotesOrderId] = useState<string>('');
   const [editNotes, setEditNotes] = useState<string>('');
   const [retryOrderId, setRetryOrderId] = useState<number>(0);
 
-  const openDialog = useCallback((items: typeof orders[0]['items']) => {
+  const openDialog = useCallback((items: OrderItem[]) => {
     setDialogItems(items);
     setDialogOpen(true);
   }, []);
+
+  // Infinite scroll functions
+  const loadMoreOrders = useCallback(() => {
+    if (!isLoadingMore && hasNextPage && !isLoading) {
+      setIsLoadingMore(true);
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [isLoadingMore, hasNextPage, isLoading]);
+
+  const renderFooter = () => {
+    if (isLoadingMore) {
+      return (
+        <View style={tw`py-6 items-center`}>
+          <ActivityIndicator size="small" color="#3B82F6" />
+          <MyText style={tw`text-gray-500 mt-2 text-sm`}>Loading more orders...</MyText>
+        </View>
+      );
+    }
+
+    if (loadMoreError) {
+      return (
+        <View style={tw`py-6 items-center`}>
+          <MyText style={tw`text-red-500 text-sm mb-2`}>{loadMoreError}</MyText>
+          <TouchableOpacity
+            onPress={() => {
+              setLoadMoreError(null);
+              loadMoreOrders();
+            }}
+            style={tw`bg-blue-500 px-4 py-2 rounded-lg`}
+          >
+            <MyText style={tw`text-white font-medium text-sm`}>Retry</MyText>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (!hasNextPage && allOrders.length > 0) {
+      return (
+        <View style={tw`py-6 items-center`}>
+          <MyText style={tw`text-gray-500 text-sm`}>No more orders to load</MyText>
+        </View>
+      );
+    }
+
+    return null;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -109,13 +233,16 @@ export default function MyOrders() {
     }
   };
 
-  const renderOrder = useCallback(({ item }: { item: typeof orders[0] }) => {
+  const renderOrder = useCallback(({ item }: { item: Order }) => {
     const statusConfig = getStatusColor(item.orderStatus);
     const totalAmount = item.items.reduce((sum, p) => sum + p.amount, 0);
 
-    return (
-      <View style={tw`bg-white rounded-2xl p-6 mb-4 shadow-sm border border-gray-100`}>
-        {/* Header with Order ID and Status */}
+  return (
+    <TouchableOpacity
+      style={tw`bg-white rounded-2xl p-6 mb-4 shadow-sm border border-gray-100`}
+      onPress={() => router.push(`/my-orders/${item.id}`)}
+    >
+      {/* Header with Order ID and Status */}
         <View style={tw`flex-row justify-between items-start mb-4`}>
           <View>
             <MyText style={tw`text-lg font-bold text-gray-800`}>Order #{item.orderId}</MyText>
@@ -259,9 +386,10 @@ export default function MyOrders() {
           <MyText style={tw`text-lg font-bold text-gray-800`}>Total</MyText>
           <MyText style={tw`text-xl font-bold text-gray-800`}>₹{totalAmount}</MyText>
         </View>
-      </View>
-    );
-  }, []);
+
+    </TouchableOpacity>
+  );
+}, []);
 
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
@@ -341,7 +469,7 @@ export default function MyOrders() {
       });
   };
 
-  if (isLoading) {
+  if (isLoading && currentPage === 1) {
     return (
       <View style={tw`flex-1 justify-center items-center`}>
         <ActivityIndicator size="large" color="#3B82F6" />
@@ -374,10 +502,13 @@ export default function MyOrders() {
       <MyFlatList
         style={tw`flex-1 bg-white`}
         contentContainerStyle={tw`px-4 pb-6`}
-        data={orders}
+        data={allOrders}
         renderItem={({ item }) => renderOrder({ item })}
         keyExtractor={(item) => item.orderId}
         showsVerticalScrollIndicator={false}
+        onEndReached={loadMoreOrders}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
         ListEmptyComponent={
           <View style={tw`flex-1 justify-center items-center py-12`}>
             <MaterialIcons name="shopping-bag" size={64} color="#D1D5DB" />
@@ -394,14 +525,14 @@ export default function MyOrders() {
              <View style={tw`space-y-4`}>
                <TouchableOpacity
                  style={tw`px-4 py-3 border-b border-gray-200 flex-row items-center`}
-                 onPress={() => {
-                   const order = orders.find(o => o.orderId === menuOrderId);
-                   if (order) {
-                     setEditNotes(order.userNotes || '');
-                     setEditNotesOrderId(menuOrderId);
-                     setEditNotesDialogOpen(true);
-                   }
-                 }}
+                  onPress={() => {
+                    const order = allOrders.find(o => o.orderId === menuOrderId);
+                    if (order) {
+                      setEditNotes(order.userNotes || '');
+                      setEditNotesOrderId(menuOrderId);
+                      setEditNotesDialogOpen(true);
+                    }
+                  }}
                >
                  <MaterialIcons name="edit" size={20} color="#6B7280" style={tw`mr-3`} />
                  <MyText style={tw`text-gray-800 font-medium`}>Edit Notes</MyText>

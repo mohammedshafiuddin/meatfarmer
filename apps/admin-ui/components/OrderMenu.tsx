@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, Alert } from 'react-native';
 import { Entypo } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { MyText, tw, BottomDialog, MyTextInput } from 'common-ui';
 import { OrderNotesForm } from './OrderNotesForm';
 import { FullOrderView } from './FullOrderView';
@@ -28,6 +29,7 @@ export const OrderMenu: React.FC<OrderMenuProps> = ({
   iconSize = 16,
   iconColor = '#6B7280',
 }) => {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [fullOrderDialogOpen, setFullOrderDialogOpen] = useState(false);
@@ -84,6 +86,11 @@ export const OrderMenu: React.FC<OrderMenuProps> = ({
     setFullOrderDialogOpen(true);
   };
 
+  const handleViewFullDetails = () => {
+    setIsOpen(false);
+    router.push(`/order-details/${orderId}`);
+  };
+
   const handleGenerateCoupon = () => {
     setIsOpen(false);
     setGenerateCouponDialogOpen(true);
@@ -132,6 +139,11 @@ export const OrderMenu: React.FC<OrderMenuProps> = ({
         title: 'Add Notes',
         icon: 'edit',
         onPress: handleAddNotes,
+      },
+      {
+        title: 'View Full Details',
+        icon: 'info-with-circle',
+        onPress: handleViewFullDetails,
       },
     ];
 

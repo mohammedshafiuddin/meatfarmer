@@ -53,10 +53,10 @@ export const cancelledOrdersRouter = router({
           readableId: status.order.readableId,
           customerName: `${status.order.user.name}`,
           address: `${status.order.address.addressLine1}, ${status.order.address.city}`,
-          totalAmount: status.order.totalAmount,
-           cancellationReviewed: cancellation?.cancellationReviewed || false,
-           refundStatus: cancellation?.refundStatus || 'none',
-          adminNotes: status.order.adminNotes,
+           totalAmount: status.order.totalAmount,
+            cancellationReviewed: cancellation?.cancellationReviewed || false,
+            isRefundDone: cancellation?.refundStatus === 'processed' || false,
+           adminNotes: status.order.adminNotes,
           cancelReason: status.cancelReason,
           paymentMode: status.order.isCod ? 'COD' : 'Online',
           paymentStatus: status.paymentStatus || 'pending',
@@ -91,6 +91,69 @@ export const cancelledOrdersRouter = router({
       }
 
       return result[0];
+    }),
+
+  getById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const { id } = input;
+
+      // Get cancelled order with full details
+      const cancelledOrderStatus = await db.query.orderStatus.findFirst({
+        where: eq(orderStatus.id, id),
+        with: {
+          order: {
+            with: {
+              user: true,
+              address: true,
+              orderItems: {
+                with: {
+                  product: {
+                    with: {
+                      unit: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!cancelledOrderStatus || !cancelledOrderStatus.isCancelled) {
+        throw new Error("Cancelled order not found");
+      }
+
+      // Get cancellation details separately
+      const cancellation = await db.query.orderCancellationsTable.findFirst({
+        where: eq(orderCancellationsTable.orderId, cancelledOrderStatus.orderId),
+      });
+
+      const order = cancelledOrderStatus.order;
+
+      // Format the response similar to the getAll method
+      const formattedOrder = {
+        id: order.id,
+        readableId: order.readableId,
+        customerName: order.user.name,
+        address: `${order.address.addressLine1}${order.address.addressLine2 ? ', ' + order.address.addressLine2 : ''}, ${order.address.city}, ${order.address.state} ${order.address.pincode}`,
+        totalAmount: order.totalAmount,
+        cancellationReviewed: cancellation?.cancellationReviewed || false,
+        isRefundDone: cancellation?.refundStatus === 'processed' || false,
+        adminNotes: cancellation?.cancellationAdminNotes || null,
+        cancelReason: cancelledOrderStatus.cancelReason || null,
+        items: order.orderItems.map((item: any) => ({
+          name: item.product.name,
+          quantity: item.quantity,
+          price: parseFloat(item.price.toString()),
+          unit: item.product.unit?.shortNotation || 'unit',
+          amount: parseFloat(item.price.toString()) * parseFloat(item.quantity),
+          image: item.product.images?.[0] || null,
+        })),
+        createdAt: order.createdAt.toISOString(),
+      };
+
+      return { order: formattedOrder };
     }),
 
   updateRefund: protectedProcedure

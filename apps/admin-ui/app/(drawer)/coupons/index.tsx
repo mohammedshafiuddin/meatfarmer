@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { tw, AppContainer, BottomDialog, MyButton, MyText, SearchBar, MyFlatList, useMarkDataFetchers } from 'common-ui';
+import { tw, MyButton, MyText, SearchBar, MyFlatList, useMarkDataFetchers } from 'common-ui';
 import useManualRefresh from 'common-ui/hooks/useManualRefresh';
-import { CreateCouponPayload, Coupon } from 'common-ui/shared-types';
-import CouponForm from '../../../src/components/CouponForm';
+import { Coupon } from 'common-ui/shared-types';
 import { trpc } from '@/src/trpc-client';
+import { useRouter } from 'expo-router';
 
 export default function Coupons() {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   // const { data: coupons = [], isLoading, error, refetch } = useGetCoupons();
@@ -21,10 +21,7 @@ export default function Coupons() {
     );
   }, [coupons, searchQuery]);
 
-  const createCoupon = trpc.admin.coupon.create.useMutation();
   const deleteCoupon = trpc.admin.coupon.delete.useMutation();
-  // const createCoupon = useCreateCoupon();
-  // const deleteCoupon = useDeleteCoupon();
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -37,18 +34,6 @@ export default function Coupons() {
   useMarkDataFetchers(() => {
     refetch();
   });
-
-  const handleCreateCoupon = (values: CreateCouponPayload) => {
-    createCoupon.mutate(values, {
-      onSuccess: () => {
-        Alert.alert('Success', 'Coupon created successfully');
-        setIsCreateDialogOpen(false);
-      },
-      onError: (error: any) => {
-        Alert.alert('Error', error.message || 'Failed to create coupon');
-      },
-    });
-  };
 
   const handleDeleteCoupon = (id: number) => {
     Alert.alert('Delete Coupon', 'Are you sure you want to delete this coupon?', [
@@ -106,7 +91,7 @@ export default function Coupons() {
 
       <View style={tw`mb-3`}>
         <MyText style={tw`text-sm text-gray-700 mb-1`}>
-          <MaterialCommunityIcons name="account-group" size={14} color="#6b7280" /> Target: {item.isApplyForAll ? 'All Users' : item.targetUser ? `User ${item.targetUser}` : 'All Users'}
+          <MaterialCommunityIcons name="account-group" size={14} color="#6b7280" /> Target: {item.isApplyForAll ? 'All Users' : item.targetUser ? `${item.targetUser.name || 'User'} (${item.targetUser.mobile})` : 'All Users'}
         </MyText>
         {item.productIds && item.productIds.length > 0 && (
           <MyText style={tw`text-sm text-gray-700`}>
@@ -136,46 +121,36 @@ export default function Coupons() {
 
     if (isLoading) {
       return (
-        <AppContainer>
-          <View style={tw`flex-1 justify-center items-center`}>
-            <View style={tw`w-16 h-16 bg-blue-100 rounded-full items-center justify-center mb-4`}>
-              <MaterialCommunityIcons name="loading" size={32} color="#3b82f6" />
-            </View>
-            <MyText style={tw`text-lg font-semibold text-gray-600`}>Loading Coupons...</MyText>
+        <View style={tw`flex-1 justify-center items-center bg-white`}>
+          <View style={tw`w-16 h-16 bg-blue-100 rounded-full items-center justify-center mb-4`}>
+            <MaterialCommunityIcons name="loading" size={32} color="#3b82f6" />
           </View>
-        </AppContainer>
+          <MyText style={tw`text-lg font-semibold text-gray-600`}>Loading Coupons...</MyText>
+        </View>
       );
     }
 
     if (error) {
       return (
-        <AppContainer>
-          <View style={tw`flex-1 justify-center items-center`}>
-            <View style={tw`w-16 h-16 bg-red-100 rounded-full items-center justify-center mb-4`}>
-              <MaterialCommunityIcons name="alert-circle" size={32} color="#ef4444" />
-            </View>
-            <MyText style={tw`text-lg font-semibold text-red-600 mb-2`}>Oops!</MyText>
-            <MyText style={tw`text-gray-600 text-center mb-4`}>Failed to load coupons. Please try again.</MyText>
-            <MyButton onPress={() => refetch()} style={tw`bg-red-500`}>
-              <View style={tw`flex-row items-center`}>
-                <MaterialCommunityIcons name="refresh" size={16} color="white" />
-                <MyText style={tw`text-white font-semibold ml-1`}>Retry</MyText>
-              </View>
-            </MyButton>
+        <View style={tw`flex-1 justify-center items-center bg-white`}>
+          <View style={tw`w-16 h-16 bg-red-100 rounded-full items-center justify-center mb-4`}>
+            <MaterialCommunityIcons name="alert-circle" size={32} color="#ef4444" />
           </View>
-        </AppContainer>
+          <MyText style={tw`text-lg font-semibold text-red-600 mb-2`}>Oops!</MyText>
+          <MyText style={tw`text-gray-600 text-center mb-4`}>Failed to load coupons. Please try again.</MyText>
+          <MyButton onPress={() => refetch()} style={tw`bg-red-500`}>
+            <View style={tw`flex-row items-center`}>
+              <MaterialCommunityIcons name="refresh" size={16} color="white" />
+              <MyText style={tw`text-white font-semibold ml-1`}>Retry</MyText>
+            </View>
+          </MyButton>
+        </View>
       );
     }
 
   return (
-    <AppContainer>
-       <View style={tw`mb-6 p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg items-center`}>
-          <View style={tw`flex-row items-center`}>
-            <MaterialCommunityIcons name="ticket-percent" size={28} color="white" />
-            <MyText style={tw`text-2xl font-bold text-white ml-2`}>Coupons</MyText>
-          </View>
-        </View>
-       <View style={tw`flex-row items-center mb-4`}>
+    <View style={tw`flex-1 bg-white`}>
+       <View style={tw`flex-row items-center mb-4 p-4`}>
          <View style={tw`flex-1 mr-2`}>
            <SearchBar
              value={searchQuery}
@@ -184,12 +159,12 @@ export default function Coupons() {
              placeholder="Search coupons..."
            />
          </View>
-         <MyButton onPress={() => setIsCreateDialogOpen(true)} style={tw`bg-blue-500`}>
-           <View style={tw`flex-row items-center`}>
-             <MaterialCommunityIcons name="plus" size={16} color="white" />
-             <MyText style={tw`text-white font-semibold ml-1`}>Add</MyText>
-           </View>
-         </MyButton>
+          <MyButton onPress={() => router.push('/(drawer)/create-coupon')}>
+            <View style={tw`flex-row items-center`}>
+              <MaterialCommunityIcons name="plus" size={16} color="white" />
+              <MyText style={tw`text-white font-semibold ml-1`}>Add</MyText>
+            </View>
+          </MyButton>
        </View>
         <MyFlatList
          data={filteredCoupons}
@@ -198,6 +173,7 @@ export default function Coupons() {
          refreshControl={
            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
          }
+         contentContainerStyle={tw`px-4 pb-4`}
          ListEmptyComponent={
            searchQuery ? (
              <View style={tw`flex-1 justify-center items-center py-20`}>
@@ -217,22 +193,16 @@ export default function Coupons() {
                </View>
                <MyText style={tw`text-xl font-semibold text-gray-600 mb-2`}>No Coupons Yet</MyText>
                <MyText style={tw`text-gray-500 text-center mb-4`}>Create your first coupon to start offering discounts</MyText>
-               <MyButton onPress={() => setIsCreateDialogOpen(true)} style={tw`bg-blue-500`}>
-                 <View style={tw`flex-row items-center`}>
-                   <MaterialCommunityIcons name="plus" size={16} color="white" />
-                   <MyText style={tw`text-white font-semibold ml-1`}>Create Coupon</MyText>
-                 </View>
-               </MyButton>
+                <MyButton onPress={() => router.push('/(drawer)/create-coupon')} style={tw`bg-blue-500`}>
+                  <View style={tw`flex-row items-center`}>
+                    <MaterialCommunityIcons name="plus" size={16} color="white" />
+                    <MyText style={tw`text-white font-semibold ml-1`}>Create Coupon</MyText>
+                  </View>
+                </MyButton>
              </View>
            )
          }
-       />
-      <BottomDialog open={isCreateDialogOpen} onClose={() => setIsCreateDialogOpen(false)}>
-        <CouponForm
-          onSubmit={handleCreateCoupon}
-          isLoading={createCoupon.isPending}
         />
-      </BottomDialog>
-    </AppContainer>
+     </View>
   );
 }

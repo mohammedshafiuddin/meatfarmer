@@ -263,32 +263,41 @@ export interface Slot {
 
 export interface Coupon {
   id: number;
-  code: string;
-  discountType: 'percentage' | 'fixed';
-  discountValue: number;
-  minOrderValue?: number;
-  maxDiscount?: number;
-  isActive: boolean;
-  validFrom: string;
-  validTill: string;
-  usageLimit?: number;
-  usedCount: number;
-  createdAt: string;
+  couponCode: string;
+  isUserBased: boolean;
+  discountPercent: string | null;
+  flatDiscount: string | null;
+  minOrder: string | null;
+  targetUser: {
+    id: number;
+    name: string | null;
+    mobile: string;
+  } | null;
+  productIds: number[] | null;
+  createdBy: number;
+  creator: {
+    id: number;
+    name: string | null;
+  } | null;
+  maxValue: string | null;
+  isApplyForAll: boolean;
+  validTill: Date | null;
+  maxLimitForUser: number | null;
+  isInvalidated: boolean;
+  createdAt: Date;
 }
 
 export interface CreateCouponPayload {
   couponCode: string;
-  discountType: 'percentage' | 'fixed';
   discountPercent?: number;
   flatDiscount?: number;
   minOrder?: number;
   maxValue?: number;
-  validFrom: string;
-  validTill: string;
+  validTill?: string;
   maxLimitForUser?: number;
   isApplyForAll: boolean;
   isUserBased: boolean;
-  targetUser?: string;
+  targetUsers?: number[];
   productIds?: number[];
 }
 

@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Farm2Door-admin",
+    "name": "Symbuyote Admin",
     "slug": "health-petal",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/farm2door-logo.png",
+    "icon": "./assets/images/symbuyoteadmin.png",
     "scheme": "medikore",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -28,7 +28,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/farm2door-logo.png",
+        "foregroundImage": "./assets/images/symbuyoteadmin.png",
         "backgroundColor": "#fff0f6"
       },
       "edgeToEdgeEnabled": true,
@@ -44,7 +44,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/farm2door-logo.png",
+          "image": "./assets/images/symbuyoteadmin.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

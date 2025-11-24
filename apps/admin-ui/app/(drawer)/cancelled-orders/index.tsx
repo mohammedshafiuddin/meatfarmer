@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import { useRouter } from 'expo-router';
 import { TabViewWrapper, AppContainer, MyText, tw, useManualRefresh, useMarkDataFetchers } from 'common-ui';
 import { trpc } from '../../../src/trpc-client';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -36,6 +37,7 @@ const OrderItem = ({
   isReviewedTab: boolean;
   onToggleReview: (orderId: number, reviewed: boolean) => void;
 }) => {
+  const router = useRouter();
   const displayedItems = order.items.slice(0, 2);
   const moreItems = order.items.length > 2 ? ` +${order.items.length - 2} more` : '';
 
@@ -54,10 +56,15 @@ const OrderItem = ({
     );
   };
 
-
+  const handleOrderPress = () => {
+    router.push(`/order-details/${order.id}` as any);
+  };
 
   return (
-    <View style={tw`bg-white p-4 mb-2 rounded-2xl shadow-lg`}>
+    <TouchableOpacity
+      style={tw`bg-white p-4 mb-2 rounded-2xl shadow-lg`}
+      onPress={handleOrderPress}
+    >
       <MyText style={tw`font-bold text-gray-800 mb-2`}>{order.customerName} - #{order.readableId}</MyText>
       <View style={tw`flex-row gap-2 mb-2`}>
         <TouchableOpacity
@@ -97,7 +104,7 @@ const OrderItem = ({
           </MyText>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 

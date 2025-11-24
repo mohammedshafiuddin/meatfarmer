@@ -8,6 +8,7 @@ import {
   View,
   ActivityIndicator,
   Image,
+  Text,
 } from "react-native";
 import { useState, useEffect } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -142,6 +143,10 @@ export default function Layout() {
   const navigation = useNavigation();
   const [drawerTitle, setDrawerTitle] = useState<string | undefined>(undefined);
 
+  // Get cart data for badge
+  const { data: cartData } = trpc.user.cart.getCart.useQuery();
+  const cartItemCount = cartData?.totalItems || 0;
+
   useEffect(() => {
     const subscription = DeviceEventEmitter.addListener(
       "updateDrawerTitle",
@@ -211,29 +216,38 @@ export default function Layout() {
           ),
           headerRight: () => (
             <View style={{ flexDirection: "row", marginRight: 15 }}>
-              <TouchableOpacity
-                onPress={() => router.push("/my-cart")}
-                style={{
-                  marginRight: 10,
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <View
+              <View style={tw`relative`}>
+                <TouchableOpacity
+                  onPress={() => router.push("/my-cart")}
                   style={{
-                    position: "absolute",
+                    marginRight: 10,
                     width: 40,
                     height: 40,
                     borderRadius: 20,
-                    backgroundColor: theme.colors.pink1,
-                    opacity: 0.7,
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
-                />
-                <MaterialIcons name="shopping-cart" size={24} color="white" />
-              </TouchableOpacity>
+                >
+                  <View
+                    style={{
+                      position: "absolute",
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor: theme.colors.pink1,
+                      opacity: 0.7,
+                    }}
+                  />
+                  <MaterialIcons name="shopping-cart" size={24} color="white" />
+                </TouchableOpacity>
+                {cartItemCount > 0 && (
+                  <View style={tw`absolute -top-1 -right-[0.001] bg-red-500 rounded-full min-w-5 h-5 items-center justify-center`}>
+                    <Text style={tw`text-white text-xs font-bold px-1`}>
+                      {cartItemCount > 9 ? '9+' : cartItemCount.toString()}
+                    </Text>
+                  </View>
+                )}
+              </View>
               <TouchableOpacity
                 onPress={() => DeviceEventEmitter.emit(REFRESH_EVENT)}
                 style={{

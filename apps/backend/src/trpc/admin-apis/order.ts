@@ -1,7 +1,7 @@
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { orders, orderItems, orderStatus, users, addresses, productInfo, units, deliverySlotInfo, payments, paymentInfoTable } from '../../db/schema';
+import { orders, orderItems, orderStatus, users, addresses, productInfo, units, deliverySlotInfo, payments, paymentInfoTable, orderCancellationsTable } from '../../db/schema';
 import { eq, and, gte, lt } from 'drizzle-orm';
 import dayjs from 'dayjs';
 import { sendOrderPackagedNotification, sendOrderDeliveredNotification } from '../../lib/notif-job';
@@ -12,6 +12,10 @@ const updateOrderNotesSchema = z.object({
 });
 
 const getFullOrderSchema = z.object({
+  orderId: z.number(),
+});
+
+const getOrderDetailsSchema = z.object({
   orderId: z.number(),
 });
 
@@ -82,6 +86,25 @@ export const orderRouter = router({
         throw new Error("Order not found");
       }
 
+      // Get order status separately
+      const statusRecord = await db.query.orderStatus.findFirst({
+        where: eq(orderStatus.orderId, orderId),
+      });
+
+      const status: 'pending' | 'delivered' | 'cancelled' = statusRecord?.isCancelled
+        ? 'cancelled'
+        : statusRecord?.isDelivered
+        ? 'delivered'
+        : 'pending';
+
+      // Get cancellation details if order is cancelled
+      let cancellation = null;
+      if (status === 'cancelled') {
+        cancellation = await db.query.orderCancellationsTable.findFirst({
+          where: eq(orderCancellationsTable.orderId, orderId),
+        });
+      }
+
       return {
         id: orderData.id,
         readableId: orderData.readableId,
@@ -106,9 +129,12 @@ export const orderRouter = router({
         adminNotes: orderData.adminNotes,
         userNotes: orderData.userNotes,
         createdAt: orderData.createdAt,
+        status,
+        isPackaged: statusRecord?.isPackaged || false,
+        isDelivered: statusRecord?.isDelivered || false,
         items: orderData.orderItems.map(item => ({
           id: item.id,
-          productName: item.product.name,
+          name: item.product.name,
           quantity: item.quantity,
           price: item.price,
           unit: item.product.unit?.shortNotation,
@@ -124,6 +150,106 @@ export const orderRouter = router({
           gateway: orderData.paymentInfo.gateway,
           merchantOrderId: orderData.paymentInfo.merchantOrderId,
         } : null,
+        // Cancellation details (only present for cancelled orders)
+        cancelReason: statusRecord?.cancelReason || null,
+        cancellationReviewed: cancellation?.cancellationReviewed || false,
+        isRefundDone: cancellation?.refundStatus === 'processed' || false,
+      };
+    }),
+
+  getOrderDetails: protectedProcedure
+    .input(getOrderDetailsSchema)
+    .query(async ({ input }) => {
+      const { orderId } = input;
+
+      // Single optimized query with all relations
+      const orderData = await db.query.orders.findFirst({
+        where: eq(orders.id, orderId),
+        with: {
+          user: true,
+          address: true,
+          slot: true,
+          orderItems: {
+            with: {
+              product: {
+                with: {
+                  unit: true,
+                },
+              },
+            },
+          },
+          payment: true,
+          paymentInfo: true,
+          orderStatus: true,        // Include in main query
+          orderCancellations: true, // Include in main query
+        },
+      });
+
+      if (!orderData) {
+        throw new Error("Order not found");
+      }
+
+      // Status determination from included relation
+      const statusRecord = orderData.orderStatus?.[0];
+      const status: 'pending' | 'delivered' | 'cancelled' = statusRecord?.isCancelled
+        ? 'cancelled'
+        : statusRecord?.isDelivered
+        ? 'delivered'
+        : 'pending';
+
+      // Always include cancellation data (will be null/undefined if not cancelled)
+      const cancellation = orderData.orderCancellations?.[0];
+
+      return {
+        id: orderData.id,
+        readableId: orderData.readableId,
+        customerName: `${orderData.user.name}`,
+        customerEmail: orderData.user.email,
+        customerMobile: orderData.user.mobile,
+        address: {
+          line1: orderData.address.addressLine1,
+          line2: orderData.address.addressLine2,
+          city: orderData.address.city,
+          state: orderData.address.state,
+          pincode: orderData.address.pincode,
+          phone: orderData.address.phone,
+        },
+        slotInfo: orderData.slot ? {
+          time: orderData.slot.deliveryTime,
+          sequence: orderData.slot.deliverySequence,
+        } : null,
+        isCod: orderData.isCod,
+        isOnlinePayment: orderData.isOnlinePayment,
+        totalAmount: orderData.totalAmount,
+        adminNotes: orderData.adminNotes,
+        userNotes: orderData.userNotes,
+        createdAt: orderData.createdAt,
+        status,
+        isPackaged: statusRecord?.isPackaged || false,
+        isDelivered: statusRecord?.isDelivered || false,
+        items: orderData.orderItems.map(item => ({
+          id: item.id,
+          name: item.product.name,
+          quantity: item.quantity,
+          price: item.price,
+          unit: item.product.unit?.shortNotation,
+          amount: parseFloat(item.price.toString()) * parseFloat(item.quantity || '0'),
+        })),
+        payment: orderData.payment ? {
+          status: orderData.payment.status,
+          gateway: orderData.payment.gateway,
+          merchantOrderId: orderData.payment.merchantOrderId,
+        } : null,
+        paymentInfo: orderData.paymentInfo ? {
+          status: orderData.paymentInfo.status,
+          gateway: orderData.paymentInfo.gateway,
+          merchantOrderId: orderData.paymentInfo.merchantOrderId,
+        } : null,
+        // Cancellation details (always included, null if not cancelled)
+        cancelReason: statusRecord?.cancelReason || null,
+        cancellationReviewed: cancellation?.cancellationReviewed || false,
+        isRefundDone: cancellation?.refundStatus === 'processed' || false,
+        refundAmount: cancellation?.refundAmount ? parseFloat(cancellation.refundAmount.toString()) : null,
       };
     }),
 

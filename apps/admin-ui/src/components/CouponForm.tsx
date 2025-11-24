@@ -1,16 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { MyTextInput, MyButton } from 'common-ui';
-import { CreateCouponPayload } from 'common-ui/shared-types';
-import DateTimePickerMod from '../../components/date-time-picker';
+import { MyTextInput, MyButton, tw, AppContainer } from 'common-ui';
 import { trpc } from '../trpc-client';
-import { BottomDropdown } from 'common-ui';
+import { BottomDropdown, DateTimePickerMod } from 'common-ui';
 import { DropdownOption } from 'common-ui/src/components/bottom-dropdown';
+import { CreateCouponPayload } from 'common-ui/shared-types';
 
 interface CouponFormProps {
-  onSubmit: (values: CreateCouponPayload) => void;
+  onSubmit: (values: any) => void;
   isLoading: boolean;
 }
 
@@ -33,9 +32,9 @@ const couponValidationSchema = Yup.object().shape({
   maxLimitForUser: Yup.number().min(1, 'Must be at least 1').optional(),
   isUserBased: Yup.boolean(),
   isApplyForAll: Yup.boolean(),
-  targetUser: Yup.number().when(['isUserBased', 'isApplyForAll'], {
+  targetUsers: Yup.array().of(Yup.number()).when(['isUserBased', 'isApplyForAll'], {
     is: (isUserBased: boolean, isApplyForAll: boolean) => isUserBased && !isApplyForAll,
-    then: (schema) => schema.required('Target user is required for user-based coupons'),
+    then: (schema) => schema.min(1, 'At least one user must be selected for user-based coupons'),
     otherwise: (schema) => schema.optional(),
   }),
 }).test('discount-validation', 'Must provide exactly one discount type with valid value', function(value) {
@@ -56,7 +55,7 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
   const { height: screenHeight } = Dimensions.get('window');
   const maxFormHeight = screenHeight * 0.75;
 
-  const { data: productsData } = trpc.common.product.getAllProductsSummary.useQuery();
+  const { data: productsData } = trpc.common.product.getAllProductsSummary.useQuery({});
   const products = productsData?.products || [];
 
   const productOptions: DropdownOption[] = products.map(product => ({
@@ -64,10 +63,20 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
     value: product.id.toString(),
   }));
 
+  // User search functionality will be inside Formik
+
   const defaultValues: CreateCouponPayload = {
     couponCode: '',
     isUserBased: false,
     isApplyForAll: false,
+    targetUsers: [],
+    discountPercent: undefined,
+    flatDiscount: undefined,
+    minOrder: undefined,
+    maxValue: undefined,
+    validTill: undefined,
+    maxLimitForUser: undefined,
+    productIds: undefined,
   };
 
   return (
@@ -76,17 +85,24 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
       validationSchema={couponValidationSchema}
       onSubmit={onSubmit}
     >
-      {({ values, errors, touched, setFieldValue, handleSubmit }) => (
-        <ScrollView
-          style={{
-            padding: 16,
-            maxHeight: maxFormHeight
-          }}
-          showsVerticalScrollIndicator={true}
-          keyboardShouldPersistTaps="handled"
-        >
+      {({ values, errors, touched, setFieldValue, handleSubmit }) => {
+        // User search functionality
+        const [userSearchQuery, setUserSearchQuery] = useState('');
+        const { data: usersData } = trpc.admin.coupon.getUsersMiniInfo.useQuery(
+          { search: userSearchQuery, limit: 20 },
+          { enabled: values.isUserBased && userSearchQuery.length > 0 }
+        );
+
+        const users = usersData?.users || [];
+        const userOptions: DropdownOption[] = users.map(user => ({
+          label: `${user.name} (${user.mobile})`,
+          value: user.id.toString(),
+        }));
+
+        return (
+        <AppContainer>
           {/* Coupon Code */}
-          <View style={{ marginBottom: 16 }}>
+          <View style={tw`mb-4`}>
             <MyTextInput
               topLabel="Coupon Code"
               placeholder="e.g., SAVE20"
@@ -99,24 +115,19 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
           </View>
 
           {/* Discount Type Selection */}
-          <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
-            Discount Type *
-          </Text>
+           <Text style={tw`text-base font-bold mb-2`}>
+             Discount Type *
+           </Text>
 
-          <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+           <View style={tw`flex-row mb-4`}>
             <TouchableOpacity
               onPress={() => {
                 setFieldValue('discountPercent', values.discountPercent || 0);
                 setFieldValue('flatDiscount', undefined);
               }}
-              style={{
-                flex: 1,
-                padding: 12,
-                borderWidth: 1,
-                borderColor: values.discountPercent !== undefined ? '#007AFF' : '#ccc',
-                borderRadius: 8,
-                marginRight: 8,
-              }}
+              style={tw`flex-1 p-3 border rounded-lg mr-2 ${
+                values.discountPercent !== undefined ? 'border-blue-500' : 'border-gray-300'
+              }`}
             >
               <Text style={{ textAlign: 'center' }}>Percentage</Text>
             </TouchableOpacity>
@@ -126,13 +137,9 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
                 setFieldValue('flatDiscount', values.flatDiscount || 0);
                 setFieldValue('discountPercent', undefined);
               }}
-              style={{
-                flex: 1,
-                padding: 12,
-                borderWidth: 1,
-                borderColor: values.flatDiscount !== undefined ? '#007AFF' : '#ccc',
-                borderRadius: 8,
-              }}
+              style={tw`flex-1 p-3 border rounded-lg ${
+                values.flatDiscount !== undefined ? 'border-blue-500' : 'border-gray-300'
+              }`}
             >
               <Text style={{ textAlign: 'center' }}>Flat Amount</Text>
             </TouchableOpacity>
@@ -140,7 +147,7 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
 
           {/* Discount Value */}
           {values.discountPercent !== undefined && (
-            <View style={{ marginBottom: 16 }}>
+            <View style={tw`mb-4`}>
                 <MyTextInput
                  topLabel="Discount Percentage *"
                  placeholder="e.g., 10"
@@ -153,7 +160,7 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
           )}
 
           {values.flatDiscount !== undefined && (
-            <View style={{ marginBottom: 16 }}>
+            <View style={tw`mb-4`}>
                 <MyTextInput
                  topLabel="Flat Discount Amount *"
                  placeholder="e.g., 50"
@@ -166,7 +173,7 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
           )}
 
           {/* Minimum Order */}
-          <View style={{ marginBottom: 16 }}>
+          <View style={tw`mb-4`}>
             <MyTextInput
               topLabel="Minimum Order Amount"
               placeholder="e.g., 100"
@@ -178,7 +185,7 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
           </View>
 
           {/* Maximum Discount Value */}
-          <View style={{ marginBottom: 16 }}>
+          <View style={tw`mb-4`}>
             <MyTextInput
               topLabel="Maximum Discount Value"
               placeholder="e.g., 200"
@@ -190,8 +197,8 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
           </View>
 
           {/* Validity Period */}
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ fontSize: 16, marginBottom: 8 }}>Valid Till</Text>
+          <View style={tw`mb-4`}>
+            <Text style={tw`text-base mb-2`}>Valid Till</Text>
             <DateTimePickerMod
               value={values.validTill ? new Date(values.validTill) : null}
               setValue={(date) => setFieldValue('validTill', date?.toISOString())}
@@ -199,7 +206,7 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
           </View>
 
           {/* Usage Limit */}
-          <View style={{ marginBottom: 16 }}>
+          <View style={tw`mb-4`}>
             <MyTextInput
               topLabel="Max Uses Per User"
               placeholder="e.g., 5"
@@ -211,25 +218,20 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
           </View>
 
           {/* Target Audience */}
-          <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
+          <Text style={tw`text-base font-bold mb-2`}>
             Target Audience
           </Text>
 
-          <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-            <TouchableOpacity
-              onPress={() => {
-                setFieldValue('isApplyForAll', true);
-                setFieldValue('isUserBased', false);
-                setFieldValue('targetUser', undefined);
-              }}
-              style={{
-                flex: 1,
-                padding: 12,
-                borderWidth: 1,
-                borderColor: values.isApplyForAll ? '#007AFF' : '#ccc',
-                borderRadius: 8,
-                marginRight: 8,
-              }}
+          <View style={tw`flex-row mb-4`}>
+              <TouchableOpacity
+                onPress={() => {
+                  setFieldValue('isApplyForAll', true);
+                  setFieldValue('isUserBased', false);
+                  setFieldValue('targetUsers', []);
+                }}
+                style={tw`flex-1 p-3 border rounded-lg mr-2 ${
+                  values.isApplyForAll ? 'border-blue-500' : 'border-gray-300'
+                }`}
             >
               <Text style={{ textAlign: 'center' }}>All Users</Text>
             </TouchableOpacity>
@@ -239,35 +241,38 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
                 setFieldValue('isUserBased', true);
                 setFieldValue('isApplyForAll', false);
               }}
-              style={{
-                flex: 1,
-                padding: 12,
-                borderWidth: 1,
-                borderColor: values.isUserBased ? '#007AFF' : '#ccc',
-                borderRadius: 8,
-              }}
+              style={tw`flex-1 p-3 border rounded-lg ${
+                values.isUserBased ? 'border-blue-500' : 'border-gray-300'
+              }`}
             >
               <Text style={{ textAlign: 'center' }}>Specific User</Text>
             </TouchableOpacity>
           </View>
 
-           {/* Target User Selection (if user-based) */}
-           {values.isUserBased && (
-             <View style={{ marginBottom: 16 }}>
-               <MyTextInput
-                 topLabel="Target User ID *"
-                 placeholder="e.g., 123"
-                 value={values.targetUser?.toString() || ''}
-                 onChangeText={(text) => setFieldValue('targetUser', parseInt(text) || undefined)}
-                 keyboardType="numeric"
-                 error={!!(touched.targetUser && errors.targetUser)}
-               />
-             </View>
-           )}
+            {/* Target User Selection (if user-based) */}
+            {values.isUserBased && (
+              <View style={tw`mb-4`}>
+                <Text style={tw`text-base mb-2`}>Target Users *</Text>
+                <BottomDropdown
+                  label="Target Users"
+                  options={userOptions}
+                  value={values.targetUsers ? values.targetUsers.map(id => id.toString()) : []}
+                  onValueChange={(selectedValues) => {
+                    setFieldValue('targetUsers', (selectedValues as string[]).map(v => Number(v)));
+                  }}
+                  onSearch={(query) => {
+                    setUserSearchQuery(query);
+                  }}
+                  placeholder="Search and select users..."
+                  // multiple={true}
+                  error={!!(touched.targetUsers && errors.targetUsers)}
+                />
+              </View>
+            )}
 
             {/* Product Selection */}
-            <View style={{ marginBottom: 16 }}>
-              <Text style={{ fontSize: 16, marginBottom: 8 }}>Target Products (Optional)</Text>
+            <View style={tw`mb-4`}>
+              <Text style={tw`text-base mb-2`}>Target Products (Optional)</Text>
               <BottomDropdown
                 label="Target Products"
                 options={productOptions}
@@ -289,9 +294,10 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
             disabled={isLoading}
           >
             Create Coupon
-          </MyButton>
-        </ScrollView>
-      )}
-    </Formik>
+           </MyButton>
+         </AppContainer>
+        );
+      }}
+     </Formik>
   );
 }

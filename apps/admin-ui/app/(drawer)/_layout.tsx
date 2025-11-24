@@ -44,27 +44,20 @@ function CustomDrawerContent() {
            <MaterialIcons name="add" size={size} color={color} />
          )}
        /> */}
+         <DrawerItem
+           label="Products"
+           onPress={() => router.push("/(drawer)/products" as any)}
+           icon={({ color, size }) => (
+             <MaterialIcons name="inventory" size={size} color={color} />
+           )}
+         />
         <DrawerItem
-          label="Products"
-          onPress={() => router.push("/(drawer)/products" as any)}
+          label="Slots"
+          onPress={() => router.push("/(drawer)/slots" as any)}
           icon={({ color, size }) => (
-            <MaterialIcons name="inventory" size={size} color={color} />
+            <MaterialIcons name="schedule" size={size} color={color} />
           )}
         />
-        <DrawerItem
-          label="Product Tags"
-          onPress={() => router.push("/(drawer)/product-tags" as any)}
-          icon={({ color, size }) => (
-            <MaterialIcons name="label" size={size} color={color} />
-          )}
-        />
-       <DrawerItem
-         label="Slots"
-         onPress={() => router.push("/(drawer)/slots" as any)}
-         icon={({ color, size }) => (
-           <MaterialIcons name="schedule" size={size} color={color} />
-         )}
-       />
       {/* <DrawerItem
         label="Edit Product"
         onPress={() => router.push("/(drawer)/edit-product" as any)}
@@ -193,12 +186,14 @@ export default function Layout() {
         options={{ title: "Manage Orders" }}
       />
        <Drawer.Screen name="complaints" options={{ title: "Complaints" }} />
-       <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
-        <Drawer.Screen name="vendor-snippets" options={{ title: "Vendor Snippets" }} />
-        <Drawer.Screen name="stores" options={{ title: "Stores" }} />
-        <Drawer.Screen name="product-tags" options={{ title: "Product Tags" }} />
-        <Drawer.Screen name="add-tag" options={{ title: "Add Tag" }} />
-        <Drawer.Screen name="edit-tag" options={{ title: "Edit Tag" }} />
+        <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
+         <Drawer.Screen name="create-coupon" options={{ title: "Create Coupon" }} />
+         <Drawer.Screen name="vendor-snippets" options={{ title: "Vendor Snippets" }} />
+         <Drawer.Screen name="stores" options={{ title: "Stores" }} />
+         <Drawer.Screen name="product-tags" options={{ title: "Product Tags" }} />
+         <Drawer.Screen name="add-tag" options={{ title: "Add Tag" }} />
+         <Drawer.Screen name="edit-tag" options={{ title: "Edit Tag" }} />
+         <Drawer.Screen name="order-details/[id]" options={{ title: "Order Details" }} />
       </Drawer>
   );
 }

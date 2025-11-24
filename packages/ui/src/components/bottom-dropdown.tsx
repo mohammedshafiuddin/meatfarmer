@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Text, View, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomDialog } from './dialog';
 import tw from '../lib/tailwind';
@@ -26,6 +26,7 @@ interface BottomDropdownProps {
     disabled?: boolean;
     displayText: string;
   }>;
+  onSearch?: (query: string) => void;
 }
 
 const BottomDropdown: React.FC<BottomDropdownProps> = ({
@@ -40,8 +41,35 @@ const BottomDropdown: React.FC<BottomDropdownProps> = ({
   disabled,
   className,
   triggerComponent,
+  onSearch,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const debounceTimeoutRef = useRef<number | null>(null);
+
+  // Debounced search function
+  const debouncedOnSearch = useCallback((query: string) => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      onSearch?.(query);
+    }, 2000);
+  }, [onSearch]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Filter options based on search query
+  const filteredOptions = options.filter(option =>
+    option.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const getDisplayText = () => {
     if (multiple) {
@@ -74,6 +102,11 @@ const BottomDropdown: React.FC<BottomDropdownProps> = ({
 
   const handleDone = () => {
     setIsOpen(false);
+    setSearchQuery(''); // Clear search when done
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = null;
+    }
   };
 
   const isSelected = (optionValue: string | number) => {
@@ -124,11 +157,41 @@ const BottomDropdown: React.FC<BottomDropdownProps> = ({
         </TouchableOpacity>
       )}
 
-      <BottomDialog open={isOpen} onClose={() => setIsOpen(false)}>
+      <BottomDialog open={isOpen} onClose={() => {
+        setIsOpen(false);
+        setSearchQuery(''); // Clear search when closed
+        if (debounceTimeoutRef.current) {
+          clearTimeout(debounceTimeoutRef.current);
+          debounceTimeoutRef.current = null;
+        }
+      }}>
         <View style={tw`py-4`}>
           <Text style={tw`text-lg font-semibold mb-4 text-center`}>{label}</Text>
+
+          {/* Search Input - Fixed at top */}
+          <View style={tw`px-4 pb-2 border-b border-gray-200 mb-2`}>
+            <TextInput
+              style={tw`border border-gray-300 rounded-md px-3 py-2 text-base`}
+              placeholder="Search options..."
+              value={searchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                debouncedOnSearch(text);
+              }}
+              autoFocus={true}
+              clearButtonMode="while-editing"
+            />
+          </View>
+
           <ScrollView style={tw`max-h-80`}>
-            {options.map((option) => {
+            {filteredOptions.length === 0 && searchQuery ? (
+              <View style={tw`py-8 px-4 items-center`}>
+                <Text style={tw`text-gray-500 text-center`}>
+                  No options found for "{searchQuery}"
+                </Text>
+              </View>
+            ) : (
+              filteredOptions.map((option) => {
               const selected = isSelected(option.value);
               return (
                 <TouchableOpacity
@@ -161,8 +224,9 @@ const BottomDropdown: React.FC<BottomDropdownProps> = ({
                     <Ionicons name="checkmark" size={20} color="#FA7189" />
                   )}
                 </TouchableOpacity>
-              );
-            })}
+               );
+             })
+            )}
           </ScrollView>
           {multiple && (
             <View style={tw`flex-row justify-between mt-4 px-4`}>

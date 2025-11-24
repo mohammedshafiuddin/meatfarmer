@@ -22,7 +22,7 @@ const Quantifier: React.FC<QuantifierProps> = ({
         <Text style={tw`text-lg font-bold text-black`}>-</Text>
       </TouchableOpacity>
       <TextInput
-        style={tw`underline py-2 text-center w-12`}
+        style={tw`underline py-2 text-center w-8`}
         value={value.toString()}
         onChangeText={(text) => {
           const num = parseInt(text);

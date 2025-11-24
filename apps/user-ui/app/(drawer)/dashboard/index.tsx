@@ -152,6 +152,7 @@ export default function Dashboard() {
   });
 
   const { data: tagsData } = trpc.common.product.getDashboardTags.useQuery();
+  const { data: cartData, refetch: refetchCart } = trpc.user.cart.getCart.useQuery();
 
   const products = productsData?.products || [];
   const dashboardTags = tagsData?.tags || [];
@@ -182,6 +183,7 @@ export default function Dashboard() {
       {
         onSuccess: () => {
           Alert.alert("Success", "Item added to cart!");
+          refetchCart(); // Update cart badge in header
         },
         onError: (error: any) => {
           Alert.alert("Error", error.message || "Failed to add item to cart");

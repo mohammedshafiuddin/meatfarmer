@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Alert } from "react-native";
-import { tw, ConfirmationDialog, MyText, MyFlatList, useMarkDataFetchers } from "common-ui";
-import { usePagination } from "../../../hooks/usePagination";
+import { tw, ConfirmationDialog, MyText, MyFlatList, useMarkDataFetchers, usePagination } from "common-ui";
 import { trpc } from "@/src/trpc-client";
 
 export default function Complaints() {
