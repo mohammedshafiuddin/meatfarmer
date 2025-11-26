@@ -9,8 +9,9 @@ import { DropdownOption } from 'common-ui/src/components/bottom-dropdown';
 import { CreateCouponPayload } from 'common-ui/shared-types';
 
 interface CouponFormProps {
-  onSubmit: (values: any) => void;
+  onSubmit: (values: CreateCouponPayload) => void;
   isLoading: boolean;
+  initialValues?: Partial<CreateCouponPayload>;
 }
 
 const couponValidationSchema = Yup.object().shape({
@@ -51,7 +52,7 @@ const couponValidationSchema = Yup.object().shape({
   return true;
 });
 
-export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
+export default function CouponForm({ onSubmit, isLoading, initialValues }: CouponFormProps) {
   const { height: screenHeight } = Dimensions.get('window');
   const maxFormHeight = screenHeight * 0.75;
 
@@ -81,7 +82,7 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
 
   return (
     <Formik
-      initialValues={defaultValues}
+      initialValues={(initialValues || defaultValues) as CreateCouponPayload}
       validationSchema={couponValidationSchema}
       onSubmit={onSubmit}
     >
@@ -201,7 +202,10 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
             <Text style={tw`text-base mb-2`}>Valid Till</Text>
             <DateTimePickerMod
               value={values.validTill ? new Date(values.validTill) : null}
-              setValue={(date) => setFieldValue('validTill', date?.toISOString())}
+              setValue={(date) => {
+                
+                setFieldValue('validTill', date?.toISOString())
+              }}
             />
           </View>
 
@@ -257,9 +261,10 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
                   label="Target Users"
                   options={userOptions}
                   value={values.targetUsers ? values.targetUsers.map(id => id.toString()) : []}
-                  onValueChange={(selectedValues) => {
-                    setFieldValue('targetUsers', (selectedValues as string[]).map(v => Number(v)));
-                  }}
+                   onValueChange={(value) => {
+                     const selectedValues = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
+                     setFieldValue('targetUsers', selectedValues.map(v => Number(v)));
+                   }}
                   onSearch={(query) => {
                     setUserSearchQuery(query);
                   }}
@@ -277,9 +282,10 @@ export default function CouponForm({ onSubmit, isLoading }: CouponFormProps) {
                 label="Target Products"
                 options={productOptions}
                 value={values.productIds ? values.productIds.map(id => id.toString()) : []}
-                onValueChange={(selectedValues) => {
-                  setFieldValue('productIds', (selectedValues as string[]).map(v => Number(v)));
-                }}
+                 onValueChange={(value) => {
+                   const selectedValues = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
+                   setFieldValue('productIds', selectedValues.map(v => Number(v)));
+                 }}
                 placeholder="Select products (optional)"
                 multiple={true}
               />

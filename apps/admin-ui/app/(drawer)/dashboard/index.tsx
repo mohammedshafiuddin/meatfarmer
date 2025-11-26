@@ -32,24 +32,25 @@
        color: 'bg-orange-500',
        onPress: () => router.push('/(drawer)/coupons'),
      },
-     {
-       title: 'Slots',
-       icon: 'schedule',
-       color: 'bg-teal-500',
-       onPress: () => router.push('/(drawer)/slots'),
-     },
+
       {
         title: 'Products',
         icon: 'inventory',
         color: 'bg-indigo-500',
         onPress: () => router.push('/(drawer)/products'),
       },
-      {
-        title: 'Product Tags',
-        icon: 'label',
-        color: 'bg-pink-500',
-        onPress: () => router.push('/(drawer)/product-tags'),
-      },
+       {
+         title: 'Product Tags',
+         icon: 'label',
+         color: 'bg-pink-500',
+         onPress: () => router.push('/(drawer)/product-tags'),
+       },
+       {
+         title: 'Slots',
+         icon: 'schedule',
+         color: 'bg-cyan-500',
+          onPress: () => router.push('/(drawer)/slots' as any),
+       },
    ];
 
     return (

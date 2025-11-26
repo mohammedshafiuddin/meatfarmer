@@ -1,0 +1,6 @@
+I have a mobile app meant for online shopping. People can shop for meat, fruits and dry fruits.
+my major colors are #F83758 and #fff0f6. I want just an info web site. I want the website
+to tell people that we sell the trust of local and the convenience of online. I want to highlight
+the process of selling. the steps are Find products, select a delivery slot, and get order delivered
+I want the site to be a jolly and fun theme one baked primarily in the colors I've given. Make
+it a node js app with pug and a statically rendered home page. 

@@ -101,10 +101,10 @@ export default function Coupons() {
       </View>
 
       <View style={tw`flex-row mt-3 gap-2`}>
-        <TouchableOpacity
-          onPress={() => Alert.alert('Edit', 'Edit functionality coming soon')}
-          style={tw`bg-blue-500 p-3 rounded-lg shadow-md flex-1 flex-row items-center justify-center`}
-        >
+         <TouchableOpacity
+           onPress={() => router.push(`/edit-coupon/${item.id}`)}
+           style={tw`bg-blue-500 p-3 rounded-lg shadow-md flex-1 flex-row items-center justify-center`}
+         >
           <MaterialCommunityIcons name="pencil" size={16} color="white" />
           <MyText style={tw`text-white text-center font-semibold ml-1`}>Edit</MyText>
         </TouchableOpacity>

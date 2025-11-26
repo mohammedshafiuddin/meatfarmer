@@ -41,6 +41,7 @@ import { useIsDevMode } from "./hooks/useIsDevMode";
 import { usePagination } from "./hooks/usePagination";
 import { StorageServiceCasual } from "./src/services/StorageServiceCasual";
 import DateTimePickerMod from "./src/components/date-time-picker";
+import { RefreshProvider, useRefresh } from "./src/lib/refresh-context";
 
 // const localhost =
 //   Platform.OS === "android"
@@ -56,7 +57,7 @@ import DateTimePickerMod from "./src/components/date-time-picker";
 
 // const BASE_API_URL = API_URL;
 // const BASE_API_URL = 'http://10.0.2.2:4000';
-// const BASE_API_URL = 'http://192.168.100.98:4000';
+// const BASE_API_URL = 'http://192.168.1.10:4000';
 const BASE_API_URL = "https://mf.technocracy.ovh";
 export {
   RolesDropdown,
@@ -101,6 +102,8 @@ export {
   StorageServiceCasual,
   useIsDevMode,
   usePagination,
-  REFUND_STATUS,
-  DateTimePickerMod,
-};
+   REFUND_STATUS,
+   DateTimePickerMod,
+   RefreshProvider,
+   useRefresh,
+ };

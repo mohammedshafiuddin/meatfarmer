@@ -3,17 +3,18 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "../../db/db_index";
 import { deliverySlotInfo, productSlots } from "../../db/schema";
-import { eq, inArray, and } from "drizzle-orm";
+import { eq, inArray, and, desc } from "drizzle-orm";
 import { ApiError } from "../../lib/api-error";
 
 const createSlotSchema = z.object({
   deliveryTime: z.string(),
   freezeTime: z.string(),
   isActive: z.boolean().optional(),
+  productIds: z.array(z.number()).optional(),
 });
 
 const getSlotByIdSchema = z.object({
-  id: z.string(),
+  id: z.number(),
 });
 
 const updateSlotSchema = z.object({
@@ -21,6 +22,7 @@ const updateSlotSchema = z.object({
   deliveryTime: z.string(),
   freezeTime: z.string(),
   isActive: z.boolean().optional(),
+  productIds: z.array(z.number()).optional(),
 });
 
 const deleteSlotSchema = z.object({
@@ -43,17 +45,29 @@ export const slotsRouter = router({
       throw new TRPCError({ code: "UNAUTHORIZED", message: "Access denied" });
     }
 
-    // const slots = await db.query.deliverySlotInfo.findMany({
-    //   where: eq(deliverySlotInfo.isActive, true),
-    // });
     const slots = await db.query.deliverySlotInfo
       .findMany({
         where: eq(deliverySlotInfo.isActive, true),
+        orderBy: desc(deliverySlotInfo.deliveryTime),
+        with: {
+          productSlots: {
+            with: {
+              product: {
+                columns: {
+                  id: true,
+                  name: true,
+                  images: true,
+                },
+              },
+            },
+          },
+        },
       })
       .then((slots) =>
         slots.map((slot) => ({
           ...slot,
           deliverySequence: slot.deliverySequence as number[],
+          products: slot.productSlots.map((ps) => ps.product),
         }))
       );
 
@@ -193,27 +207,38 @@ export const slotsRouter = router({
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Access denied" });
       }
 
-      const { deliveryTime, freezeTime, isActive } = input;
+      const { deliveryTime, freezeTime, isActive, productIds } = input;
 
       // Validate required fields
       if (!deliveryTime || !freezeTime) {
         throw new ApiError("Delivery time and freeze time are required", 400);
       }
 
-      // Create slot
-      const [newSlot] = await db
-        .insert(deliverySlotInfo)
-        .values({
-          deliveryTime: new Date(deliveryTime),
-          freezeTime: new Date(freezeTime),
-          isActive: isActive !== undefined ? isActive : true,
-        })
-        .returning();
+      return await db.transaction(async (tx) => {
+        // Create slot
+        const [newSlot] = await tx
+          .insert(deliverySlotInfo)
+          .values({
+            deliveryTime: new Date(deliveryTime),
+            freezeTime: new Date(freezeTime),
+            isActive: isActive !== undefined ? isActive : true,
+          })
+          .returning();
 
-      return {
-        slot: newSlot,
-        message: "Slot created successfully",
-      };
+        // Insert product associations if provided
+        if (productIds && productIds.length > 0) {
+          const associations = productIds.map((productId) => ({
+            productId,
+            slotId: newSlot.id,
+          }));
+          await tx.insert(productSlots).values(associations);
+        }
+
+        return {
+          slot: newSlot,
+          message: "Slot created successfully",
+        };
+      });
     }),
 
   getSlots: protectedProcedure.query(async ({ ctx }) => {
@@ -241,7 +266,20 @@ export const slotsRouter = router({
       const { id } = input;
 
       const slot = await db.query.deliverySlotInfo.findFirst({
-        where: eq(deliverySlotInfo.id, parseInt(id)),
+        where: eq(deliverySlotInfo.id, id),
+        with: {
+          productSlots: {
+            with: {
+              product: {
+                columns: {
+                  id: true,
+                  name: true,
+                  images: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!slot) {
@@ -249,7 +287,11 @@ export const slotsRouter = router({
       }
 
       return {
-        slot,
+        slot: {
+          ...slot,
+          deliverySequence: slot.deliverySequence as number[],
+          products: slot.productSlots.map((ps) => ps.product),
+        },
       };
     }),
 
@@ -260,30 +302,47 @@ export const slotsRouter = router({
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Access denied" });
       }
 
-      const { id, deliveryTime, freezeTime, isActive } = input;
+      const { id, deliveryTime, freezeTime, isActive, productIds } = input;
 
       if (!deliveryTime || !freezeTime) {
         throw new ApiError("Delivery time and freeze time are required", 400);
       }
 
-      const [updatedSlot] = await db
-        .update(deliverySlotInfo)
-        .set({
-          deliveryTime: new Date(deliveryTime),
-          freezeTime: new Date(freezeTime),
-          isActive: isActive !== undefined ? isActive : true,
-        })
-        .where(eq(deliverySlotInfo.id, id))
-        .returning();
+      return await db.transaction(async (tx) => {
+        const [updatedSlot] = await tx
+          .update(deliverySlotInfo)
+          .set({
+            deliveryTime: new Date(deliveryTime),
+            freezeTime: new Date(freezeTime),
+            isActive: isActive !== undefined ? isActive : true,
+          })
+          .where(eq(deliverySlotInfo.id, id))
+          .returning();
 
-      if (!updatedSlot) {
-        throw new ApiError("Slot not found", 404);
-      }
+        if (!updatedSlot) {
+          throw new ApiError("Slot not found", 404);
+        }
 
-      return {
-        slot: updatedSlot,
-        message: "Slot updated successfully",
-      };
+        // Update product associations
+        if (productIds !== undefined) {
+          // Delete existing associations
+          await tx.delete(productSlots).where(eq(productSlots.slotId, id));
+
+          // Insert new associations
+          if (productIds.length > 0) {
+            const associations = productIds.map((productId) => ({
+              productId,
+              slotId: id,
+            }));
+            await tx.insert(productSlots).values(associations);
+          }
+        }
+
+        return {
+          slot: updatedSlot,
+          message: "Slot updated successfully",
+        };
+      });
     }),
 
   deleteSlot: protectedProcedure

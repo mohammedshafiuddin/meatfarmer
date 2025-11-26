@@ -35,7 +35,7 @@ export const checkRefundStatuses = async () => {
       try {
         const razorpayRefund = await razorpayInstance.refunds.fetch(refund.razorpayRefundId);
         // console.log({refundId: refund.razorpayRefundId, refundStatus: JSON.stringify(razorpayRefund)});
-
+        
         if (razorpayRefund.status === 'processed') {
           await db
             .update(orderCancellationsTable)

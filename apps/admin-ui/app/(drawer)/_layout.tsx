@@ -179,15 +179,19 @@ export default function Layout() {
        <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
        <Drawer.Screen name="add-product" options={{ title: "Add Product" }} />
        <Drawer.Screen name="products" options={{ title: "Products" }} />
-       <Drawer.Screen name="slots" options={{ title: "Slots" }} />
+
       <Drawer.Screen name="edit-product" options={{ title: "Edit Product" }} />
       <Drawer.Screen
         name="manage-orders"
         options={{ title: "Manage Orders" }}
       />
        <Drawer.Screen name="complaints" options={{ title: "Complaints" }} />
-        <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
+         <Drawer.Screen name="coupons" options={{ title: "Coupons" }} />
          <Drawer.Screen name="create-coupon" options={{ title: "Create Coupon" }} />
+         <Drawer.Screen name="edit-coupon/[id]" options={{ title: "Edit Coupon" }} />
+          <Drawer.Screen name="slots" options={{ title: "Slots" }} />
+          <Drawer.Screen name="add-slot" options={{ title: "Add Slot" }} />
+          <Drawer.Screen name="edit-slot/[id]" options={{ title: "Edit Slot" }} />
          <Drawer.Screen name="vendor-snippets" options={{ title: "Vendor Snippets" }} />
          <Drawer.Screen name="stores" options={{ title: "Stores" }} />
          <Drawer.Screen name="product-tags" options={{ title: "Product Tags" }} />

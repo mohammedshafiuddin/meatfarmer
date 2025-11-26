@@ -20,6 +20,7 @@ import { AuthProvider } from "@/src/contexts/AuthContext";
 import { trpc, trpcClient } from "@/src/trpc-client";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LocationTestWrapper from "@/components/LocationTestWrapper";
+import { RefreshProvider } from '../../../packages/ui/src/lib/refresh-context';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -40,9 +41,11 @@ export default function RootLayout() {
               <AuthProvider>
                 <NotificationProvider>
                   <PaperProvider>
-                    <LocationTestWrapper>
-                      <Stack screenOptions={{ headerShown: false }} />
-                    </LocationTestWrapper>
+                     <LocationTestWrapper>
+                       <RefreshProvider queryClient={queryClient}>
+                         <Stack screenOptions={{ headerShown: false }} />
+                       </RefreshProvider>
+                     </LocationTestWrapper>
                   </PaperProvider>
                 </NotificationProvider>
               </AuthProvider>

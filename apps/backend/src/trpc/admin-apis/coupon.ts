@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { coupons, users, staffUsers, orders } from '../../db/schema';
 import { eq, and, like, or } from 'drizzle-orm';
+import dayjs from 'dayjs';
 
 const createCouponBodySchema = z.object({
   couponCode: z.string().optional(),
@@ -11,7 +12,7 @@ const createCouponBodySchema = z.object({
   flatDiscount: z.number().optional(),
   minOrder: z.number().optional(),
   targetUser: z.number().optional(),
-  productIds: z.array(z.number()).optional(),
+  productIds: z.array(z.number()).optional().nullable(),
   maxValue: z.number().optional(),
   isApplyForAll: z.boolean().optional(),
   validTill: z.string().optional(),
@@ -90,7 +91,7 @@ export const couponRouter = router({
         createdBy: staffUserId,
         maxValue: maxValue?.toString(),
         isApplyForAll: isApplyForAll || false,
-        validTill: validTill ? new Date(validTill) : undefined,
+         validTill: validTill ? dayjs(validTill).toDate() : undefined,
         maxLimitForUser: maxLimitForUser,
       }).returning();
 
@@ -127,7 +128,10 @@ export const couponRouter = router({
         throw new Error("Coupon not found");
       }
 
-      return result;
+      return {
+        ...result,
+        productIds: (result.productIds as number[]) || undefined,
+      };
     }),
 
   update: protectedProcedure
@@ -177,10 +181,15 @@ export const couponRouter = router({
       if (updates.minOrder !== undefined) {
         updateData.minOrder = updates.minOrder?.toString();
       }
-      if (updates.maxValue !== undefined) {
-        updateData.maxValue = updates.maxValue?.toString();
-      }
+       if (updates.maxValue !== undefined) {
+         updateData.maxValue = updates.maxValue?.toString();
+       }
+       if (updates.validTill !== undefined) {
+         updateData.validTill = updates.validTill ? dayjs(updates.validTill).toDate() : null;
+       }
 
+       console.log({updateData})
+      
       const result = await db.update(coupons)
         .set(updateData)
         .where(eq(coupons.id, id))
@@ -190,6 +199,8 @@ export const couponRouter = router({
         throw new Error("Coupon not found");
       }
 
+      console.log('updated coupon successfully')
+      
       return result[0];
     }),
 

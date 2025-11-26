@@ -248,16 +248,16 @@ export default function Layout() {
                   </View>
                 )}
               </View>
-              <TouchableOpacity
-                onPress={() => DeviceEventEmitter.emit(REFRESH_EVENT)}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
+               <TouchableOpacity
+                 onPress={() => router.push("/(drawer)/me")}
+                 style={{
+                   width: 40,
+                   height: 40,
+                   borderRadius: 20,
+                   justifyContent: "center",
+                   alignItems: "center",
+                 }}
+               >
                 <View
                   style={{
                     position: "absolute",

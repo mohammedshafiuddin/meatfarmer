@@ -1,0 +1,13 @@
+{
+  "name": "symbuyote-info-site",
+  "version": "1.0.0",
+  "description": "Info website for Symbuyote - Local trust, online convenience",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "pug": "^3.0.2"
+  }
+}

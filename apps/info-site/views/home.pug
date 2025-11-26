@@ -1,0 +1,75 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="utf-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    title= title
+    link(rel="stylesheet" href="/css/styles.css")
+    link(href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet")
+  body
+    nav.navbar
+      .container
+        .brand
+          img.logo(src="/images/logo.svg" alt="Symbuyote Logo")
+          span Symbuyote
+        ul.nav-links
+          li: a(href="#home") Home
+          li: a(href="#about") About
+          li: a(href="#process") How It Works
+
+    section#home.hero
+      .container
+        .hero-content
+          h1.hero-title Fresh From Local Farms! 🌾
+          p.hero-subtitle We sell the trust of local and the convenience of online. Get premium meat, fruits, and dry fruits delivered fresh to your door!
+          a.cta(href="#process") See How It Works
+
+    section#about.about
+      .container
+        .about-content
+          h2 About Symbuyote
+          p We bridge the gap between local farmers and you! Our platform ensures you get the freshest produce while supporting local communities. Trust us for quality, freshness, and convenience! 🎉
+          .trust-points
+            .point
+              .point-icon 🏭
+              .point-text Local Sourcing
+            .point
+              .point-icon 🚚
+              .point-text Fast Delivery
+            .point
+              .point-icon ⭐
+              .point-text Quality Guarantee
+
+    section#process.process
+      .container
+        h2.section-title Our Simple Process
+        .process-steps
+          .step
+            .step-number 1
+            h3 Find Products
+            p Browse our curated selection of fresh meat, seasonal fruits, and premium dry fruits from trusted local farms.
+          .step
+            .step-number 2
+            h3 Select Delivery Slot
+            p Choose a convenient delivery time that fits your schedule. We deliver fresh and on time!
+          .step
+            .step-number 3
+            h3 Get Order Delivered
+            p Sit back and relax! Your fresh, locally-sourced goodies arrive at your doorstep with a smile. 😊
+
+    footer.footer
+      .container
+        .footer-content
+          .footer-section
+            .brand
+              img.logo(src="/images/logo.svg" alt="Symbuyote Logo")
+              span Symbuyote
+            p Bringing local trust and online convenience to your doorstep.
+          .footer-section
+            h4 Quick Links
+            ul
+              li: a(href="#home") Home
+              li: a(href="#about") About
+              li: a(href="#process") How It Works
+        .footer-bottom
+          p &copy; #{year} Symbuyote. All rights reserved.
