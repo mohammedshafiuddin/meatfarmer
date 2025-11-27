@@ -2,7 +2,7 @@ import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { orders, orderItems, orderStatus, users, addresses, productInfo, units, deliverySlotInfo, payments, paymentInfoTable, orderCancellationsTable } from '../../db/schema';
-import { eq, and, gte, lt } from 'drizzle-orm';
+import { eq, and, gte, lt, desc, SQL } from 'drizzle-orm';
 import dayjs from 'dayjs';
 import { sendOrderPackagedNotification, sendOrderDeliveredNotification } from '../../lib/notif-job';
 
@@ -35,6 +35,15 @@ const getSlotOrdersSchema = z.object({
 
 const getTodaysOrdersSchema = z.object({
   slotId: z.string().optional(),
+});
+
+const getAllOrdersSchema = z.object({
+  cursor: z.number().optional(),
+  limit: z.number().default(20),
+  slotId: z.number().optional().nullable(),
+  packagedFilter: z.enum(['all', 'packaged', 'not_packaged']).optional().default('all'),
+  deliveredFilter: z.enum(['all', 'delivered', 'not_delivered']).optional().default('all'),
+  cancellationFilter: z.enum(['all', 'cancelled', 'not_cancelled']).optional().default('all'),
 });
 
 export const orderRouter = router({
@@ -86,18 +95,19 @@ export const orderRouter = router({
         throw new Error("Order not found");
       }
 
-      // Get order status separately
-      const statusRecord = await db.query.orderStatus.findFirst({
-        where: eq(orderStatus.orderId, orderId),
-      });
+       // Get order status separately
+       const statusRecord = await db.query.orderStatus.findFirst({
+         where: eq(orderStatus.orderId, orderId),
+       });
 
-      const status: 'pending' | 'delivered' | 'cancelled' = statusRecord?.isCancelled
-        ? 'cancelled'
-        : statusRecord?.isDelivered
-        ? 'delivered'
-        : 'pending';
+       let status: 'pending' | 'delivered' | 'cancelled' = 'pending';
+       if (statusRecord?.isCancelled) {
+         status = 'cancelled';
+       } else if (statusRecord?.isDelivered) {
+         status = 'delivered';
+       }
 
-      // Get cancellation details if order is cancelled
+       // Get cancellation details if order is cancelled
       let cancellation = null;
       if (status === 'cancelled') {
         cancellation = await db.query.orderCancellationsTable.findFirst({
@@ -189,15 +199,16 @@ export const orderRouter = router({
         throw new Error("Order not found");
       }
 
-      // Status determination from included relation
-      const statusRecord = orderData.orderStatus?.[0];
-      const status: 'pending' | 'delivered' | 'cancelled' = statusRecord?.isCancelled
-        ? 'cancelled'
-        : statusRecord?.isDelivered
-        ? 'delivered'
-        : 'pending';
+       // Status determination from included relation
+       const statusRecord = orderData.orderStatus?.[0];
+       let status: 'pending' | 'delivered' | 'cancelled' = 'pending';
+       if (statusRecord?.isCancelled) {
+         status = 'cancelled';
+       } else if (statusRecord?.isDelivered) {
+         status = 'delivered';
+       }
 
-      // Always include cancellation data (will be null/undefined if not cancelled)
+       // Always include cancellation data (will be null/undefined if not cancelled)
       const cancellation = orderData.orderCancellations?.[0];
 
       return {
@@ -258,7 +269,11 @@ export const orderRouter = router({
     .mutation(async ({ input }) => {
       const { orderId, isPackaged } = input;
 
-      await db.update(orderStatus).set({ isPackaged }).where(eq(orderStatus.orderId, parseInt(orderId)));
+      if (!isPackaged) {
+        await db.update(orderStatus).set({ isPackaged, isDelivered: false }).where(eq(orderStatus.orderId, parseInt(orderId)));
+      } else {
+        await db.update(orderStatus).set({ isPackaged }).where(eq(orderStatus.orderId, parseInt(orderId)));
+      }
 
       const order = await db.query.orders.findFirst({ where: eq(orders.id, parseInt(orderId)) });
       if (order) await sendOrderPackagedNotification(order.userId, orderId);
@@ -308,15 +323,16 @@ export const orderRouter = router({
         return order.isCod || (statusRecord && statusRecord.paymentStatus === 'success');
       });
 
-      const formattedOrders = filteredOrders.map(order => {
-        const statusRecord = order.orderStatus[0]; // assuming one status per order
-        const status: 'pending' | 'delivered' | 'cancelled' = statusRecord?.isCancelled
-          ? 'cancelled'
-          : statusRecord?.isDelivered
-          ? 'delivered'
-          : 'pending';
+       const formattedOrders = filteredOrders.map(order => {
+         const statusRecord = order.orderStatus[0]; // assuming one status per order
+         let status: 'pending' | 'delivered' | 'cancelled' = 'pending';
+         if (statusRecord?.isCancelled) {
+           status = 'cancelled';
+         } else if (statusRecord?.isDelivered) {
+           status = 'delivered';
+         }
 
-        const items = order.orderItems.map(item => ({
+         const items = order.orderItems.map(item => ({
           name: item.product.name,
           quantity: parseFloat(item.quantity),
           price: parseFloat(item.price.toString()),
@@ -353,6 +369,8 @@ export const orderRouter = router({
       const end = dayjs().endOf('day').toDate();
 
       let whereCondition = and(gte(orders.createdAt, start), lt(orders.createdAt, end));
+      console.log({slotId})
+      
       if (slotId) {
         whereCondition = and(whereCondition, eq(orders.slotId, parseInt(slotId)));
       }
@@ -376,18 +394,19 @@ export const orderRouter = router({
         },
       });
 
-      const filteredOrders = todaysOrders.filter(order => {
-        const statusRecord = order.orderStatus[0];
-        return order.isCod || (statusRecord && statusRecord.paymentStatus === 'success');
-      });
+       const filteredOrders = todaysOrders.filter(order => {
+         const statusRecord = order.orderStatus[0];
+         return order.isCod || (statusRecord && statusRecord.paymentStatus === 'success');
+       });
 
-      const formattedOrders = filteredOrders.map(order => {
-        const statusRecord = order.orderStatus[0]; // assuming one status per order
-        const status: 'pending' | 'delivered' | 'cancelled' = statusRecord?.isCancelled
-          ? 'cancelled'
-          : statusRecord?.isDelivered
-          ? 'delivered'
-          : 'pending';
+       const formattedOrders = filteredOrders.map(order => {
+         const statusRecord = order.orderStatus[0]; // assuming one status per order
+         let status: 'pending' | 'delivered' | 'cancelled' = 'pending';
+         if (statusRecord?.isCancelled) {
+           status = 'cancelled';
+         } else if (statusRecord?.isDelivered) {
+           status = 'delivered';
+         }
 
         const items = order.orderItems.map(item => ({
           name: item.product.name,
@@ -417,7 +436,103 @@ export const orderRouter = router({
 
       return { success: true, data: formattedOrders };
     }),
-});
+
+  getAll: protectedProcedure
+    .input(getAllOrdersSchema)
+    .query(async ({ input }) => {
+      const { cursor, limit, slotId, packagedFilter, deliveredFilter, cancellationFilter } = input;
+
+      let whereCondition:SQL<unknown> | undefined = eq(orders.id, orders.id); // always true
+      if (cursor) {
+        whereCondition = and(whereCondition, lt(orders.id, cursor));
+      }
+      if (slotId) {
+        whereCondition = and(whereCondition, eq(orders.slotId, slotId));
+      }
+      if (packagedFilter === 'packaged') {
+        whereCondition = and(whereCondition, eq(orderStatus.isPackaged, true));
+      } else if (packagedFilter === 'not_packaged') {
+        whereCondition = and(whereCondition, eq(orderStatus.isPackaged, false));
+      }
+      if (deliveredFilter === 'delivered') {
+        whereCondition = and(whereCondition, eq(orderStatus.isDelivered, true));
+      } else if (deliveredFilter === 'not_delivered') {
+        whereCondition = and(whereCondition, eq(orderStatus.isDelivered, false));
+      }
+      if (cancellationFilter === 'cancelled') {
+        whereCondition = and(whereCondition, eq(orderStatus.isCancelled, true));
+      } else if (cancellationFilter === 'not_cancelled') {
+        whereCondition = and(whereCondition, eq(orderStatus.isCancelled, false));
+      }
+
+      const allOrders = await db.query.orders.findMany({
+        where: whereCondition,
+        orderBy: desc(orders.createdAt),
+        limit: limit + 1, // fetch one extra to check if there's more
+        with: {
+          user: true,
+          address: true,
+          slot: true,
+          orderItems: {
+            with: {
+              product: {
+                with: {
+                  unit: true,
+                },
+              },
+            },
+          },
+          orderStatus: true,
+        },
+      });
+
+      const hasMore = allOrders.length > limit;
+      const ordersToReturn = hasMore ? allOrders.slice(0, limit) : allOrders;
+
+      const filteredOrders = ordersToReturn.filter(order => {
+        const statusRecord = order.orderStatus[0];
+        return order.isCod || (statusRecord && statusRecord.paymentStatus === 'success');
+      });
+
+      const formattedOrders = filteredOrders.map(order => {
+        const statusRecord = order.orderStatus[0];
+        let status: 'pending' | 'delivered' | 'cancelled' = 'pending';
+        if (statusRecord?.isCancelled) {
+          status = 'cancelled';
+        } else if (statusRecord?.isDelivered) {
+          status = 'delivered';
+        }
+
+        const items = order.orderItems.map(item => ({
+          name: item.product.name,
+          quantity: parseFloat(item.quantity),
+          price: parseFloat(item.price.toString()),
+          amount: parseFloat(item.quantity) * parseFloat(item.price.toString()),
+          unit: item.product.unit?.shortNotation || '',
+        }));
+
+        return {
+          id: order.id,
+          readableId: order.readableId,
+          customerName: order.user.name,
+          address: `${order.address.addressLine1}${order.address.addressLine2 ? `, ${order.address.addressLine2}` : ''}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}`,
+          totalAmount: parseFloat(order.totalAmount),
+          items,
+          createdAt: order.createdAt,
+          deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('DD MMM, h:mm A') : 'N/A',
+          status,
+          isPackaged: statusRecord?.isPackaged || false,
+          isDelivered: statusRecord?.isDelivered || false,
+          isCod: order.isCod,
+        };
+      });
+
+      return {
+        orders: formattedOrders,
+        nextCursor: hasMore ? ordersToReturn[ordersToReturn.length - 1].id : undefined,
+      };
+    }),
+  });
 
 
 

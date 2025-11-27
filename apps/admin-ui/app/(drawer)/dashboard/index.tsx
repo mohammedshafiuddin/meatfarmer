@@ -45,13 +45,19 @@
          color: 'bg-pink-500',
          onPress: () => router.push('/(drawer)/product-tags'),
        },
-       {
-         title: 'Slots',
-         icon: 'schedule',
-         color: 'bg-cyan-500',
-          onPress: () => router.push('/(drawer)/slots' as any),
-       },
-   ];
+        {
+          title: 'Slots',
+          icon: 'schedule',
+          color: 'bg-cyan-500',
+           onPress: () => router.push('/(drawer)/slots' as any),
+        },
+        {
+          title: 'Neo Orders',
+          icon: 'receipt',
+          color: 'bg-red-500',
+          onPress: () => router.push('/(drawer)/neo-orders' as any),
+        },
+    ];
 
     return (
       <View style={tw`flex-1`}>

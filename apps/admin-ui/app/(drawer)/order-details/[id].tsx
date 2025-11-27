@@ -63,7 +63,6 @@ export default function OrderDetails() {
 
   return (
     <AppContainer>
-      <ScrollView style={tw`flex-1 bg-gray-50`} showsVerticalScrollIndicator={false}>
         {/* Order Header */}
         <View style={tw`bg-white p-4 mb-4`}>
           <View style={tw`flex-row justify-between items-center mb-2`}>
@@ -214,7 +213,7 @@ export default function OrderDetails() {
             <MyText style={tw`text-white font-semibold`}>Manage Orders</MyText>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+
     </AppContainer>
   );
 }
