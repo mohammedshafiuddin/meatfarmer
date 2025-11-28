@@ -7,34 +7,26 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  StatusBar,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
-  ImageCarousel,
   theme,
   tw,
   useManualRefresh,
-  AppContainer,
   MyFlatList,
   useMarkDataFetchers,
   LoadingDialog,
 } from "common-ui";
-import { useGetAllProductsSummary } from "common-ui/src/common-api-hooks/product.api";
 import dayjs from "dayjs";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import SearchBar from "common-ui/src/components/search-bar";
 import { trpc } from "@/src/trpc-client";
 
 const { width: screenWidth } = Dimensions.get("window");
-const imageWidth = screenWidth * 0.8;
-const imageHeight = (imageWidth * 9) / 16;
-const itemWidth = (screenWidth - 40 - 20) / 2; // 40px for px-5 padding (20px each side), 20px for margins
-
-const demoImages = [
-  "https://picsum.photos/800/400?random=1",
-  "https://picsum.photos/800/400?random=2",
-  "https://picsum.photos/800/400?random=3",
-];
+const itemWidth = (screenWidth - 48) / 2; // 48 = padding horizontal (16*2) + gap (16)
 
 const renderProduct = ({
   item,
@@ -49,83 +41,64 @@ const renderProduct = ({
 }) => {
   return (
     <TouchableOpacity
-      style={[tw`flex-1 bg-white rounded-lg items-center shadow-md`]}
+      style={[
+        tw`bg-white rounded-2xl shadow-sm mb-2 overflow-hidden border border-gray-100`,
+        { width: itemWidth },
+      ]}
       onPress={() => router.push(`/product-detail?id=${item.id}`)}
+      activeOpacity={0.9}
     >
-      <Image
-        source={{ uri: item.images?.[0] }}
-        style={[{ width: itemWidth, height: itemWidth }, tw`rounded-t-lg`]}
-      />
-      <View style={tw`p-2.5 w-full`}>
-        <Text style={tw`text-base font-medium`} numberOfLines={1}>
+      <View style={tw`relative`}>
+        <Image
+          source={{ uri: item.images?.[0] }}
+          style={{ width: "100%", height: itemWidth, resizeMode: "cover" }}
+        />
+        {item.isOutOfStock && (
+          <View style={tw`absolute inset-0 bg-black/40 items-center justify-center`}>
+            <View style={tw`bg-red-500 px-3 py-1 rounded-full`}>
+              <Text style={tw`text-white text-xs font-bold`}>Out of Stock</Text>
+            </View>
+          </View>
+        )}
+        {!item.isOutOfStock && (
+          <TouchableOpacity
+            style={tw`absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md`}
+            onPress={() => handleAddToCart(item.id)}
+          >
+            <MaterialIcons name="add-shopping-cart" size={20} color={theme.colors.pink1} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={tw`p-3`}>
+        <Text style={tw`text-gray-900 font-bold text-sm mb-1`} numberOfLines={2}>
           {item.name}
         </Text>
-        <Text style={tw`text-sm text-black mt-1`}>
-          ₹{item.price} per {item.unit || "unit"}
-        </Text>
+
+        <View style={tw`flex-row items-baseline mb-2`}>
+          <Text style={tw`text-pink1 font-bold text-base`}>₹{item.price}</Text>
+          <Text style={tw`text-gray-400 text-xs ml-1`}>/ {item.unit || "unit"}</Text>
+        </View>
+
         {item.nextDeliveryDate && (
-          <View style={tw`flex-row items-center mt-1`}>
-            <MaterialIcons name="local-shipping" size={12} color="#6b7280" />
-            <Text style={tw`text-xs text-gray-500 ml-1`}>
-              {dayjs(item.nextDeliveryDate).format("ddd DD MMM, h a")}
+          <View style={tw`flex-row items-center bg-blue-50 px-2 py-1.5 rounded-lg self-start mb-2 border border-blue-100`}>
+            <MaterialIcons name="local-shipping" size={12} color="#3B82F6" />
+            <Text style={tw`text-[10px] text-blue-700 ml-1.5 font-bold`}>
+              {dayjs(item.nextDeliveryDate).format("ddd, DD MMM • h:mm A")}
             </Text>
           </View>
         )}
-        {item.isOutOfStock ? (
-          <View style={tw`mt-2 items-center`}>
-            <Text
-              style={[tw`text-sm font-medium`, { color: theme.colors.red1 }]}
-            >
-              Out of Stock
-            </Text>
-          </View>
+
+        {!item.isOutOfStock ? (
+          <TouchableOpacity
+            style={tw`bg-pink1 py-2 rounded-lg items-center mt-1`}
+            onPress={() => handleBuyNow(item.id)}
+          >
+            <Text style={tw`text-white text-xs font-bold uppercase tracking-wide`}>Buy Now</Text>
+          </TouchableOpacity>
         ) : (
-          <View style={tw`flex-row mt-2 justify-end w-full`}>
-            <TouchableOpacity
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                justifyContent: "center",
-                alignItems: "center",
-                marginRight: 8,
-              }}
-              onPress={() => handleBuyNow(item.id)}
-            >
-              <View
-                style={{
-                  position: "absolute",
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: theme.colors.pink1,
-                  opacity: 0.7,
-                }}
-              />
-              <MaterialIcons name="flash-on" size={24} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-              onPress={() => handleAddToCart(item.id)}
-            >
-              <View
-                style={{
-                  position: "absolute",
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: theme.colors.pink1,
-                  opacity: 0.7,
-                }}
-              />
-              <MaterialIcons name="shopping-cart" size={24} color="white" />
-            </TouchableOpacity>
+          <View style={tw`bg-gray-100 py-2 rounded-lg items-center mt-1`}>
+            <Text style={tw`text-gray-400 text-xs font-bold uppercase tracking-wide`}>Unavailable</Text>
           </View>
         )}
       </View>
@@ -135,7 +108,6 @@ const renderProduct = ({
 
 export default function Dashboard() {
   const router = useRouter();
-  // const { data: productsData, isLoading, error, refetch } = useGetAllProductsSummary();
   const [inputQuery, setInputQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
@@ -158,15 +130,14 @@ export default function Dashboard() {
   const dashboardTags = tagsData?.tags || [];
   const addToCart = trpc.user.cart.addToCart.useMutation();
 
-       const handleTagSelect = (tagId: number) => {
-         if (selectedTagId === tagId) {
-           // If same tag is selected, clear selection
-           setSelectedTagId(null);
-         } else {
-           setSelectedTagId(tagId);
-         }
-         setSearchQuery(''); // Clear search when selecting a tag
-       };
+  const handleTagSelect = (tagId: number) => {
+    if (selectedTagId === tagId) {
+      setSelectedTagId(null);
+    } else {
+      setSelectedTagId(tagId);
+    }
+    setSearchQuery('');
+  };
 
   useManualRefresh(() => {
     refetch();
@@ -183,7 +154,7 @@ export default function Dashboard() {
       {
         onSuccess: () => {
           Alert.alert("Success", "Item added to cart!");
-          refetchCart(); // Update cart badge in header
+          refetchCart();
         },
         onError: (error: any) => {
           Alert.alert("Error", error.message || "Failed to add item to cart");
@@ -215,22 +186,26 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <View style={tw`flex-1 justify-center items-center`}>
-        <Text>Loading products...</Text>
+      <View style={tw`flex-1 justify-center items-center bg-gray-50`}>
+        <Text style={tw`text-gray-500 font-medium`}>Loading products...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={tw`flex-1 justify-center items-center`}>
-        <Text>Error loading products</Text>
+      <View style={tw`flex-1 justify-center items-center bg-gray-50`}>
+        <MaterialIcons name="error-outline" size={48} color="#EF4444" />
+        <Text style={tw`text-gray-900 text-lg font-bold mt-4`}>Oops!</Text>
+        <Text style={tw`text-gray-500 mt-2`}>Failed to load products</Text>
       </View>
     );
   }
 
   return (
-    <View style={tw`flex-1 bg-gray1`}>
+    <View style={tw`flex-1 bg-gray-50`}>
+      <StatusBar barStyle="dark-content" />
+
       <MyFlatList
         data={products}
         numColumns={2}
@@ -238,42 +213,56 @@ export default function Dashboard() {
           renderProduct({ item, router, handleAddToCart, handleBuyNow })
         }
         keyExtractor={(item, index) => index.toString()}
-        columnWrapperStyle={{ gap: 12 }} // horizontal gap between items
-        contentContainerStyle={[tw`px-4`, { gap: 12 }]} // vertical gap
+        columnWrapperStyle={{ gap: 16 }}
+        contentContainerStyle={[tw`px-4 pb-24`, { gap: 16 }]}
         ListHeaderComponent={
-          <View style={tw`pt-5 pb-3`}>
-            {/* Dashboard Tags */}
+          <View style={tw`pt-4 pb-2`}>
+
+
+            {/* Search Bar */}
+            <SearchBar
+              value={inputQuery}
+              onChangeText={setInputQuery}
+              onSearch={() => {
+                setSearchQuery(inputQuery);
+                setSelectedTagId(null);
+              }}
+              placeholder="Search fresh meat..."
+              containerStyle={tw`mb-6 shadow-sm border-0 bg-white rounded-xl`}
+            />
+
+            {/* Categories / Tags */}
             {dashboardTags.length > 0 && (
-              <View style={tw`mb-4`}>
-                 <ScrollView
-                   horizontal
-                   showsHorizontalScrollIndicator={false}
-                   contentContainerStyle={tw`px-1`}
-                 >
-                   {/* Tag Chips */}
+              <View style={tw`mb-6`}>
+                <View style={tw`flex-row justify-between items-center mb-3`}>
+                  <Text style={tw`text-lg font-bold text-gray-900`}>Categories</Text>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={tw`pr-4`}
+                >
                   {dashboardTags.map((tag) => (
                     <TouchableOpacity
                       key={tag.id}
                       onPress={() => handleTagSelect(tag.id)}
-                      style={tw`flex-row items-center px-3 py-2 mr-2 rounded-full border ${
-                        selectedTagId === tag.id
-                          ? "bg-pink1 border-pink1"
-                          : "bg-white border-gray-300"
-                      }`}
+                      style={tw`flex-row items-center px-4 py-2.5 mr-3 rounded-xl border ${selectedTagId === tag.id
+                        ? "bg-pink1 border-pink1"
+                        : "bg-white border-gray-200"
+                        } shadow-sm`}
                     >
                       {tag.imageUrl && (
                         <Image
                           source={{ uri: tag.imageUrl }}
-                          style={tw`w-4 h-4 rounded mr-2`}
+                          style={tw`w-5 h-5 rounded mr-2`}
                           resizeMode="cover"
                         />
                       )}
                       <Text
-                        style={tw`text-sm font-medium ${
-                          selectedTagId === tag.id
-                            ? "text-white"
-                            : "text-gray-700"
-                        }`}
+                        style={tw`text-sm font-bold ${selectedTagId === tag.id
+                          ? "text-white"
+                          : "text-gray-700"
+                          }`}
                       >
                         {tag.tagName}
                       </Text>
@@ -283,25 +272,18 @@ export default function Dashboard() {
               </View>
             )}
 
-            <SearchBar
-              value={inputQuery}
-              onChangeText={setInputQuery}
-              onSearch={() => {
-                setSearchQuery(inputQuery);
-                setSelectedTagId(null); // Clear tag selection when searching
-              }}
-              placeholder="Search products..."
-              containerStyle={tw`mb-3`}
-            />
-             {searchQuery ? (
-               <Text style={tw`text-lg font-semibold mb-2`}>Results for "{searchQuery}"</Text>
-             ) : selectedTagId ? (
-               <Text style={tw`text-lg font-semibold mb-2`}>
-                 Products tagged "{dashboardTags.find(t => t.id === selectedTagId)?.tagName}"
-               </Text>
-             ) : (
-               <Text style={tw`text-lg font-semibold mb-2`}>All Products</Text>
-             )}
+            {/* Section Title */}
+            <View style={tw`flex-row justify-between items-center mb-2`}>
+              {searchQuery ? (
+                <Text style={tw`text-lg font-bold text-gray-900`}>Results for "{searchQuery}"</Text>
+              ) : selectedTagId ? (
+                <Text style={tw`text-lg font-bold text-gray-900`}>
+                  {dashboardTags.find(t => t.id === selectedTagId)?.tagName}
+                </Text>
+              ) : (
+                <Text style={tw`text-lg font-bold text-gray-900`}>Popular Items</Text>
+              )}
+            </View>
           </View>
         }
       />

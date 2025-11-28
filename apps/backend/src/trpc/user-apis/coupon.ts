@@ -1,4 +1,5 @@
 import { router, protectedProcedure } from '../trpc-index';
+import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { coupons, couponUsage } from '../../db/schema';
 import { eq, and, or, gt, isNull } from 'drizzle-orm';
@@ -84,6 +85,48 @@ export const userCouponRouter = router({
       const applicableCoupons = allCoupons.filter(coupon => {
         const applicableUsers = coupon.applicableUsers || [];
         return applicableUsers.length === 0 || applicableUsers.some(au => au.userId === userId);
+      });
+
+      return { success: true, data: applicableCoupons };
+    }),
+
+  getProductCoupons: protectedProcedure
+    .input(z.object({ productId: z.number().int().positive() }))
+    .query(async ({ input, ctx }) => {
+      const userId = ctx.user.userId;
+      const { productId } = input;
+
+      // Get all active, non-expired coupons that apply to this user and product
+      const allCoupons = await db.query.coupons.findMany({
+        where: and(
+          eq(coupons.isInvalidated, false),
+          or(
+            eq(coupons.isApplyForAll, true),
+            eq(coupons.targetUser, userId)
+          ),
+          or(
+            isNull(coupons.validTill),
+            gt(coupons.validTill, new Date())
+          )
+        ),
+        with: {
+          usages: {
+            where: eq(couponUsage.userId, userId)
+          },
+          applicableUsers: true,
+          applicableProducts: true,
+        }
+      });
+
+      // Filter to only coupons applicable to current user and product
+      const applicableCoupons = allCoupons.filter(coupon => {
+        const applicableUsers = coupon.applicableUsers || [];
+        const userApplicable = applicableUsers.length === 0 || applicableUsers.some(au => au.userId === userId);
+
+        const applicableProducts = coupon.applicableProducts || [];
+        const productApplicable = applicableProducts.length === 0 || applicableProducts.some(ap => ap.productId === productId);
+
+        return userApplicable && productApplicable;
       });
 
       return { success: true, data: applicableCoupons };

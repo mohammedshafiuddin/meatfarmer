@@ -22,6 +22,20 @@ import { ApiError } from "../../lib/api-error";
 import { sendOrderPlacedNotification, sendOrderCancelledNotification } from "../../lib/notif-job";
 import { createRazorpayOrder, insertPaymentRecord } from "../../lib/payments-utils";
 
+type AppliedCoupon = typeof coupons.$inferSelect & {
+  usages: (typeof couponUsage.$inferSelect)[];
+  applicableUsers: { userId: number }[];
+  applicableProducts: { productId: number }[];
+};
+
+type CouponUsageInsert = {
+  userId: number;
+  couponId: number;
+  orderId: number;
+  orderItemId: number;
+  usedAt: Date;
+};
+
 // Coupon stacking validation function
 const validateCouponStacking = async (couponIds: number[], orderAmount: number) => {
   const fetchedCoupons = await db.query.coupons.findMany({
@@ -114,7 +128,7 @@ export const orderRouter = router({
       }
 
       // Early coupon validation (irrespective of products)
-      let appliedCoupons = [];
+      let appliedCoupons: AppliedCoupon[] = [];
       if (couponIds && couponIds.length > 0) {
         const fetchedCoupons = await db.query.coupons.findMany({
           where: inArray(coupons.id, couponIds),
@@ -274,7 +288,7 @@ export const orderRouter = router({
             where: eq(orderItems.orderId, newOrder.id),
           });
 
-          const couponUsageInserts = [];
+          const couponUsageInserts: CouponUsageInsert[] = [];
         appliedCoupons.forEach(coupon => {
           insertedOrderItems.forEach(orderItem => {
             const applicableProducts = Array.isArray(coupon.applicableProducts) ? coupon.applicableProducts : [];
