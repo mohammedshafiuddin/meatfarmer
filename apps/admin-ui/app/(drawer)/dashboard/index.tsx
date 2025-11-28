@@ -51,12 +51,12 @@
           color: 'bg-cyan-500',
            onPress: () => router.push('/(drawer)/slots' as any),
         },
-        {
-          title: 'Neo Orders',
-          icon: 'receipt',
-          color: 'bg-red-500',
-          onPress: () => router.push('/(drawer)/neo-orders' as any),
-        },
+        // {
+        //   title: 'Orders',
+        //   icon: 'receipt',
+        //   color: 'bg-red-500',
+        //   onPress: () => router.push('/(drawer)/orders' as any),
+        // },
     ];
 
     return (

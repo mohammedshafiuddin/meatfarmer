@@ -198,7 +198,7 @@ export default function Layout() {
          <Drawer.Screen name="add-tag" options={{ title: "Add Tag" }} />
          <Drawer.Screen name="edit-tag" options={{ title: "Edit Tag" }} />
           <Drawer.Screen name="order-details/[id]" options={{ title: "Order Details" }} />
-          <Drawer.Screen name="neo-orders" options={{ title: "Neo Orders" }} />
+          <Drawer.Screen name="orders" options={{ title: "Orders" }} />
        </Drawer>
   );
 }

@@ -25,6 +25,7 @@ interface Order {
   deliveryDate?: string;
   orderStatus: string;
   cancelReason: string | null;
+  totalAmount: number;
   paymentMode: string;
   paymentStatus: string;
   refundStatus: string;
@@ -235,7 +236,7 @@ export default function MyOrders() {
 
   const renderOrder = useCallback(({ item }: { item: Order }) => {
     const statusConfig = getStatusColor(item.orderStatus);
-    const totalAmount = item.items.reduce((sum, p) => sum + p.amount, 0);
+    const totalAmount = item.totalAmount;
 
   return (
     <TouchableOpacity

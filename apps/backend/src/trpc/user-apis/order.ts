@@ -313,6 +313,7 @@ export const orderRouter = router({
           orderStatus,
           cancelReason: status?.cancelReason || null,
           paymentMode,
+          totalAmount: Number(order.totalAmount),
           paymentStatus,
           refundStatus,
           refundAmount,
@@ -567,3 +568,5 @@ export const orderRouter = router({
          return { success: true, message: "Notes updated successfully" };
        }),
  });
+
+

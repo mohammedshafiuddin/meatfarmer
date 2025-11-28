@@ -260,6 +260,7 @@ export const orderRouter = router({
         cancelReason: statusRecord?.cancelReason || null,
         cancellationReviewed: cancellation?.cancellationReviewed || false,
         isRefundDone: cancellation?.refundStatus === 'processed' || false,
+        refundStatus: cancellation?.refundStatus as RefundStatus,
         refundAmount: cancellation?.refundAmount ? parseFloat(cancellation.refundAmount.toString()) : null,
       };
     }),
@@ -539,3 +540,6 @@ export const orderRouter = router({
 
 
 // {"id": "order_Rhh00qJNdjUp8o", "notes": {"retry": "true", "customerOrderId": "14"}, "amount": 21000, "entity": "order", "status": "created", "receipt": "order_14_retry", "attempts": 0, "currency": "INR", "offer_id": null, "signature": "6df20655021f1d6841340f2a2ef2ef9378cb3d43495ab09e85f08aea1a851583", "amount_due": 21000, "created_at": 1763575791, "payment_id": "pay_Rhh15cLL28YM7j", "amount_paid": 0}
+
+
+type RefundStatus = 'success' | 'pending' | 'failed' | 'none' | 'na';

@@ -23,38 +23,16 @@ export default function ManageOrders() {
 
   const menuItems = [
     {
-      title: 'Packaging',
-      icon: 'inventory',
-      color: 'bg-green-500',
-      onPress: () => router.push(`/(drawer)/packaging?slotId=${selectedSlotId}`),
-    },
-    {
-      title: 'Delivery',
-      icon: 'local-shipping',
-      color: 'bg-blue-500',
-      onPress: () => router.push(`/(drawer)/delivery?slotId=${selectedSlotId}`),
-    },
-    {
       title: 'Delivery Sequences',
       icon: 'route',
       color: 'bg-purple-500',
       onPress: () => router.push(`/(drawer)/delivery-sequences?slotId=${selectedSlotId}`),
     },
     {
-      title: 'Product Quantities',
-      icon: 'calculate',
-      color: 'bg-orange-500',
-      onPress: () => {
-        if (selectedSlotId) {
-          router.push(`/(drawer)/product-quantities?slotId=${selectedSlotId}`);
-        }
-      },
-    },
-    {
-      title: 'Cancelled Orders',
-      icon: 'cancel',
-      color: 'bg-red-500',
-      onPress: () => router.push(`/(drawer)/cancelled-orders`),
+      title: 'Orders',
+      icon: 'list',
+      color: 'bg-cyan-500',
+      onPress: () => router.push('/(drawer)/orders'),
     },
   ];
 
