@@ -61,6 +61,43 @@ export default function ProductDetail() {
     });
   };
 
+    const generateCouponDescription = (coupon: any): string => {
+    let desc = '';
+    if (coupon.discountPercent) {
+      desc += `${coupon.discountPercent}% off`;
+    } else if (coupon.flatDiscount) {
+      desc += `₹${coupon.flatDiscount} off`;
+    }
+    if (coupon.minOrder) {
+      desc += ` on orders above ₹${coupon.minOrder}`;
+    }
+    if (coupon.maxValue) {
+      desc += ` (max discount ₹${coupon.maxValue})`;
+    }
+    return desc;
+  };
+
+
+    const discountPercentage = productDetail?.marketPrice
+    ? Math.round(((Number(productDetail.marketPrice) - Number(productDetail.price)) / Number(productDetail.marketPrice)) * 100)
+    : 0;
+
+    const productCoupons = useMemo(() => {
+    if (!productCouponsRaw?.data) return [];
+    return productCouponsRaw.data.map(coupon => {
+      const discount = coupon.discountPercent
+        ? Math.min((Number(productDetail?.price) * parseFloat(coupon.discountPercent.toString())) / 100, coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Infinity)
+        : Math.min(parseFloat(coupon.flatDiscount?.toString() || '0'), coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Number(productDetail?.price));
+      return {
+        id: coupon.id,
+        code: coupon.couponCode,
+        description: generateCouponDescription(coupon),
+        potentialSavings: Math.round(discount),
+      };
+    });
+  }, [productCouponsRaw, productDetail]);
+
+
   if (isLoading) {
     return (
       <View style={tw`flex-1 justify-center items-center bg-gray-50`}>
@@ -79,42 +116,6 @@ export default function ProductDetail() {
     );
   }
 
-  const discountPercentage = productDetail.marketPrice
-    ? Math.round(((Number(productDetail.marketPrice) - Number(productDetail.price)) / Number(productDetail.marketPrice)) * 100)
-    : 0;
-
-  
-
-  const generateCouponDescription = (coupon: any): string => {
-    let desc = '';
-    if (coupon.discountPercent) {
-      desc += `${coupon.discountPercent}% off`;
-    } else if (coupon.flatDiscount) {
-      desc += `₹${coupon.flatDiscount} off`;
-    }
-    if (coupon.minOrder) {
-      desc += ` on orders above ₹${coupon.minOrder}`;
-    }
-    if (coupon.maxValue) {
-      desc += ` (max discount ₹${coupon.maxValue})`;
-    }
-    return desc;
-  };
-
-  const productCoupons = useMemo(() => {
-    if (!productCouponsRaw?.data) return [];
-    return productCouponsRaw.data.map(coupon => {
-      const discount = coupon.discountPercent
-        ? Math.min((Number(productDetail.price) * parseFloat(coupon.discountPercent.toString())) / 100, coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Infinity)
-        : Math.min(parseFloat(coupon.flatDiscount?.toString() || '0'), coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Number(productDetail.price));
-      return {
-        id: coupon.id,
-        code: coupon.couponCode,
-        description: generateCouponDescription(coupon),
-        potentialSavings: Math.round(discount),
-      };
-    });
-  }, [productCouponsRaw, productDetail]);
 
   return (
     <View style={tw`flex-1 bg-gray-50`}>
