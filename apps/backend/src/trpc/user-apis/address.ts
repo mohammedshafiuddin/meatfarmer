@@ -1,8 +1,9 @@
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { addresses } from '../../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { addresses, orders, orderStatus, deliverySlotInfo } from '../../db/schema';
+import { eq, and, gte } from 'drizzle-orm';
+import dayjs from 'dayjs';
 
 export const addressRouter = router({
   getUserAddresses: protectedProcedure
@@ -90,6 +91,51 @@ export const addressRouter = router({
         isDefault: isDefault || false,
       }).where(and(eq(addresses.id, id), eq(addresses.userId, userId))).returning();
 
-      return { success: true, data: updatedAddress };
+       return { success: true, data: updatedAddress };
+     }),
+
+  deleteAddress: protectedProcedure
+    .input(z.object({
+      id: z.number().int().positive(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.user.userId;
+      const { id } = input;
+
+      // Check if address exists and belongs to user
+      const existingAddress = await db.select().from(addresses).where(and(eq(addresses.id, id), eq(addresses.userId, userId))).limit(1);
+      if (existingAddress.length === 0) {
+        throw new Error('Address not found or does not belong to user');
+      }
+
+      // Check if address is attached to any ongoing orders using joins
+      const ongoingOrders = await db.select({
+        order: orders,
+        status: orderStatus,
+        slot: deliverySlotInfo
+      })
+        .from(orders)
+        .innerJoin(orderStatus, eq(orders.id, orderStatus.orderId))
+        .innerJoin(deliverySlotInfo, eq(orders.slotId, deliverySlotInfo.id))
+        .where(and(
+          eq(orders.addressId, id),
+          eq(orderStatus.isCancelled, false),
+          gte(deliverySlotInfo.deliveryTime, new Date())
+        ))
+        .limit(1);
+
+      if (ongoingOrders.length > 0) {
+        throw new Error('Address is attached to an ongoing order. Please cancel the order first.');
+      }
+
+      // Prevent deletion of default address
+      if (existingAddress[0].isDefault) {
+        throw new Error('Cannot delete default address. Please set another address as default first.');
+      }
+
+      // Delete the address
+      await db.delete(addresses).where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
+
+      return { success: true, message: 'Address deleted successfully' };
     }),
 });

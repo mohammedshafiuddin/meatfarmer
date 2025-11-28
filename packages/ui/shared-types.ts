@@ -299,6 +299,9 @@ export interface CreateCouponPayload {
   isUserBased: boolean;
   targetUsers?: number[];
   productIds?: number[];
+  applicableUsers?: number[];
+  applicableProducts?: number[];
+  exclusiveApply?: boolean;
 }
 
 // Patient History Types

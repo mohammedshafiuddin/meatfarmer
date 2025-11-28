@@ -1,7 +1,7 @@
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { coupons, users, staffUsers, orders } from '../../db/schema';
+import { coupons, users, staffUsers, orders, couponApplicableUsers, couponApplicableProducts } from '../../db/schema';
 import { eq, and, like, or } from 'drizzle-orm';
 import dayjs from 'dayjs';
 
@@ -13,10 +13,13 @@ const createCouponBodySchema = z.object({
   minOrder: z.number().optional(),
   targetUser: z.number().optional(),
   productIds: z.array(z.number()).optional().nullable(),
+  applicableUsers: z.array(z.number()).optional(),
+  applicableProducts: z.array(z.number()).optional(),
   maxValue: z.number().optional(),
   isApplyForAll: z.boolean().optional(),
   validTill: z.string().optional(),
   maxLimitForUser: z.number().optional(),
+  exclusiveApply: z.boolean().optional(),
 });
 
 const validateCouponBodySchema = z.object({
@@ -29,7 +32,7 @@ export const couponRouter = router({
   create: protectedProcedure
     .input(createCouponBodySchema)
     .mutation(async ({ input, ctx }) => {
-      const { couponCode, isUserBased, discountPercent, flatDiscount, minOrder, targetUser, productIds, maxValue, isApplyForAll, validTill, maxLimitForUser } = input;
+      const { couponCode, isUserBased, discountPercent, flatDiscount, minOrder, targetUser, productIds, applicableUsers, applicableProducts, maxValue, isApplyForAll, validTill, maxLimitForUser, exclusiveApply } = input;
 
       // Validation: ensure at least one discount type is provided
       if ((!discountPercent && !flatDiscount) || (discountPercent && flatDiscount)) {
@@ -93,9 +96,32 @@ export const couponRouter = router({
         isApplyForAll: isApplyForAll || false,
          validTill: validTill ? dayjs(validTill).toDate() : undefined,
         maxLimitForUser: maxLimitForUser,
+        exclusiveApply: exclusiveApply || false,
       }).returning();
 
-      return result[0];
+      const coupon = result[0];
+
+      // Insert applicable users
+      if (applicableUsers && applicableUsers.length > 0) {
+        await db.insert(couponApplicableUsers).values(
+          applicableUsers.map(userId => ({
+            couponId: coupon.id,
+            userId,
+          }))
+        );
+      }
+
+      // Insert applicable products
+      if (applicableProducts && applicableProducts.length > 0) {
+        await db.insert(couponApplicableProducts).values(
+          applicableProducts.map(productId => ({
+            couponId: coupon.id,
+            productId,
+          }))
+        );
+      }
+
+      return coupon;
     }),
 
   getAll: protectedProcedure
@@ -104,6 +130,16 @@ export const couponRouter = router({
         with: {
           targetUser: true,
           creator: true,
+          applicableUsers: {
+            with: {
+              user: true,
+            },
+          },
+          applicableProducts: {
+            with: {
+              product: true,
+            },
+          },
         },
         orderBy: (coupons, { desc }) => [desc(coupons.createdAt)],
       });
@@ -121,6 +157,16 @@ export const couponRouter = router({
         with: {
           targetUser: true,
           creator: true,
+          applicableUsers: {
+            with: {
+              user: true,
+            },
+          },
+          applicableProducts: {
+            with: {
+              product: true,
+            },
+          },
         },
       });
 
@@ -131,6 +177,8 @@ export const couponRouter = router({
       return {
         ...result,
         productIds: (result.productIds as number[]) || undefined,
+        applicableUsers: result.applicableUsers.map(au => au.user),
+        applicableProducts: result.applicableProducts.map(ap => ap.product),
       };
     }),
 
@@ -200,7 +248,33 @@ export const couponRouter = router({
       }
 
       console.log('updated coupon successfully')
-      
+
+      // Update applicable users: delete existing and insert new
+      if (updates.applicableUsers !== undefined) {
+        await db.delete(couponApplicableUsers).where(eq(couponApplicableUsers.couponId, id));
+        if (updates.applicableUsers.length > 0) {
+          await db.insert(couponApplicableUsers).values(
+            updates.applicableUsers.map(userId => ({
+              couponId: id,
+              userId,
+            }))
+          );
+        }
+      }
+
+      // Update applicable products: delete existing and insert new
+      if (updates.applicableProducts !== undefined) {
+        await db.delete(couponApplicableProducts).where(eq(couponApplicableProducts.couponId, id));
+        if (updates.applicableProducts.length > 0) {
+          await db.insert(couponApplicableProducts).values(
+            updates.applicableProducts.map(productId => ({
+              couponId: id,
+              productId,
+            }))
+          );
+        }
+      }
+
       return result[0];
     }),
 

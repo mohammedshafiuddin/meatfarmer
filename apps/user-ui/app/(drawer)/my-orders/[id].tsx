@@ -149,7 +149,9 @@ export default function OrderDetails() {
   };
 
   const statusConfig = getStatusColor(order.orderStatus);
-  const totalAmount = order.items.reduce((sum, item) => sum + item.amount, 0);
+  const subtotal = order.items.reduce((sum, item) => sum + item.amount, 0);
+  const discountAmount = order.discountAmount || 0;
+  const totalAmount = order.orderAmount;
 
   return (
     <AppContainer>
@@ -342,6 +344,29 @@ export default function OrderDetails() {
           ))}
         </View>
 
+        {/* Coupon Applied Section */}
+        {order.couponCode && (
+          <View style={tw`bg-emerald-50 p-4 mb-4 rounded-xl border border-emerald-200`}>
+            <View style={tw`flex-row items-center mb-2`}>
+              <MaterialIcons name="local-offer" size={20} color="#10B981" />
+              <MyText style={tw`text-emerald-800 font-bold ml-2`}>
+                {order.couponCode}
+              </MyText>
+            </View>
+            <MyText style={tw`text-emerald-700 text-sm`}>
+              {order.couponDescription}
+            </MyText>
+            <View style={tw`flex-row justify-between items-center mt-3`}>
+              <MyText style={tw`text-emerald-600 font-medium`}>
+                Discount Applied:
+              </MyText>
+              <MyText style={tw`text-emerald-800 font-bold text-lg`}>
+                -₹{order.discountAmount}
+              </MyText>
+            </View>
+          </View>
+        )}
+
         {/* Order Summary */}
         <View style={tw`bg-white p-4 mb-4`}>
           <MyText style={tw`text-lg font-semibold text-gray-800 mb-3`}>
@@ -352,9 +377,19 @@ export default function OrderDetails() {
               Subtotal ({order.items.length} items)
             </MyText>
             <MyText style={tw`text-gray-800 font-medium`}>
-              ₹{totalAmount}
+              ₹{subtotal}
             </MyText>
           </View>
+          {discountAmount > 0 && (
+            <View style={tw`flex-row justify-between items-center mb-2`}>
+              <MyText style={tw`text-emerald-600 font-medium`}>
+                Discount
+              </MyText>
+              <MyText style={tw`text-emerald-600 font-medium`}>
+                -₹{discountAmount}
+              </MyText>
+            </View>
+          )}
           <View
             style={tw`flex-row justify-between items-center pt-2 border-t border-gray-200`}
           >

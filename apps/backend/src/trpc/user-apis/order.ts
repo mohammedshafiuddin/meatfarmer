@@ -15,12 +15,49 @@ import {
   cartItems,
   orderCancellationsTable,
 } from "../../db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import { READABLE_ORDER_ID_KEY } from "../../lib/const-strings";
 import { generateSignedUrlsFromS3Urls } from "../../lib/s3-client";
 import { ApiError } from "../../lib/api-error";
 import { sendOrderPlacedNotification, sendOrderCancelledNotification } from "../../lib/notif-job";
 import { createRazorpayOrder, insertPaymentRecord } from "../../lib/payments-utils";
+
+// Coupon stacking validation function
+const validateCouponStacking = async (couponIds: number[], orderAmount: number) => {
+  const fetchedCoupons = await db.query.coupons.findMany({
+    where: inArray(coupons.id, couponIds),
+  });
+
+  // Rule 3: Total discount cannot exceed 50% of order amount
+  const totalDiscount = fetchedCoupons.reduce((total, coupon) => {
+    const discount = coupon.discountPercent
+      ? (orderAmount * parseFloat(coupon.discountPercent.toString())) / 100
+      : coupon.flatDiscount
+      ? parseFloat(coupon.flatDiscount.toString())
+      : 0;
+    return total + discount;
+  }, 0);
+  
+  if (totalDiscount > orderAmount * 0.5) {
+    throw new Error("Total discount cannot exceed 50% of order amount");
+  }
+  
+  // Rule 4: No duplicate coupons
+  if (new Set(couponIds).size !== couponIds.length) {
+    throw new Error("Duplicate coupons cannot be applied");
+  }
+
+  // Rule 5: Exclusive coupon validation
+  const exclusiveCoupons = fetchedCoupons.filter(c => c.exclusiveApply);
+  if (exclusiveCoupons.length > 1) {
+    throw new Error("Only one exclusive coupon can be applied");
+  }
+  if (exclusiveCoupons.length === 1 && couponIds.length > 1) {
+    throw new Error("Exclusive coupon cannot be combined with other coupons");
+  }
+
+  return true;
+};
 
 export const orderRouter = router({
   placeOrder: protectedProcedure
@@ -34,14 +71,14 @@ export const orderRouter = router({
         ),
         addressId: z.number().int().positive(),
         paymentMethod: z.enum(["online", "cod"]),
-        couponId: z.number().int().positive().optional().nullable(),
+        couponIds: z.array(z.number().int().positive()).optional(),
         slotId: z.number().int().positive(),
         userNotes: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.user.userId;
-      const { selectedItems, addressId, slotId, paymentMethod, couponId, userNotes } =
+      const { selectedItems, addressId, slotId, paymentMethod, couponIds, userNotes } =
         input;
 
       // Validate address belongs to user
@@ -58,6 +95,7 @@ export const orderRouter = router({
         productId: number;
         quantity: string;
         price: any;
+        discountedPrice: string;
       }> = [];
       for (const item of selectedItems) {
         const product = await db.query.productInfo.findFirst({
@@ -71,69 +109,73 @@ export const orderRouter = router({
           productId: item.productId,
           quantity: item.quantity.toString(),
           price: product.price,
+          discountedPrice: product.price.toString(),
         });
       }
 
-      // Validate and apply coupon if provided
-      let discountAmount = 0;
-      let appliedCoupon = null;
-      if (couponId) {
-        const coupon = await db.query.coupons.findFirst({
-          where: eq(coupons.id, couponId),
+      // Early coupon validation (irrespective of products)
+      let appliedCoupons = [];
+      if (couponIds && couponIds.length > 0) {
+        const fetchedCoupons = await db.query.coupons.findMany({
+          where: inArray(coupons.id, couponIds),
           with: {
-            usages: {
-              where: eq(couponUsage.userId, userId),
-            },
+            usages: { where: eq(couponUsage.userId, userId) },
+            applicableUsers: true,
+            applicableProducts: true,
           },
         });
 
-        if (!coupon) {
-          throw new ApiError("Invalid coupon", 400);
+        for (const coupon of fetchedCoupons) {
+          if (!coupon) throw new ApiError("Invalid coupon", 400);
+          if (coupon.isInvalidated) throw new ApiError("Coupon is no longer valid", 400);
+          if (coupon.validTill && new Date(coupon.validTill) < new Date()) throw new ApiError("Coupon has expired", 400);
+          const applicableUsers = coupon.applicableUsers || [];
+          if (applicableUsers.length > 0 && !applicableUsers.some(au => au.userId === userId)) throw new ApiError("Coupon not applicable to this user", 400);
+          if (coupon.maxLimitForUser && coupon.usages.length >= coupon.maxLimitForUser) throw new ApiError("Coupon usage limit exceeded", 400);
         }
 
-        // Check if coupon is invalidated
-        if (coupon.isInvalidated) {
-          throw new ApiError("Coupon is no longer valid", 400);
-        }
+        const exclusiveCoupons = fetchedCoupons.filter(c => c.exclusiveApply);
+        if (exclusiveCoupons.length > 1) throw new ApiError("Only one exclusive coupon can be applied", 400);
+        if (exclusiveCoupons.length === 1 && couponIds.length > 1) throw new ApiError("Exclusive coupon cannot be combined with other coupons", 400);
 
-        // Check expiration
-        if (coupon.validTill && new Date(coupon.validTill) < new Date()) {
-          throw new ApiError("Coupon has expired", 400);
-        }
-
-        // Check minimum order requirement
-        if (coupon.minOrder && parseFloat(coupon.minOrder) > totalAmount) {
-          throw new ApiError(
-            "Order amount does not meet coupon minimum requirement",
-            400
-          );
-        }
-
-        // Check usage limits
-        if (coupon.maxLimitForUser) {
-          const usageCount = coupon.usages.length;
-          if (usageCount >= coupon.maxLimitForUser) {
-            throw new ApiError("Coupon usage limit exceeded", 400);
-          }
-        }
-
-        // Calculate discount
-        if (coupon.discountPercent) {
-          discountAmount = Math.min(
-            (totalAmount * parseFloat(coupon.discountPercent)) / 100,
-            coupon.maxValue ? parseFloat(coupon.maxValue) : Infinity
-          );
-        } else if (coupon.flatDiscount) {
-          discountAmount = Math.min(
-            parseFloat(coupon.flatDiscount),
-            coupon.maxValue ? parseFloat(coupon.maxValue) : totalAmount
-          );
-        }
-
-        appliedCoupon = coupon;
+        appliedCoupons = fetchedCoupons;
       }
 
-       const finalAmount = totalAmount - discountAmount;
+      // Validate min order
+      if (appliedCoupons.length > 0) {
+        for (const coupon of appliedCoupons) {
+          if (coupon.minOrder && parseFloat(coupon.minOrder.toString()) > totalAmount) {
+            throw new ApiError("Order amount does not meet coupon minimum requirement", 400);
+          }
+        }
+      }
+
+      // Calculate per-product discounted prices
+      orderItemsData.forEach(itemData => {
+        let itemDiscount = 0;
+        const applicableCouponsForItem = appliedCoupons.filter(coupon => {
+          const applicableProducts = Array.isArray(coupon.applicableProducts) ? coupon.applicableProducts : [];
+          return applicableProducts.length === 0 || applicableProducts.some((ap: any) => ap.productId === itemData.productId);
+        });
+
+        applicableCouponsForItem.forEach(coupon => {
+          if (coupon.discountPercent) {
+            itemDiscount += Math.min(
+              (parseFloat(itemData.price.toString()) * parseFloat(coupon.discountPercent.toString())) / 100,
+              coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Infinity
+            );
+          } else if (coupon.flatDiscount) {
+            itemDiscount += Math.min(
+              parseFloat(coupon.flatDiscount.toString()),
+              coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : parseFloat(itemData.price.toString())
+            );
+          }
+        });
+
+        itemData.discountedPrice = (parseFloat(itemData.price.toString()) - itemDiscount).toString();
+      });
+
+      const finalAmount = orderItemsData.reduce((sum, item) => sum + parseFloat(item.discountedPrice), 0);
 
        // Create order in transaction
        const newOrder = await db.transaction(async (tx) => {
@@ -225,14 +267,33 @@ export const orderRouter = router({
          return order;
        });
 
-      // Add coupon usage record if coupon was applied
-      if (appliedCoupon) {
-        await db.insert(couponUsage).values({
-          userId,
-          couponId: appliedCoupon.id,
-          usedAt: new Date(),
-        });
-      }
+        // Add coupon usage records if coupons were applied
+        if (appliedCoupons.length > 0) {
+          // Get inserted order items
+          const insertedOrderItems = await db.query.orderItems.findMany({
+            where: eq(orderItems.orderId, newOrder.id),
+          });
+
+          const couponUsageInserts = [];
+        appliedCoupons.forEach(coupon => {
+          insertedOrderItems.forEach(orderItem => {
+            const applicableProducts = Array.isArray(coupon.applicableProducts) ? coupon.applicableProducts : [];
+            if (applicableProducts.length === 0 || applicableProducts.some((ap: any) => ap.productId === orderItem.productId)) {
+                couponUsageInserts.push({
+                  userId,
+                  couponId: coupon.id,
+                  orderId: newOrder.id,
+                  orderItemId: orderItem.id,
+                  usedAt: new Date(),
+                });
+              }
+            });
+          });
+
+          if (couponUsageInserts.length > 0) {
+            await db.insert(couponUsage).values(couponUsageInserts);
+          }
+        }
 
       sendOrderPlacedNotification(userId, newOrder.id.toString());
 
@@ -297,6 +358,7 @@ export const orderRouter = router({
               productName: item.product.name,
               quantity: parseFloat(item.quantity),
               price: parseFloat(item.price.toString()),
+              discountedPrice: parseFloat(item.discountedPrice?.toString() || item.price.toString()),
               amount:
                 parseFloat(item.price.toString()) * parseFloat(item.quantity),
               image: signedImages[0] || null,
@@ -360,6 +422,44 @@ export const orderRouter = router({
         throw new Error("Order not found");
       }
 
+      // Get coupon usage for this specific order using new orderId field
+      const couponUsageData = await db.query.couponUsage.findMany({
+        where: eq(couponUsage.orderId, order.id), // Use new orderId field
+        with: {
+          coupon: true,
+        },
+      });
+
+      let couponData = null;
+      if (couponUsageData.length > 0) {
+        // Calculate total discount from multiple coupons
+        let totalDiscountAmount = 0;
+        const orderTotal = parseFloat(order.totalAmount.toString());
+        
+        for (const usage of couponUsageData) {
+          let discountAmount = 0;
+          
+          if (usage.coupon.discountPercent) {
+            discountAmount = (orderTotal * parseFloat(usage.coupon.discountPercent.toString())) / 100;
+          } else if (usage.coupon.flatDiscount) {
+            discountAmount = parseFloat(usage.coupon.flatDiscount.toString());
+          }
+
+          // Apply max value limit if set
+          if (usage.coupon.maxValue && discountAmount > parseFloat(usage.coupon.maxValue.toString())) {
+            discountAmount = parseFloat(usage.coupon.maxValue.toString());
+          }
+
+          totalDiscountAmount += discountAmount;
+        }
+
+        couponData = {
+          couponCode: couponUsageData.map(u => u.coupon.couponCode).join(', '),
+          couponDescription: `${couponUsageData.length} coupons applied`,
+          discountAmount: totalDiscountAmount,
+        };
+      }
+
       const status = order.orderStatus[0]; // assuming one status per order
       const cancellation = order.orderCancellations[0]; // assuming one cancellation per order
       const deliveryStatus = status?.isCancelled
@@ -380,14 +480,15 @@ export const orderRouter = router({
                 item.product.images as string[]
               )
             : [];
-          return {
-            productName: item.product.name,
-            quantity: parseFloat(item.quantity),
-            price: parseFloat(item.price.toString()),
-            amount:
-              parseFloat(item.price.toString()) * parseFloat(item.quantity),
-            image: signedImages[0] || null,
-          };
+           return {
+             productName: item.product.name,
+             quantity: parseFloat(item.quantity),
+             price: parseFloat(item.price.toString()),
+             discountedPrice: parseFloat(item.discountedPrice?.toString() || item.price.toString()),
+             amount:
+               parseFloat(item.price.toString()) * parseFloat(item.quantity),
+             image: signedImages[0] || null,
+           };
         })
       );
 
@@ -405,6 +506,10 @@ export const orderRouter = router({
         refundAmount,
         userNotes: order.userNotes || null,
         items,
+        couponCode: couponData?.couponCode || null,
+        couponDescription: couponData?.couponDescription || null,
+        discountAmount: couponData?.discountAmount || null,
+        orderAmount: parseFloat(order.totalAmount.toString()),
       };
     }),
 

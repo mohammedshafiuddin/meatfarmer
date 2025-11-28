@@ -8,13 +8,14 @@ import { theme } from '../theme';
 export interface DropdownOption {
   label: string;
   value: string | number;
+  disabled?: boolean;
 }
 
 interface BottomDropdownProps {
   label: string;
-  value: string | number | string[];
+  value: string | number | string[] | number[];
   options: DropdownOption[];
-  onValueChange: (value: string | number | string[]) => void;
+  onValueChange: (value: string | number | string[] | number[]) => void;
   multiple?: boolean;
   error?: boolean;
   style?: any;
@@ -169,19 +170,21 @@ const BottomDropdown: React.FC<BottomDropdownProps> = ({
           <Text style={tw`text-lg font-semibold mb-4 text-center`}>{label}</Text>
 
           {/* Search Input - Fixed at top */}
-          <View style={tw`px-4 pb-2 border-b border-gray-200 mb-2`}>
-            <TextInput
-              style={tw`border border-gray-300 rounded-md px-3 py-2 text-base`}
-              placeholder="Search options..."
-              value={searchQuery}
-              onChangeText={(text) => {
-                setSearchQuery(text);
-                debouncedOnSearch(text);
-              }}
-              autoFocus={true}
-              clearButtonMode="while-editing"
-            />
-          </View>
+          {onSearch && (
+            <View style={tw`px-4 pb-2 border-b border-gray-200 mb-2`}>
+              <TextInput
+                style={tw`border border-gray-300 rounded-md px-3 py-2 text-base`}
+                placeholder="Search options..."
+                value={searchQuery}
+                onChangeText={(text) => {
+                  setSearchQuery(text);
+                  debouncedOnSearch(text);
+                }}
+                autoFocus={true}
+                clearButtonMode="while-editing"
+              />
+            </View>
+          )}
 
           <ScrollView style={tw`max-h-80`}>
             {filteredOptions.length === 0 && searchQuery ? (
@@ -193,22 +196,24 @@ const BottomDropdown: React.FC<BottomDropdownProps> = ({
             ) : (
               filteredOptions.map((option) => {
               const selected = isSelected(option.value);
+              const isDisabled = option.disabled || disabled;
               return (
                 <TouchableOpacity
                   key={option.value}
                   style={[
                     tw`px-4 py-3 rounded-md my-1 mx-2 flex-row items-center justify-between`,
                     selected ? { backgroundColor: theme.colors.pink2 } : tw`bg-transparent`,
+                    isDisabled && tw`opacity-50`,
                   ]}
-                  onPress={() => handleSelect(option.value)}
-                  disabled={disabled}
+                  onPress={() => !isDisabled && handleSelect(option.value)}
+                  disabled={isDisabled}
                 >
                    <Text
-                     style={[
-                       selected ? tw`text-pink-800 font-semibold` : tw`text-gray-800`,
-                       disabled && tw`text-gray-400`,
-                     ]}
-                   >
+                      style={[
+                        selected ? tw`text-pink-800 font-semibold` : tw`text-gray-800`,
+                        isDisabled && tw`text-gray-400`,
+                      ]}
+                    >
                      {(() => {
                        const labelStr = option.label as string;
                        const [code, rest] = labelStr.split(' - ', 2);

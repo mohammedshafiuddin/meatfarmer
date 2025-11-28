@@ -105,6 +105,10 @@ export default function OrderDetails() {
 
   const order = orderData;
 
+  // Calculate subtotal and discount for order summary
+  const subtotal = order.items.reduce((sum, item) => sum + item.amount, 0);
+  const discountAmount = order.discountAmount || 0;
+
   const handleGenerateCoupon = () => {
     const orderIdString = `ORD${order.id.toString().padStart(3, "0")}`;
     generateCouponMutation.mutate({ orderId: orderIdString });
@@ -363,8 +367,26 @@ export default function OrderDetails() {
           ))}
 
           <View style={tw`mt-4 pt-4 border-t border-gray-100`}>
-            <View style={tw`flex-row justify-between items-center`}>
+            <View style={tw`flex-row justify-between items-center mb-2`}>
               <MyText style={tw`text-base font-bold text-gray-900`}>
+                Subtotal ({order.items.length} items)
+              </MyText>
+              <MyText style={tw`text-base font-bold text-gray-900`}>
+                ₹{subtotal}
+              </MyText>
+            </View>
+            {discountAmount > 0 && (
+              <View style={tw`flex-row justify-between items-center mb-2`}>
+                <MyText style={tw`text-emerald-600 font-medium`}>
+                  Discount
+                </MyText>
+                <MyText style={tw`text-emerald-600 font-medium`}>
+                  -₹{discountAmount}
+                </MyText>
+              </View>
+            )}
+            <View style={tw`flex-row justify-between items-center pt-2 border-t border-gray-200`}>
+              <MyText style={tw`text-lg font-bold text-gray-900`}>
                 Total Amount
               </MyText>
               <MyText style={tw`text-xl font-bold text-blue-600`}>
@@ -391,6 +413,36 @@ export default function OrderDetails() {
           </View>
         )}
 
+        {/* Coupon Applied Section */}
+        {order.couponCode && (
+          <View
+            style={tw`bg-emerald-50 p-5 rounded-2xl shadow-sm mb-4 border border-emerald-100`}
+          >
+            <MyText style={tw`text-lg font-bold text-emerald-800 mb-3`}>
+              Coupon Applied
+            </MyText>
+            <View style={tw`bg-emerald-100 p-4 rounded-xl border border-emerald-200`}>
+              <View style={tw`flex-row items-center mb-2`}>
+                <MaterialIcons name="local-offer" size={20} color="#10B981" />
+                <MyText style={tw`text-emerald-800 font-bold ml-2`}>
+                  {order.couponCode}
+                </MyText>
+              </View>
+              <MyText style={tw`text-emerald-700 text-sm`}>
+                {order.couponDescription}
+              </MyText>
+              <View style={tw`flex-row justify-between items-center mt-3`}>
+                <MyText style={tw`text-emerald-600 font-medium`}>
+                  Discount Applied:
+                </MyText>
+                <MyText style={tw`text-emerald-800 font-bold text-lg`}>
+                  -₹{order.discountAmount}
+                </MyText>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Cancellation Details */}
         {order.status === "cancelled" && (
           <View
@@ -409,8 +461,8 @@ export default function OrderDetails() {
                 <MyText style={tw`text-sm text-red-900`}>
                   {order.cancelReason}
                 </MyText>
-              </View>
-            )}
+           </View>
+         )}
             <View
               style={tw`flex-row justify-between items-center bg-white/50 p-3 rounded-xl mb-4`}
             >

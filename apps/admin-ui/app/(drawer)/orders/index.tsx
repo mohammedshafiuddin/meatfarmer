@@ -27,6 +27,9 @@ interface OrderType {
   isPackaged: boolean;
   isDelivered: boolean;
   isCod: boolean;
+  couponCode?: string;
+  couponDescription?: string;
+  discountAmount?: number;
 }
 
 const OrderItem = ({ order }: { order: OrderType }) => {
@@ -181,9 +184,31 @@ const OrderItem = ({ order }: { order: OrderType }) => {
                 </MyText>
               </TouchableOpacity>
             )}
-          </View>
+           </View>
 
-          {/* Footer / Total */}
+           {/* Coupons */}
+           {order.couponCode && (
+             <View style={tw`mb-4`}>
+               <MyText style={tw`text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide`}>Applied Coupons</MyText>
+               <View style={tw`bg-pink-50 border border-pink-200 rounded-lg p-3`}>
+                 <MyText style={tw`text-sm text-pink-800 font-medium mb-1`}>
+                   {order.couponCode}
+                 </MyText>
+                 {order.couponDescription && (
+                   <MyText style={tw`text-xs text-pink-600 mb-2`}>
+                     {order.couponDescription}
+                   </MyText>
+                 )}
+                 {order.discountAmount && (
+                   <MyText style={tw`text-sm font-bold text-pink-800`}>
+                     Discount: ₹{order.discountAmount}
+                   </MyText>
+                 )}
+               </View>
+             </View>
+           )}
+
+           {/* Footer / Total */}
           <View style={tw`pt-3 border-t border-gray-100 flex-row justify-between items-center`}>
             <MyText style={tw`text-sm text-gray-500`}>Total Amount</MyText>
             <MyText style={tw`text-xl font-bold text-gray-900`}>₹{order.totalAmount}</MyText>

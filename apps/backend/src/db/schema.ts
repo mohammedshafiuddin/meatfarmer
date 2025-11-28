@@ -162,6 +162,7 @@ export const orderItems = mf.table('order_items', {
   productId: integer('product_id').notNull().references(() => productInfo.id),
   quantity: varchar('quantity', { length: 50 }).notNull(),
   price: numeric({ precision: 10, scale: 2 }).notNull(),
+  discountedPrice: numeric('discounted_price', { precision: 10, scale: 2 }),
 });
 
 export const paymentStatusEnum = pgEnum('payment_status', ['pending', 'success', 'cod', 'failed']);
@@ -270,6 +271,7 @@ export const coupons = mf.table('coupons', {
   validTill: timestamp('valid_till'),
   maxLimitForUser: integer('max_limit_for_user'),
   isInvalidated: boolean('is_invalidated').notNull().default(false),
+  exclusiveApply: boolean('exclusive_apply').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -277,8 +279,26 @@ export const couponUsage = mf.table('coupon_usage', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   userId: integer('user_id').notNull().references(() => users.id),
   couponId: integer('coupon_id').notNull().references(() => coupons.id),
+  orderId: integer('order_id').references(() => orders.id),
+  orderItemId: integer('order_item_id').references(() => orderItems.id),
   usedAt: timestamp('used_at').notNull().defaultNow(),
 });
+
+export const couponApplicableUsers = mf.table('coupon_applicable_users', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  couponId: integer('coupon_id').notNull().references(() => coupons.id),
+  userId: integer('user_id').notNull().references(() => users.id),
+}, (t) => ({
+  unq_coupon_user: unique('unique_coupon_user').on(t.couponId, t.userId),
+}));
+
+export const couponApplicableProducts = mf.table('coupon_applicable_products', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  couponId: integer('coupon_id').notNull().references(() => coupons.id),
+  productId: integer('product_id').notNull().references(() => productInfo.id),
+}, (t) => ({
+  unq_coupon_product: unique('unique_coupon_product').on(t.couponId, t.productId),
+}));
 
 export const notifCreds = mf.table('notif_creds', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -297,6 +317,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   userCreds: one(userCreds),
   coupons: many(coupons),
   couponUsages: many(couponUsage),
+  applicableCoupons: many(couponApplicableUsers),
   userDetails: one(userDetails),
   notifCreds: many(notifCreds),
 }));
@@ -327,6 +348,7 @@ export const productInfoRelations = relations(productInfo, ({ one, many }) => ({
   orderItems: many(orderItems),
   cartItems: many(cartItems),
   tags: many(productTags),
+  applicableCoupons: many(couponApplicableProducts),
 }));
 
 export const productTagInfoRelations = relations(productTagInfo, ({ many }) => ({
@@ -361,6 +383,7 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   paymentInfo: one(paymentInfoTable, { fields: [orders.paymentInfoId], references: [paymentInfoTable.id] }),
   orderStatus: many(orderStatus),
   orderCancellations: many(orderCancellationsTable),
+  couponUsages: many(couponUsage),
 }));
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
@@ -406,11 +429,15 @@ export const couponsRelations = relations(coupons, ({ one, many }) => ({
   targetUser: one(users, { fields: [coupons.targetUser], references: [users.id] }),
   creator: one(staffUsers, { fields: [coupons.createdBy], references: [staffUsers.id] }),
   usages: many(couponUsage),
+  applicableUsers: many(couponApplicableUsers),
+  applicableProducts: many(couponApplicableProducts),
 }));
 
 export const couponUsageRelations = relations(couponUsage, ({ one }) => ({
   user: one(users, { fields: [couponUsage.userId], references: [users.id] }),
   coupon: one(coupons, { fields: [couponUsage.couponId], references: [coupons.id] }),
+  order: one(orders, { fields: [couponUsage.orderId], references: [orders.id] }),
+  orderItem: one(orderItems, { fields: [couponUsage.orderItemId], references: [orderItems.id] }),
 }));
 
 export const userDetailsRelations = relations(userDetails, ({ one }) => ({
@@ -424,4 +451,14 @@ export const notifCredsRelations = relations(notifCreds, ({ one }) => ({
 export const storeInfoRelations = relations(storeInfo, ({ one, many }) => ({
   owner: one(staffUsers, { fields: [storeInfo.owner], references: [staffUsers.id] }),
   products: many(productInfo),
+}));
+
+export const couponApplicableUsersRelations = relations(couponApplicableUsers, ({ one }) => ({
+  coupon: one(coupons, { fields: [couponApplicableUsers.couponId], references: [coupons.id] }),
+  user: one(users, { fields: [couponApplicableUsers.userId], references: [users.id] }),
+}));
+
+export const couponApplicableProductsRelations = relations(couponApplicableProducts, ({ one }) => ({
+  coupon: one(coupons, { fields: [couponApplicableProducts.couponId], references: [coupons.id] }),
+  product: one(productInfo, { fields: [couponApplicableProducts.productId], references: [productInfo.id] }),
 }));

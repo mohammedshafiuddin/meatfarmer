@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."coupons" ADD COLUMN "exclusive_apply" boolean DEFAULT false NOT NULL;

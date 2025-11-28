@@ -127,6 +127,13 @@ function CustomDrawerContent() {
         )}
       />
       <DrawerItem
+        label="About"
+        onPress={() => router.push("/(drawer)/about")}
+        icon={({ color, size }) => (
+          <MaterialIcons name="info" size={size} color={color} />
+        )}
+      />
+      <DrawerItem
         label="Logout"
         onPress={handleLogout}
         icon={({ color, size }) => (
@@ -321,6 +328,12 @@ export default function Layout() {
           name="me"
           options={{
             title: "Me",
+          }}
+        />
+        <Drawer.Screen
+          name="about"
+          options={{
+            title: "About",
           }}
         />
         <Drawer.Screen

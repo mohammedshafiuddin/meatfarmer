@@ -30,14 +30,12 @@ const couponValidationSchema = Yup.object().shape({
   minOrder: Yup.number().min(0, 'Must be positive').optional(),
   maxValue: Yup.number().min(0, 'Must be positive').optional(),
   validTill: Yup.date().optional(),
-  maxLimitForUser: Yup.number().min(1, 'Must be at least 1').optional(),
-  isUserBased: Yup.boolean(),
-  isApplyForAll: Yup.boolean(),
-  targetUsers: Yup.array().of(Yup.number()).when(['isUserBased', 'isApplyForAll'], {
-    is: (isUserBased: boolean, isApplyForAll: boolean) => isUserBased && !isApplyForAll,
-    then: (schema) => schema.min(1, 'At least one user must be selected for user-based coupons'),
-    otherwise: (schema) => schema.optional(),
-  }),
+   maxLimitForUser: Yup.number().min(1, 'Must be at least 1').optional(),
+   exclusiveApply: Yup.boolean().optional(),
+   isUserBased: Yup.boolean(),
+   isApplyForAll: Yup.boolean(),
+   applicableUsers: Yup.array().of(Yup.number()).optional(),
+   applicableProducts: Yup.array().of(Yup.number()).optional(),
 }).test('discount-validation', 'Must provide exactly one discount type with valid value', function(value) {
   const { discountPercent, flatDiscount } = value;
   const hasPercent = discountPercent !== undefined && discountPercent > 0;
@@ -66,19 +64,22 @@ export default function CouponForm({ onSubmit, isLoading, initialValues }: Coupo
 
   // User search functionality will be inside Formik
 
-  const defaultValues: CreateCouponPayload = {
-    couponCode: '',
-    isUserBased: false,
-    isApplyForAll: false,
-    targetUsers: [],
-    discountPercent: undefined,
-    flatDiscount: undefined,
-    minOrder: undefined,
-    maxValue: undefined,
-    validTill: undefined,
-    maxLimitForUser: undefined,
-    productIds: undefined,
-  };
+   const defaultValues: CreateCouponPayload = {
+     couponCode: '',
+     isUserBased: false,
+     isApplyForAll: false,
+     targetUsers: [],
+     discountPercent: undefined,
+     flatDiscount: undefined,
+     minOrder: undefined,
+     maxValue: undefined,
+     validTill: undefined,
+     maxLimitForUser: undefined,
+     productIds: undefined,
+     applicableUsers: [],
+     applicableProducts: [],
+     exclusiveApply: false,
+   };
 
   return (
     <Formik
@@ -209,19 +210,33 @@ export default function CouponForm({ onSubmit, isLoading, initialValues }: Coupo
             />
           </View>
 
-          {/* Usage Limit */}
-          <View style={tw`mb-4`}>
-            <MyTextInput
-              topLabel="Max Uses Per User"
-              placeholder="e.g., 5"
-              value={values.maxLimitForUser?.toString() || ''}
-              onChangeText={(text: string) => setFieldValue('maxLimitForUser', parseInt(text) || undefined)}
-              keyboardType="numeric"
-              error={!!(touched.maxLimitForUser && errors.maxLimitForUser)}
-            />
-          </View>
+           {/* Usage Limit */}
+           <View style={tw`mb-4`}>
+             <MyTextInput
+               topLabel="Max Uses Per User"
+               placeholder="e.g., 5"
+               value={values.maxLimitForUser?.toString() || ''}
+               onChangeText={(text: string) => setFieldValue('maxLimitForUser', parseInt(text) || undefined)}
+               keyboardType="numeric"
+               error={!!(touched.maxLimitForUser && errors.maxLimitForUser)}
+             />
+           </View>
 
-          {/* Target Audience */}
+           {/* Exclusive Apply */}
+           <View style={tw`mb-4`}>
+             <Text style={tw`text-base mb-2`}>Exclusive Apply</Text>
+             <TouchableOpacity
+               onPress={() => setFieldValue('exclusiveApply', !values.exclusiveApply)}
+               style={tw`flex-row items-center`}
+             >
+               <View style={tw`w-5 h-5 border-2 border-gray-300 rounded mr-3 ${values.exclusiveApply ? 'bg-blue-500 border-blue-500' : ''}`}>
+                 {values.exclusiveApply && <Text style={tw`text-white text-center`}>✓</Text>}
+               </View>
+               <Text style={tw`text-gray-700`}>Exclusive coupon (cannot be combined with other coupons)</Text>
+             </TouchableOpacity>
+           </View>
+
+           {/* Target Audience */}
           <Text style={tw`text-base font-bold mb-2`}>
             Target Audience
           </Text>
@@ -253,43 +268,40 @@ export default function CouponForm({ onSubmit, isLoading, initialValues }: Coupo
             </TouchableOpacity>
           </View>
 
-            {/* Target User Selection (if user-based) */}
-            {values.isUserBased && (
-              <View style={tw`mb-4`}>
-                <Text style={tw`text-base mb-2`}>Target Users *</Text>
-                <BottomDropdown
-                  label="Target Users"
-                  options={userOptions}
-                  value={values.targetUsers ? values.targetUsers.map(id => id.toString()) : []}
-                   onValueChange={(value) => {
-                     const selectedValues = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
-                     setFieldValue('targetUsers', selectedValues.map(v => Number(v)));
-                   }}
-                  onSearch={(query) => {
-                    setUserSearchQuery(query);
+             {/* Applicable User Selection */}
+             <View style={tw`mb-4`}>
+               <Text style={tw`text-base mb-2`}>Applicable Users (Optional)</Text>
+               <BottomDropdown
+                 label="Applicable Users"
+                 options={userOptions}
+                 value={values.applicableUsers ? values.applicableUsers.map(id => id.toString()) : []}
+                  onValueChange={(value) => {
+                    const selectedValues = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
+                    setFieldValue('applicableUsers', selectedValues.map(v => Number(v)));
                   }}
-                  placeholder="Search and select users..."
-                  // multiple={true}
-                  error={!!(touched.targetUsers && errors.targetUsers)}
-                />
-              </View>
-            )}
-
-            {/* Product Selection */}
-            <View style={tw`mb-4`}>
-              <Text style={tw`text-base mb-2`}>Target Products (Optional)</Text>
-              <BottomDropdown
-                label="Target Products"
-                options={productOptions}
-                value={values.productIds ? values.productIds.map(id => id.toString()) : []}
-                 onValueChange={(value) => {
-                   const selectedValues = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
-                   setFieldValue('productIds', selectedValues.map(v => Number(v)));
+                 onSearch={(query) => {
+                   setUserSearchQuery(query);
                  }}
-                placeholder="Select products (optional)"
-                multiple={true}
-              />
-            </View>
+                 placeholder="Search and select users..."
+                 multiple={true}
+               />
+             </View>
+
+             {/* Applicable Product Selection */}
+             <View style={tw`mb-4`}>
+               <Text style={tw`text-base mb-2`}>Applicable Products (Optional)</Text>
+               <BottomDropdown
+                 label="Applicable Products"
+                 options={productOptions}
+                 value={values.applicableProducts ? values.applicableProducts.map(id => id.toString()) : []}
+                  onValueChange={(value) => {
+                    const selectedValues = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
+                    setFieldValue('applicableProducts', selectedValues.map(v => Number(v)));
+                  }}
+                 placeholder="Select products (optional)"
+                 multiple={true}
+               />
+             </View>
 
 
 

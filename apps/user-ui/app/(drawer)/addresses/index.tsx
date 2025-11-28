@@ -18,11 +18,12 @@ interface Address {
   isDefault: boolean;
 }
 
-function AddressCard({ address, onEdit, onDelete, onSetDefault }: {
+function AddressCard({ address, onEdit, onDelete, onSetDefault, isDeleting }: {
   address: Address;
   onEdit: (address: Address) => void;
   onDelete: (id: number) => void;
   onSetDefault: (id: number) => void;
+  isDeleting?: boolean;
 }) {
   const formatAddress = (addr: Address) => {
     return `${addr.addressLine1}${addr.addressLine2 ? `, ${addr.addressLine2}` : ''}, ${addr.city}, ${addr.state} - ${addr.pincode}`;
@@ -67,10 +68,13 @@ function AddressCard({ address, onEdit, onDelete, onSetDefault }: {
           <MyText style={tw`text-white text-xs font-medium`}>Edit</MyText>
         </TouchableOpacity>
         <TouchableOpacity
-          style={tw`bg-red-500 px-3 py-2 rounded`}
+          style={tw`bg-red-500 px-3 py-2 rounded ${isDeleting ? 'opacity-50' : ''}`}
           onPress={() => onDelete(address.id)}
+          disabled={isDeleting}
         >
-          <MyText style={tw`text-white text-xs font-medium`}>Delete</MyText>
+          <MyText style={tw`text-white text-xs font-medium`}>
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </MyText>
         </TouchableOpacity>
       </View>
     </View>
@@ -90,6 +94,7 @@ export default function Addresses() {
   const addresses = data?.data || [];
 
   const updateAddressMutation = trpc.user.address.updateAddress.useMutation();
+  const deleteAddressMutation = trpc.user.address.deleteAddress.useMutation();
 
   const handleAddAddress = () => {
     setEditingAddress(null);
@@ -111,8 +116,15 @@ export default function Addresses() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            // TODO: Implement delete functionality when backend supports it
-            Alert.alert('Info', 'Delete functionality will be implemented soon');
+            deleteAddressMutation.mutate({ id }, {
+              onSuccess: () => {
+                refetch();
+                Alert.alert('Success', 'Address deleted successfully');
+              },
+              onError: (error) => {
+                Alert.alert('Error', error.message || 'Failed to delete address');
+              }
+            });
           }
         }
       ]

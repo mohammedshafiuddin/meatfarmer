@@ -1,7 +1,7 @@
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { orders, orderItems, orderStatus, users, addresses, productInfo, units, deliverySlotInfo, payments, paymentInfoTable, orderCancellationsTable } from '../../db/schema';
+import { orders, orderItems, orderStatus, users, addresses, productInfo, units, deliverySlotInfo, payments, paymentInfoTable, orderCancellationsTable, coupons, couponUsage } from '../../db/schema';
 import { eq, and, gte, lt, desc, SQL } from 'drizzle-orm';
 import dayjs from 'dayjs';
 import { sendOrderPackagedNotification, sendOrderDeliveredNotification } from '../../lib/notif-job';
@@ -199,6 +199,44 @@ export const orderRouter = router({
         throw new Error("Order not found");
       }
 
+      // Get coupon usage for this specific order using new orderId field
+      const couponUsageData = await db.query.couponUsage.findMany({
+        where: eq(couponUsage.orderId, orderData.id), // Use new orderId field
+        with: {
+          coupon: true,
+        },
+      });
+
+      let couponData = null;
+      if (couponUsageData.length > 0) {
+        // Calculate total discount from multiple coupons
+        let totalDiscountAmount = 0;
+        const orderTotal = parseFloat(orderData.totalAmount.toString());
+        
+        for (const usage of couponUsageData) {
+          let discountAmount = 0;
+          
+          if (usage.coupon.discountPercent) {
+            discountAmount = (orderTotal * parseFloat(usage.coupon.discountPercent.toString())) / 100;
+          } else if (usage.coupon.flatDiscount) {
+            discountAmount = parseFloat(usage.coupon.flatDiscount.toString());
+          }
+
+          // Apply max value limit if set
+          if (usage.coupon.maxValue && discountAmount > parseFloat(usage.coupon.maxValue.toString())) {
+            discountAmount = parseFloat(usage.coupon.maxValue.toString());
+          }
+
+          totalDiscountAmount += discountAmount;
+        }
+
+        couponData = {
+          couponCode: couponUsageData.map(u => u.coupon.couponCode).join(', '),
+          couponDescription: `${couponUsageData.length} coupons applied`,
+          discountAmount: totalDiscountAmount,
+        };
+      }
+
        // Status determination from included relation
        const statusRecord = orderData.orderStatus?.[0];
        let status: 'pending' | 'delivered' | 'cancelled' = 'pending';
@@ -257,11 +295,15 @@ export const orderRouter = router({
           merchantOrderId: orderData.paymentInfo.merchantOrderId,
         } : null,
         // Cancellation details (always included, null if not cancelled)
-        cancelReason: statusRecord?.cancelReason || null,
-        cancellationReviewed: cancellation?.cancellationReviewed || false,
-        isRefundDone: cancellation?.refundStatus === 'processed' || false,
-        refundStatus: cancellation?.refundStatus as RefundStatus,
-        refundAmount: cancellation?.refundAmount ? parseFloat(cancellation.refundAmount.toString()) : null,
+         cancelReason: statusRecord?.cancelReason || null,
+         cancellationReviewed: cancellation?.cancellationReviewed || false,
+         isRefundDone: cancellation?.refundStatus === 'processed' || false,
+         refundStatus: cancellation?.refundStatus as RefundStatus,
+         refundAmount: cancellation?.refundAmount ? parseFloat(cancellation.refundAmount.toString()) : null,
+         // Coupon information
+         couponCode: couponData?.couponCode || null,
+         couponDescription: couponData?.couponDescription || null,
+         discountAmount: couponData?.discountAmount || null,
       };
     }),
 

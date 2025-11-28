@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,17 +14,36 @@ import {
   AppContainer,
   useMarkDataFetchers,
 } from "common-ui";
-import { BottomDropdown, Checkbox } from "common-ui";
+import { BottomDropdown, Checkbox, BottomDialog } from "common-ui";
 import { Quantifier } from "common-ui";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 import dayjs from "dayjs";
 import { trpc } from "@/src/trpc-client";
 
+interface CartItem {
+  id: number;
+  productId: number;
+  quantity: number;
+  product: {
+    price: number;
+    isOutOfStock: boolean;
+    name: string;
+    images: string[];
+  } | null;
+}
+
+interface ItemDiscountInfo {
+  discountedPrice: number;
+  discountAmount: number;
+  couponCount: number;
+}
+
 export default function MyCart() {
   const [checkedProducts, setCheckedProducts] = useState<
     Record<number, boolean>
   >({});
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
   const {
     data: cartData,
     isLoading,
@@ -35,6 +54,72 @@ export default function MyCart() {
   });
   const { data: slotsData, refetch: refetchSlots } =
     trpc.user.cart.getCartSlots.useQuery();
+
+  const cartItems = cartData?.items || [];
+
+   // Base total price without discounts for coupon eligibility check
+   const baseTotalPrice = useMemo(
+     () =>
+       cartItems
+         .filter((item) => checkedProducts[item.id] && !item.product?.isOutOfStock)
+         .reduce(
+           (sum, item) =>
+             sum +
+             (item.product?.price || 0) * (quantities[item.id] || item.quantity),
+           0
+         ),
+     [cartItems, checkedProducts, quantities]
+   );
+
+   const { data: couponsRaw } = trpc.user.coupon.getEligible.useQuery();
+
+   const generateCouponDescription = (coupon: any): string => {
+     let desc = '';
+
+     if (coupon.discountPercent) {
+       desc += `${coupon.discountPercent}% off`;
+     } else if (coupon.flatDiscount) {
+       desc += `₹${coupon.flatDiscount} off`;
+     }
+
+     if (coupon.minOrder) {
+       desc += ` on orders above ₹${coupon.minOrder}`;
+     }
+
+     if (coupon.maxValue) {
+       desc += ` (max discount ₹${coupon.maxValue})`;
+     }
+
+     return desc;
+   };
+
+   const eligibleCoupons = useMemo(() => {
+     if (!couponsRaw?.data) return [];
+     return couponsRaw.data.map(coupon => {
+       let isEligible = true;
+       let ineligibilityReason = '';
+       if (coupon.maxLimitForUser && coupon.usages.length >= coupon.maxLimitForUser) {
+         isEligible = false;
+         ineligibilityReason = 'Usage limit exceeded';
+       }
+       if (coupon.minOrder && parseFloat(coupon.minOrder) > baseTotalPrice) {
+         isEligible = false;
+         ineligibilityReason = `Min order ₹${coupon.minOrder}`;
+       }
+       return {
+         id: coupon.id,
+         code: coupon.couponCode,
+         discountType: coupon.discountPercent ? 'percentage' : 'flat',
+         discountValue: parseFloat(coupon.discountPercent || coupon.flatDiscount || '0'),
+         maxValue: coupon.maxValue ? parseFloat(coupon.maxValue) : undefined,
+         minOrder: coupon.minOrder ? parseFloat(coupon.minOrder) : undefined,
+         description: generateCouponDescription(coupon),
+         exclusiveApply: coupon.exclusiveApply,
+         isEligible,
+         ineligibilityReason: isEligible ? undefined : ineligibilityReason,
+       };
+     }).filter(coupon => coupon.ineligibilityReason !== 'Usage limit exceeded');
+   }, [couponsRaw, baseTotalPrice]);
 
   const updateCartItem = trpc.user.cart.updateCartItem.useMutation();
   const removeFromCart = trpc.user.cart.removeFromCart.useMutation();
@@ -48,8 +133,8 @@ export default function MyCart() {
     refetchSlots();
   });
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
-
-  const cartItems = cartData?.items || [];
+  const [selectedCouponId, setSelectedCouponId] = useState<number[]>([]);
+  const [couponDialogOpen, setCouponDialogOpen] = useState(false);
   const params = useLocalSearchParams();
   const router = useRouter();
 
@@ -77,8 +162,102 @@ export default function MyCart() {
       )
       .map(Number);
   }, [selectedSlot, slotsData]);
+  
+    // Calculate coupon discount
+  const selectedCoupons = useMemo(
+    () =>
+      eligibleCoupons?.filter((coupon) => selectedCouponId.includes(coupon.id)),
+    [eligibleCoupons, selectedCouponId]
+  );
+    // Calculate discounted price for each item
+  const getItemDiscountInfo = (item: CartItem, ): ItemDiscountInfo => {
+    const quantity = quantities[item.id] || item.quantity;
+    const originalPrice = (item.product?.price || 0) * quantity;
+    let discount = 0;
+    console.log({selectedCoupons})
+    
+    const applicableCoupons = selectedCoupons.filter((coupon) => {
+      // For cart, assume all coupons apply to all items, or check applicableProducts if available
+      return true; // Simplify for cart preview
+    });
+    applicableCoupons.forEach((coupon) => {
+      if (coupon.discountType === "percentage") {
+        discount += Math.min(
+          (originalPrice * coupon.discountValue) / 100,
+          coupon.maxValue || Infinity
+        );
+      } else {
+        discount += Math.min(
+          coupon.discountValue,
+          coupon.maxValue || originalPrice
+        );
+      }
+    });
+    const discountedPrice = Math.max(0, originalPrice - discount);
+    
+    return {
+      discountedPrice,
+      discountAmount: discount,
+      couponCount: applicableCoupons.length,
+    };
+  };
+  const totalPrice = cartItems
+    .filter((item) => checkedProducts[item.id] && !item.product?.isOutOfStock)
+    .reduce((sum, item) => {
+      try {
 
-  const [quantities, setQuantities] = useState<Record<number, number>>({});
+        const discountInfo = getItemDiscountInfo(item);
+        const newSum = sum + discountInfo.discountedPrice;
+        
+        return newSum;
+      }
+      catch (error) {
+        console.log({error})
+        
+        return sum;
+      }
+    }, 0);
+  const dropdownData = useMemo(
+    () =>
+      eligibleCoupons?.map((coupon) => {
+        const discount =
+          coupon.discountType === "percentage"
+            ? Math.min(
+                (totalPrice * coupon.discountValue) / 100,
+                coupon.maxValue || Infinity
+              )
+            : Math.min(coupon.discountValue, coupon.maxValue || totalPrice);
+        const saveString = !isNaN(discount) ? ` (Save ₹${discount})` : "";
+        const baseLabel = `${coupon.code} - ${coupon.description}${
+          coupon.isEligible ? saveString : ""
+        }`;
+        const label = coupon.isEligible
+          ? baseLabel
+          : `${baseLabel} (${coupon.ineligibilityReason})`;
+        return {
+          label,
+          value: coupon.id,
+          disabled: !coupon.isEligible,
+        };
+      }) || [],
+    [eligibleCoupons, totalPrice]
+  );
+
+  const discountAmount = useMemo(
+    () =>
+      selectedCoupons?.reduce(
+        (sum, coupon) =>
+          sum +
+          (coupon.discountType === "percentage"
+            ? Math.min(
+                (totalPrice * coupon.discountValue) / 100,
+                coupon.maxValue || Infinity
+              )
+            : Math.min(coupon.discountValue, coupon.maxValue || totalPrice)),
+        0
+      ) || 0,
+    [selectedCoupons, totalPrice]
+  );
 
   useEffect(() => {
     const initial: Record<number, number> = {};
@@ -133,13 +312,6 @@ export default function MyCart() {
     }
   }, [selectedSlot, slotsData, cartItems]);
 
-  const totalPrice = cartItems
-    .filter((item) => checkedProducts[item.id] && !item.product.isOutOfStock)
-    .reduce(
-      (sum, item) =>
-        sum + item.product.price * (quantities[item.id] || item.quantity),
-      0
-    );
 
   if (isLoading) {
     return (
@@ -173,6 +345,82 @@ export default function MyCart() {
           }
           disabled={availableSlots.length === 0}
         />
+      </View>
+
+      {/* Coupon Selection */}
+      <View style={tw`mb-4 bg-white rounded-lg p-4 shadow-md`}>
+        <Text style={tw`text-lg font-semibold mb-3`}>Apply Coupon</Text>
+        <BottomDropdown
+          label="Available Coupons"
+          options={dropdownData}
+          value={selectedCouponId}
+          multiple={true}
+          disabled={!selectedSlot || eligibleCoupons.length === 0}
+          onValueChange={(value) => {
+            const newSelected = value as number[];
+            const selectedCoupons = eligibleCoupons.filter((c) =>
+              newSelected.includes(c.id)
+            );
+            const exclusiveCoupons = selectedCoupons.filter(
+              (c) => c.exclusiveApply
+            );
+
+            if (exclusiveCoupons.length > 0 && newSelected.length > 1) {
+              // Keep only the exclusive coupon(s)
+              const exclusiveIds = exclusiveCoupons.map((c) => c.id);
+              setSelectedCouponId(exclusiveIds);
+              Alert.alert(
+                "Exclusive Coupon",
+                "Exclusive coupons cannot be combined with others. Other coupons have been removed."
+              );
+            } else {
+              setSelectedCouponId(newSelected);
+            }
+          }}
+          placeholder={
+            eligibleCoupons.length === 0
+              ? "No coupons available"
+              : selectedSlot
+              ? "Select coupons"
+              : "Select delivery slot first"
+          }
+        />
+
+        {eligibleCoupons.length === 0 && (
+          <Text style={tw`text-gray-500 text-sm mt-2`}>
+            No coupons available for this order
+          </Text>
+        )}
+
+        {!selectedSlot && (
+          <Text style={tw`text-red-500 text-sm mt-2`}>
+            Select a delivery slot to apply coupons
+          </Text>
+        )}
+
+        {selectedCoupons &&
+          selectedCoupons.length > 0 &&
+          discountAmount > 0 && (
+            <View
+              style={tw`mt-3 p-3 bg-pink-50 border border-pink-200 rounded`}
+            >
+              <Text style={tw`text-pink1 text-sm font-medium`}>
+                🎉 You save ₹{discountAmount} with{" "}
+                {selectedCoupons.map((c) => c.code).join(", ")}
+              </Text>
+            </View>
+          )}
+
+        {selectedCoupons.length > 0 && (
+          <TouchableOpacity
+            style={tw`mt-3`}
+            onPress={() => setSelectedCouponId([])}
+          >
+            <Text style={tw`text-gray-500 text-sm underline`}>
+              Remove all coupons
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
       {cartItems.length === 0 ? (
         <Text style={tw`text-lg text-center`}>No items in your cart</Text>
@@ -210,6 +458,7 @@ export default function MyCart() {
                         Alert.alert("Error", reason);
                         return;
                       }
+                      
                       setCheckedProducts((prev) => ({
                         ...prev,
                         [item.id]: !prev[item.id],
@@ -265,18 +514,24 @@ export default function MyCart() {
                       </View>
                       <TouchableOpacity
                         onPress={() => {
-                          removeFromCart.mutate({itemId: item.id}, {
-                            onSuccess: () => {
-                              Alert.alert("Success", "Item removed from cart");
-                              refetch();
-                            },
-                            onError: (error: any) => {
-                              Alert.alert(
-                                "Error",
-                                error.message || "Failed to remove item"
-                              );
-                            },
-                          });
+                          removeFromCart.mutate(
+                            { itemId: item.id },
+                            {
+                              onSuccess: () => {
+                                Alert.alert(
+                                  "Success",
+                                  "Item removed from cart"
+                                );
+                                refetch();
+                              },
+                              onError: (error: any) => {
+                                Alert.alert(
+                                  "Error",
+                                  error.message || "Failed to remove item"
+                                );
+                              },
+                            }
+                          );
                         }}
                         style={[tw`ml-2`, !isAvailable && { opacity: 1 }]}
                       >
@@ -293,12 +548,35 @@ export default function MyCart() {
                       }`}
                     >
                       <Text style={tw`text-base mr-2`}>Amount:</Text>
-                      <Text style={tw`text-base font-bold`}>
-                        ₹
-                        {item.product.price *
-                          (quantities[item.id] || item.quantity)}
-                      </Text>
+                      <View style={tw`flex-row items-center`}>
+                        <Text
+                          style={tw`text-base line-through text-gray-500 mr-2`}
+                        >
+                          ₹
+                          {(item.product?.price || 0) *
+                            (quantities[item.id] || item.quantity)}
+                        </Text>
+                        <Text style={tw`text-base font-bold text-pink1`}>
+                          ₹{getItemDiscountInfo(item).discountedPrice}
+                        </Text>
+                      </View>
                     </View>
+                    {getItemDiscountInfo(item).couponCount > 0 && (
+                      <View style={tw`mt-1`}>
+                        <TouchableOpacity
+                          onPress={() => setCouponDialogOpen(true)}
+                        >
+                          <Text style={tw`text-xs text-pink1 underline`}>
+                            {getItemDiscountInfo(item).couponCount} coupon
+                            {getItemDiscountInfo(item).couponCount > 1
+                              ? "s"
+                              : ""}{" "}
+                            applied, saved ₹
+                            {getItemDiscountInfo(item).discountAmount}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
                 </View>
               </View>
@@ -332,7 +610,9 @@ export default function MyCart() {
                 router.push(
                   `/checkout?selected=${selectedItems.join(
                     ","
-                  )}&slot=${selectedSlot}` as any
+                  )}&slot=${selectedSlot}&coupons=${selectedCouponId.join(
+                    ","
+                  )}` as any
                 );
               }}
             >
@@ -347,6 +627,31 @@ export default function MyCart() {
           </View>
         </>
       )}
+
+      <BottomDialog
+        open={couponDialogOpen}
+        onClose={() => setCouponDialogOpen(false)}
+      >
+        <View style={tw`p-6`}>
+          <Text style={tw`text-lg font-bold text-gray-800 mb-6`}>
+            Applied Coupons
+          </Text>
+          {selectedCoupons.map((coupon) => (
+            <View key={coupon.id} style={tw`mb-4 p-4 bg-gray-50 rounded-lg`}>
+              <Text style={tw`font-semibold text-gray-800`}>{coupon.code}</Text>
+              <Text style={tw`text-sm text-gray-600 mt-1`}>
+                {coupon.description}
+              </Text>
+              <Text style={tw`text-sm text-pink1 mt-1`}>
+                {coupon.discountType === "percentage"
+                  ? `${coupon.discountValue}% off`
+                  : `₹${coupon.discountValue} off`}
+                {coupon.maxValue && ` (max ₹${coupon.maxValue})`}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </BottomDialog>
     </AppContainer>
   );
 }
