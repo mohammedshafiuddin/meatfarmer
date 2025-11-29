@@ -1,0 +1,1 @@
+DROP TABLE "mf"."order_cancellations" CASCADE;

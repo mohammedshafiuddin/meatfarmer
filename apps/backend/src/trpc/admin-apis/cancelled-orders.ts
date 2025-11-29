@@ -1,7 +1,7 @@
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { orders, orderStatus, users, addresses, orderItems, productInfo, units, orderCancellationsTable } from '../../db/schema';
+import { orders, orderStatus, users, addresses, orderItems, productInfo, units, refunds } from '../../db/schema';
 import { eq, desc } from 'drizzle-orm';
 
 const updateCancellationReviewSchema = z.object({
@@ -35,7 +35,7 @@ export const cancelledOrdersRouter = router({
                   },
                 },
               },
-              orderCancellations: true,
+              refunds: true,
             },
           },
         },
@@ -47,16 +47,16 @@ export const cancelledOrdersRouter = router({
       });
 
       return filteredStatuses.map(status => {
-        const cancellation = status.order.orderCancellations[0];
+        const refund = status.order.refunds[0];
         return {
           id: status.order.id,
           readableId: status.order.readableId,
-          customerName: `${status.order.user.name}`,
-          address: `${status.order.address.addressLine1}, ${status.order.address.city}`,
-           totalAmount: status.order.totalAmount,
-            cancellationReviewed: cancellation?.cancellationReviewed || false,
-            isRefundDone: cancellation?.refundStatus === 'processed' || false,
-           adminNotes: status.order.adminNotes,
+           customerName: `${status.order.user.name}`,
+           address: `${status.order.address.addressLine1}, ${status.order.address.city}`,
+            totalAmount: status.order.totalAmount,
+             cancellationReviewed: status.cancellationReviewed || false,
+             isRefundDone: refund?.refundStatus === 'processed' || false,
+            adminNotes: status.order.adminNotes,
           cancelReason: status.cancelReason,
           paymentMode: status.order.isCod ? 'COD' : 'Online',
           paymentStatus: status.paymentStatus || 'pending',
@@ -77,13 +77,13 @@ export const cancelledOrdersRouter = router({
     .mutation(async ({ input }) => {
       const { orderId, cancellationReviewed, adminNotes } = input;
 
-      const result = await db.update(orderCancellationsTable)
+      const result = await db.update(orderStatus)
         .set({
           cancellationReviewed,
           cancellationAdminNotes: adminNotes || null,
-          reviewedAt: new Date(),
+          cancellationReviewedAt: new Date(),
         })
-        .where(eq(orderCancellationsTable.orderId, orderId))
+        .where(eq(orderStatus.orderId, orderId))
         .returning();
 
       if (result.length === 0) {
@@ -124,9 +124,9 @@ export const cancelledOrdersRouter = router({
         throw new Error("Cancelled order not found");
       }
 
-      // Get cancellation details separately
-      const cancellation = await db.query.orderCancellationsTable.findFirst({
-        where: eq(orderCancellationsTable.orderId, cancelledOrderStatus.orderId),
+      // Get refund details separately
+      const refund = await db.query.refunds.findFirst({
+        where: eq(refunds.orderId, cancelledOrderStatus.orderId),
       });
 
       const order = cancelledOrderStatus.order;
@@ -138,9 +138,9 @@ export const cancelledOrdersRouter = router({
         customerName: order.user.name,
         address: `${order.address.addressLine1}${order.address.addressLine2 ? ', ' + order.address.addressLine2 : ''}, ${order.address.city}, ${order.address.state} ${order.address.pincode}`,
         totalAmount: order.totalAmount,
-        cancellationReviewed: cancellation?.cancellationReviewed || false,
-        isRefundDone: cancellation?.refundStatus === 'processed' || false,
-        adminNotes: cancellation?.cancellationAdminNotes || null,
+        cancellationReviewed: cancelledOrderStatus.cancellationReviewed || false,
+        isRefundDone: refund?.refundStatus === 'processed' || false,
+        adminNotes: cancelledOrderStatus.cancellationAdminNotes || null,
         cancelReason: cancelledOrderStatus.cancelReason || null,
         items: order.orderItems.map((item: any) => ({
           name: item.product.name,
@@ -162,12 +162,12 @@ export const cancelledOrdersRouter = router({
       const { orderId, isRefundDone } = input;
 
       const refundStatus = isRefundDone ? 'processed' : 'none';
-      const result = await db.update(orderCancellationsTable)
+      const result = await db.update(refunds)
         .set({
           refundStatus,
           refundProcessedAt: isRefundDone ? new Date() : null,
         })
-        .where(eq(orderCancellationsTable.orderId, orderId))
+        .where(eq(refunds.orderId, orderId))
         .returning();
 
       if (result.length === 0) {

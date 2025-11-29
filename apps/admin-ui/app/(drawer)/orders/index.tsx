@@ -9,7 +9,7 @@ import { Entypo } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface OrderType {
-  id: number;
+  orderId: string;
   readableId: number;
   customerName: string | null;
   address: string;
@@ -33,6 +33,7 @@ interface OrderType {
 }
 
 const OrderItem = ({ order }: { order: OrderType }) => {
+  const id = order.orderId;
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -42,17 +43,17 @@ const OrderItem = ({ order }: { order: OrderType }) => {
   const queryClient = useQueryClient();
 
   const handleOrderPress = () => {
-    router.push(`/order-details/${order.id}` as any);
+    router.push(`/order-details/${order.orderId}` as any);
   };
 
   const handleMenuOption = () => {
     setMenuOpen(false);
-    router.push(`/order-details/${order.id}` as any);
+    router.push(`/order-details/${order.orderId}` as any);
   };
 
   const handleMarkPackaged = (isPackaged: boolean) => {
     updatePackagedMutation.mutate(
-      { orderId: order.id.toString(), isPackaged },
+      { orderId: order.orderId.toString(), isPackaged },
       {
         onSuccess: () => {
           setMenuOpen(false);
@@ -64,10 +65,10 @@ const OrderItem = ({ order }: { order: OrderType }) => {
 
   const handleMarkDelivered = (isDelivered: boolean) => {
     updateDeliveredMutation.mutate(
-      { orderId: order.id.toString(), isDelivered },
+      { orderId: order.orderId.toString(), isDelivered },
       {
         onSuccess: () => {
-          setMenuOpen(false);
+          setMenuOpen(false); 
           // queryClient.invalidateQueries({ queryKey: trpc.admin.order.getAl });
         },
       }
@@ -296,7 +297,7 @@ export default function Orders() {
     <>
       <MyFlatList
         data={orders}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.orderId}
         renderItem={({ item }) => <OrderItem order={item} />}
         onEndReached={() => {
           if (hasNextPage && !isFetchingNextPage) {

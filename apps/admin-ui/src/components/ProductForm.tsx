@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandl
 import { View, TouchableOpacity, Image } from 'react-native';
 import { Formik, FieldArray } from 'formik';
 import * as Yup from 'yup';
-import { MyTextInput, BottomDropdown, MyText, ImageUploader, ImageGalleryWithDelete, useTheme, DatePicker, tw, useFocusCallback } from 'common-ui';
+import { MyTextInput, BottomDropdown, MyText, ImageUploader, ImageGalleryWithDelete, useTheme, DatePicker, tw, useFocusCallback, Checkbox } from 'common-ui';
 import usePickImage from 'common-ui/src/components/use-pick-image';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { trpc } from '../trpc-client';
@@ -16,6 +16,7 @@ interface ProductFormData {
   storeId: number;
   price: string;
   marketPrice: string;
+  isSuspended: boolean;
   deals: Deal[];
   tagIds: number[];
 }
@@ -208,6 +209,15 @@ const ProductForm = forwardRef<ProductFormRef, ProductFormProps>(({
               onChangeText={handleChange('marketPrice')}
               style={{ marginBottom: 16 }}
             />
+
+            <View style={tw`flex-row items-center mb-4`}>
+              <Checkbox
+                checked={values.isSuspended}
+                onPress={() => setFieldValue('isSuspended', !values.isSuspended)}
+                style={tw`mr-3`}
+              />
+              <MyText style={tw`text-gray-700 font-medium`}>Suspend Product</MyText>
+            </View>
 
             <FieldArray name="deals">
               {({ push, remove, form }) => (

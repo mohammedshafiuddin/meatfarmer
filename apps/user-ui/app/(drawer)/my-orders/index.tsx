@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, FlatList, Image, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
-import { Entypo, MaterialIcons } from '@expo/vector-icons';
+import { View, FlatList, Image, TouchableOpacity, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { Entypo, MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { tw, useManualRefresh, MyText, MyFlatList, useMarkDataFetchers, REFUND_STATUS } from 'common-ui';
 import { BottomDialog } from 'common-ui';
@@ -49,7 +49,7 @@ export default function MyOrders() {
     page: currentPage,
     pageSize: pageSize,
   });
-  
+
   const cancelOrderMutation = trpc.user.order.cancelOrder.useMutation();
   const raiseComplaintMutation = trpc.user.complaint.raise.useMutation();
   const updateNotesMutation = trpc.user.order.updateUserNotes.useMutation({
@@ -192,7 +192,7 @@ export default function MyOrders() {
     if (!hasNextPage && allOrders.length > 0) {
       return (
         <View style={tw`py-6 items-center`}>
-          <MyText style={tw`text-gray-500 text-sm`}>No more orders to load</MyText>
+          <MyText style={tw`text-gray-400 text-xs`}>End of list</MyText>
         </View>
       );
     }
@@ -203,19 +203,19 @@ export default function MyOrders() {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'delivered':
-        return { bg: 'bg-green-100', text: 'text-green-800', icon: 'check-circle', color: '#16A34A' };
+        return { bg: 'bg-green-100', text: 'text-green-800', icon: 'check-circle', color: '#16A34A', border: 'border-green-200' };
       case 'cancelled':
-        return { bg: 'bg-red-100', text: 'text-red-800', icon: 'cancel', color: '#DC2626' };
+        return { bg: 'bg-red-100', text: 'text-red-800', icon: 'cancel', color: '#DC2626', border: 'border-red-200' };
       case 'pending':
-        return { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'schedule', color: '#D97706' };
+        return { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'schedule', color: '#D97706', border: 'border-yellow-200' };
       case 'processing':
-        return { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'hourglass-empty', color: '#2563EB' };
+        return { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'hourglass-empty', color: '#2563EB', border: 'border-blue-200' };
       case 'success':
-        return { bg: 'bg-green-100', text: 'text-green-800', icon: 'check-circle', color: '#16A34A' };
+        return { bg: 'bg-green-100', text: 'text-green-800', icon: 'check-circle', color: '#16A34A', border: 'border-green-200' };
       case 'failed':
-        return { bg: 'bg-red-100', text: 'text-red-800', icon: 'error', color: '#DC2626' };
+        return { bg: 'bg-red-100', text: 'text-red-800', icon: 'error', color: '#DC2626', border: 'border-red-200' };
       default:
-        return { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'info', color: '#6B7280' };
+        return { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'info', color: '#6B7280', border: 'border-gray-200' };
     }
   };
 
@@ -238,16 +238,17 @@ export default function MyOrders() {
     const statusConfig = getStatusColor(item.orderStatus);
     const totalAmount = item.totalAmount;
 
-  return (
-    <TouchableOpacity
-      style={tw`bg-white rounded-2xl p-6 mb-4 shadow-sm border border-gray-100`}
-      onPress={() => router.push(`/my-orders/${item.id}`)}
-    >
-      {/* Header with Order ID and Status */}
-        <View style={tw`flex-row justify-between items-start mb-4`}>
+    return (
+      <TouchableOpacity
+        style={tw`bg-white rounded-2xl mb-4 shadow-sm border border-gray-100 overflow-hidden`}
+        onPress={() => router.push(`/my-orders/${item.id}`)}
+        activeOpacity={0.9}
+      >
+        {/* Header */}
+        <View style={tw`flex-row justify-between items-center p-4 bg-gray-50 border-b border-gray-100`}>
           <View>
-            <MyText style={tw`text-lg font-bold text-gray-800`}>Order #{item.orderId}</MyText>
-            <MyText style={tw`text-sm text-gray-500 mt-1`}>
+            <MyText style={tw`text-base font-bold text-gray-900`}>Order #{item.orderId}</MyText>
+            <MyText style={tw`text-xs text-gray-500 mt-0.5`}>
               {new Date(item.orderDate).toLocaleDateString('en-IN', {
                 day: 'numeric',
                 month: 'short',
@@ -257,140 +258,152 @@ export default function MyOrders() {
               })}
             </MyText>
           </View>
-
-           <View style={tw`flex-row items-center`}>
-             {item.orderStatus === 'cancelled' && (
-               <View style={tw`flex-row items-center ${statusConfig.bg} px-3 py-1 rounded-full mr-3`}>
-                 <MaterialIcons name={statusConfig.icon as any} size={14} color={statusConfig.color} />
-                 <MyText style={tw`text-xs font-semibold ${statusConfig.text} ml-1 capitalize`}>
-                   {item.orderStatus}
-                 </MyText>
-               </View>
-             )}
-
-             <TouchableOpacity
-               onPress={() => { setMenuOrderId(item.orderId); setMenuDialogOpen(true); }}
-               style={tw`p-2 rounded-full bg-gray-50`}
-             >
-               <Entypo name="dots-three-vertical" size={16} color="#6B7280" />
-             </TouchableOpacity>
-           </View>
+          <View style={tw`flex-row items-center`}>
+            <View style={tw`flex-row items-center ${statusConfig.bg} px-2.5 py-1 rounded-full border ${statusConfig.border} mr-2`}>
+              <MaterialIcons name={statusConfig.icon as any} size={12} color={statusConfig.color} />
+              <MyText style={tw`text-xs font-bold ${statusConfig.text} ml-1 capitalize`}>
+                {item.orderStatus}
+              </MyText>
+            </View>
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                setMenuOrderId(item.orderId);
+                setMenuDialogOpen(true);
+              }}
+              style={tw`p-1.5 rounded-full bg-white border border-gray-200`}
+            >
+              <Entypo name="dots-three-vertical" size={14} color="#4B5563" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-         {/* Status Details */}
-         <View style={tw`flex-row justify-between mb-4`}>
-           <View style={tw`flex-row items-center`}>
-             <MaterialIcons name="local-shipping" size={16} color="#6B7280" />
-             <MyText style={tw`text-sm text-gray-600 ml-2 capitalize`}>
-               {item.deliveryStatus}
-             </MyText>
-           </View>
+        <View style={tw`p-4`}>
+          {/* Items Preview */}
+          <View style={tw`mb-4`}>
+            {item.items.slice(0, 2).map((product, index) => (
+              <View key={index} style={tw`flex-row items-center mb-3 last:mb-0`}>
+                <Image
+                  source={{ uri: product.image || undefined }}
+                  style={tw`w-12 h-12 rounded-lg bg-gray-100 border border-gray-100`}
+                  defaultSource={require('@/assets/logo.png')}
+                />
+                <View style={tw`flex-1 ml-3`}>
+                  <MyText style={tw`text-sm font-medium text-gray-800 leading-tight`} numberOfLines={1}>
+                    {product.productName}
+                  </MyText>
+                  <View style={tw`flex-row items-center mt-1`}>
+                    <MyText style={tw`text-xs text-gray-500`}>
+                      {product.quantity} x
+                    </MyText>
+                    <MyText style={tw`text-xs font-medium text-gray-900 ml-1`}>
+                      ₹{product.price}
+                    </MyText>
+                  </View>
+                </View>
+                <MyText style={tw`text-sm font-bold text-gray-900`}>
+                  ₹{product.amount}
+                </MyText>
+              </View>
+            ))}
 
-           {item.paymentMode !== 'COD' && (
-             <View style={tw`flex-row items-center`}>
-               <MaterialIcons name="payment" size={16} color="#6B7280" />
-               <MyText style={tw`text-sm text-gray-600 ml-2 capitalize`}>
-                 {item.paymentMode}
-               </MyText>
-             </View>
-           )}
-         </View>
+            {item.items.length > 2 && (
+              <MyText style={tw`text-xs text-blue-600 font-medium mt-1 ml-1`}>
+                +{item.items.length - 2} more items...
+              </MyText>
+            )}
+          </View>
 
-        {/* Payment Status */}
-        {item.paymentMode === 'Online' && (
-          <View style={tw`flex-row items-center justify-between mb-4`}>
-            <View style={tw`flex-row items-center`}>
-              <MaterialIcons name="credit-card" size={16} color="#6B7280" />
-              <MyText style={tw`text-sm text-gray-600 ml-2`}>Payment: </MyText>
-              <View style={tw`flex-row items-center ml-1 ${getStatusColor(item.paymentStatus).bg} px-2 py-1 rounded-full`}>
-                <MaterialIcons name={getStatusColor(item.paymentStatus).icon as any} size={12} color={getStatusColor(item.paymentStatus).color} />
-                <MyText style={tw`text-xs font-semibold ${getStatusColor(item.paymentStatus).text} ml-1 capitalize`}>
+          {/* Info Badges */}
+          <View style={tw`flex-row flex-wrap gap-2 mb-4`}>
+            <View style={tw`flex-row items-center bg-gray-50 px-2 py-1 rounded-md border border-gray-100`}>
+              <MaterialIcons name="local-shipping" size={12} color="#6B7280" />
+              <MyText style={tw`text-xs text-gray-600 ml-1 capitalize`}>
+                {item.deliveryStatus}
+              </MyText>
+            </View>
+            {item.paymentMode !== 'COD' && (
+              <View style={tw`flex-row items-center bg-gray-50 px-2 py-1 rounded-md border border-gray-100`}>
+                <MaterialIcons name="payment" size={12} color="#6B7280" />
+                <MyText style={tw`text-xs text-gray-600 ml-1 capitalize`}>
+                  {item.paymentMode}
+                </MyText>
+              </View>
+            )}
+            {item.paymentMode === 'Online' && (
+              <View style={tw`flex-row items-center ${getStatusColor(item.paymentStatus).bg} px-2 py-1 rounded-md border ${getStatusColor(item.paymentStatus).border}`}>
+                <MyText style={tw`text-xs font-medium ${getStatusColor(item.paymentStatus).text} capitalize`}>
                   {item.paymentStatus}
                 </MyText>
               </View>
+            )}
+          </View>
+
+          {/* Alerts/Notes */}
+          {item.userNotes && (
+            <View style={tw`bg-blue-50 p-3 rounded-lg mb-3 border border-blue-100`}>
+              <View style={tw`flex-row items-center mb-1`}>
+                <MaterialIcons name="note" size={14} color="#2563EB" />
+                <MyText style={tw`text-xs text-blue-700 font-bold ml-1`}>Note:</MyText>
+              </View>
+              <MyText style={tw`text-xs text-blue-600 leading-relaxed`}>{item.userNotes}</MyText>
             </View>
-             {(item.paymentStatus === 'pending' || item.paymentStatus === 'failed') && (
-               <TouchableOpacity onPress={() => handleRetryPayment(item.id)} disabled={createRazorpayOrderMutation.isPending}>
-                 <MyText style={tw`text-pink1 font-medium ${createRazorpayOrderMutation.isPending ? 'opacity-50' : ''}`}>
-                   {createRazorpayOrderMutation.isPending ? 'Retrying...' : 'Retry'}
-                 </MyText>
-               </TouchableOpacity>
-             )}
-          </View>
-        )}
+          )}
 
-        {/* User Notes */}
-        {item.userNotes && (
-          <View style={tw`bg-blue-50 p-3 rounded-lg mb-4`}>
-            <MyText style={tw`text-sm text-blue-700 font-medium`}>Special Instructions:</MyText>
-            <MyText style={tw`text-sm text-blue-600 mt-1`}>{item.userNotes}</MyText>
-          </View>
-        )}
-
-        {/* Cancel/Refund Info */}
-        {item.cancelReason && (
-          <View style={tw`bg-red-50 p-3 rounded-lg mb-4`}>
-            <MyText style={tw`text-sm text-red-700 font-medium`}>Cancel Reason:</MyText>
-            <MyText style={tw`text-sm text-red-600 mt-1`}>{item.cancelReason}</MyText>
-            {item.orderStatus === 'cancelled' && item.refundStatus && (
-              <View style={tw`flex-row items-center mt-2`}>
-                <View style={tw`flex-row items-center ${getRefundStatusColor(item.refundStatus).bg} px-2 py-1 rounded-full`}>
+          {item.cancelReason && (
+            <View style={tw`bg-red-50 p-3 rounded-lg mb-3 border border-red-100`}>
+              <View style={tw`flex-row items-center mb-1`}>
+                <MaterialIcons name="info" size={14} color="#DC2626" />
+                <MyText style={tw`text-xs text-red-700 font-bold ml-1`}>Cancelled:</MyText>
+              </View>
+              <MyText style={tw`text-xs text-red-600 leading-relaxed`}>{item.cancelReason}</MyText>
+              {item.orderStatus === 'cancelled' && item.refundStatus && (
+                <View style={tw`flex-row items-center mt-2 bg-white self-start px-2 py-1 rounded border border-red-100`}>
                   <MaterialIcons name={getRefundStatusColor(item.refundStatus).icon as any} size={12} color={getRefundStatusColor(item.refundStatus).color} />
-                  <MyText style={tw`text-xs font-semibold ${getRefundStatusColor(item.refundStatus).text} ml-1 capitalize`}>
+                  <MyText style={tw`text-xs font-medium ${getRefundStatusColor(item.refundStatus).text} ml-1 capitalize`}>
                     Refund {item.refundStatus === REFUND_STATUS.PENDING ? 'Pending' : item.refundStatus === REFUND_STATUS.NOT_APPLICABLE ? 'N/A' : item.refundStatus === REFUND_STATUS.PROCESSING ? 'Processing' : 'Success'}
                   </MyText>
                 </View>
+              )}
+            </View>
+          )}
+
+          {/* Footer Actions */}
+          <View style={tw`flex-row justify-between items-center pt-3 border-t border-gray-100`}>
+            <View>
+              <MyText style={tw`text-xs text-gray-500`}>Total Amount</MyText>
+              <MyText style={tw`text-lg font-bold text-gray-900`}>₹{totalAmount}</MyText>
+            </View>
+
+            {(item.paymentMode === 'Online' && (item.paymentStatus === 'pending' || item.paymentStatus === 'failed')) ? (
+              <TouchableOpacity
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleRetryPayment(item.id);
+                }}
+                disabled={createRazorpayOrderMutation.isPending}
+                style={tw`bg-pink-600 px-4 py-2 rounded-lg shadow-sm flex-row items-center`}
+              >
+                {createRazorpayOrderMutation.isPending ? (
+                  <ActivityIndicator size="small" color="white" style={tw`mr-2`} />
+                ) : (
+                  <MaterialIcons name="refresh" size={16} color="white" style={tw`mr-1`} />
+                )}
+                <MyText style={tw`text-white font-bold text-sm`}>
+                  Retry Payment
+                </MyText>
+              </TouchableOpacity>
+            ) : (
+              <View style={tw`flex-row items-center`}>
+                <MyText style={tw`text-sm text-blue-600 font-medium mr-1`}>View Details</MyText>
+                <MaterialIcons name="chevron-right" size={16} color="#2563EB" />
               </View>
             )}
           </View>
-        )}
-
-        {/* Items Preview */}
-        <View style={tw`mb-4`}>
-          <MyText style={tw`text-sm font-semibold text-gray-800 mb-2`}>Items</MyText>
-          {item.items.slice(0, 2).map((product, index) => (
-            <View key={index} style={tw`flex-row items-center mb-2`}>
-              <Image
-                source={{ uri: product.image || undefined }}
-                style={tw`w-10 h-10 rounded-lg mr-3 bg-gray-100`}
-                defaultSource={require('@/assets/logo.png')}
-              />
-              <View style={tw`flex-1`}>
-                <MyText style={tw`text-sm font-medium text-gray-800`} numberOfLines={1}>
-                  {product.productName}
-                </MyText>
-                <MyText style={tw`text-xs text-gray-500`}>
-                  Qty: {product.quantity} × ₹{product.price}
-                </MyText>
-              </View>
-              <MyText style={tw`text-sm font-semibold text-gray-800`}>
-                ₹{product.amount}
-              </MyText>
-            </View>
-          ))}
-
-          {item.items.length > 2 && (
-            <TouchableOpacity
-              onPress={() => openDialog(item.items)}
-              style={tw`flex-row items-center mt-2`}
-            >
-              <MyText style={tw`text-sm text-blue-600 font-medium`}>
-                +{item.items.length - 2} more items
-              </MyText>
-              <MaterialIcons name="chevron-right" size={16} color="#2563EB" />
-            </TouchableOpacity>
-          )}
         </View>
-
-        {/* Total Amount */}
-        <View style={tw`flex-row justify-between items-center pt-4 border-t border-gray-100`}>
-          <MyText style={tw`text-lg font-bold text-gray-800`}>Total</MyText>
-          <MyText style={tw`text-xl font-bold text-gray-800`}>₹{totalAmount}</MyText>
-        </View>
-
-    </TouchableOpacity>
-  );
-}, []);
+      </TouchableOpacity>
+    );
+  }, []);
 
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
@@ -472,37 +485,36 @@ export default function MyOrders() {
 
   if (isLoading && currentPage === 1) {
     return (
-      <View style={tw`flex-1 justify-center items-center`}>
+      <View style={tw`flex-1 justify-center items-center bg-gray-50`}>
         <ActivityIndicator size="large" color="#3B82F6" />
-        <MyText style={tw`text-gray-600 mt-4`}>Loading your orders...</MyText>
+        <MyText style={tw`text-gray-500 mt-4 font-medium`}>Loading your orders...</MyText>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={tw`flex-1 justify-center items-center`}>
-        <MaterialIcons name="error-outline" size={48} color="#EF4444" />
-        <MyText style={tw`text-gray-800 text-lg font-semibold mt-4`}>Unable to load orders</MyText>
-        <MyText style={tw`text-gray-600 text-center mt-2`}>Please check your connection and try again</MyText>
+      <View style={tw`flex-1 justify-center items-center bg-gray-50 p-6`}>
+        <View style={tw`bg-white p-6 rounded-full shadow-sm mb-4`}>
+          <MaterialIcons name="error-outline" size={48} color="#EF4444" />
+        </View>
+        <MyText style={tw`text-gray-900 text-xl font-bold mt-2`}>Unable to load orders</MyText>
+        <MyText style={tw`text-gray-500 text-center mt-2 mb-6`}>Please check your connection and try again</MyText>
         <TouchableOpacity
           onPress={() => refetch()}
-          style={tw`bg-blue-500 px-6 py-3 rounded-lg mt-4`}
+          style={tw`bg-blue-600 px-8 py-3 rounded-full shadow-md`}
         >
-          <MyText style={tw`text-white font-semibold`}>Retry</MyText>
+          <MyText style={tw`text-white font-bold`}>Retry</MyText>
         </TouchableOpacity>
       </View>
     );
   }
 
-
-
   return (
-    <View style={tw`flex-1`}>
-
+    <View style={tw`flex-1 bg-gray-50`}>
       <MyFlatList
-        style={tw`flex-1 bg-white`}
-        contentContainerStyle={tw`px-4 pb-6`}
+        style={tw`flex-1`}
+        contentContainerStyle={tw`px-4 py-6`}
         data={allOrders}
         renderItem={({ item }) => renderOrder({ item })}
         keyExtractor={(item) => item.orderId}
@@ -511,159 +523,209 @@ export default function MyOrders() {
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={
-          <View style={tw`flex-1 justify-center items-center py-12`}>
-            <MaterialIcons name="shopping-bag" size={64} color="#D1D5DB" />
-            <MyText style={tw`text-gray-500 text-lg font-semibold mt-4`}>No orders yet</MyText>
-            <MyText style={tw`text-gray-400 text-center mt-2`}>Your order history will appear here</MyText>
+          <View style={tw`flex-1 justify-center items-center py-20`}>
+            <View style={tw`bg-white p-6 rounded-full shadow-sm mb-4`}>
+              <MaterialIcons name="shopping-bag" size={64} color="#E5E7EB" />
+            </View>
+            <MyText style={tw`text-gray-900 text-lg font-bold mt-2`}>No orders yet</MyText>
+            <MyText style={tw`text-gray-500 text-center mt-2`}>Your order history will appear here</MyText>
+            <TouchableOpacity
+              style={tw`mt-6 bg-blue-600 px-6 py-3 rounded-full`}
+              onPress={() => router.push('/(drawer)/dashboard')}
+            >
+              <MyText style={tw`text-white font-bold`}>Start Shopping</MyText>
+            </TouchableOpacity>
           </View>
         }
       />
 
-        {/* Menu Dialog */}
-        <BottomDialog open={menuDialogOpen} onClose={() => setMenuDialogOpen(false)}>
-          <View style={tw`p-6`}>
-            <MyText style={tw`text-xl font-bold text-gray-800 mb-6`}>Order Options</MyText>
-             <View style={tw`space-y-4`}>
-               <TouchableOpacity
-                 style={tw`px-4 py-3 border-b border-gray-200 flex-row items-center`}
-                  onPress={() => {
-                    const order = allOrders.find(o => o.orderId === menuOrderId);
-                    if (order) {
-                      setEditNotes(order.userNotes || '');
-                      setEditNotesOrderId(menuOrderId);
-                      setEditNotesDialogOpen(true);
-                    }
-                  }}
-               >
-                 <MaterialIcons name="edit" size={20} color="#6B7280" style={tw`mr-3`} />
-                 <MyText style={tw`text-gray-800 font-medium`}>Edit Notes</MyText>
-               </TouchableOpacity>
-
-               <TouchableOpacity
-                 style={tw`px-4 py-3 border-b border-gray-200 flex-row items-center`}
-                 onPress={() => {
-                   setComplaintOrderId(menuOrderId);
-                   setComplaintDialogOpen(true);
-                 }}
-               >
-                 <MaterialIcons name="report-problem" size={20} color="#6B7280" style={tw`mr-3`} />
-                 <MyText style={tw`text-gray-800 font-medium`}>Raise Complaint</MyText>
-               </TouchableOpacity>
-
-               <TouchableOpacity
-                 style={tw`px-4 py-3 border-b border-gray-200 flex-row items-center`}
-                 onPress={() => {
-                   setCancelOrderId(menuOrderId);
-                   setCancelDialogOpen(true);
-                 }}
-               >
-                 <MaterialIcons name="cancel" size={20} color="#6B7280" style={tw`mr-3`} />
-                 <MyText style={tw`text-gray-800 font-medium`}>Cancel Order</MyText>
-               </TouchableOpacity>
-             </View>
+      {/* Menu Dialog */}
+      <BottomDialog open={menuDialogOpen} onClose={() => setMenuDialogOpen(false)}>
+        <View style={tw`pb-8 pt-2 px-4`}>
+          {/* Handle */}
+          <View style={tw`items-center mb-6`}>
+            <View style={tw`w-12 h-1.5 bg-gray-200 rounded-full mb-4`} />
+            <MyText style={tw`text-lg font-bold text-gray-900`}>Order Options</MyText>
+            <MyText style={tw`text-sm text-gray-500`}>Select an action for Order #{menuOrderId}</MyText>
           </View>
-        </BottomDialog>
 
-        {/* Edit Notes Dialog */}
-        <BottomDialog open={editNotesDialogOpen} onClose={() => setEditNotesDialogOpen(false)}>
+          <View style={tw`space-y-3`}>
+            <TouchableOpacity
+              style={tw`flex-row items-center p-4 bg-white border border-gray-100 rounded-xl shadow-sm`}
+              onPress={() => {
+                const order = allOrders.find(o => o.orderId === menuOrderId);
+                if (order) {
+                  setEditNotes(order.userNotes || '');
+                  setEditNotesOrderId(menuOrderId);
+                  setEditNotesDialogOpen(true);
+                }
+              }}
+            >
+              <View style={tw`w-10 h-10 rounded-full bg-blue-50 items-center justify-center mr-4`}>
+                <MaterialIcons name="edit" size={20} color="#2563EB" />
+              </View>
+              <View style={tw`flex-1`}>
+                <MyText style={tw`text-gray-900 font-semibold text-base`}>Edit Notes</MyText>
+                <MyText style={tw`text-gray-500 text-xs`}>Add special instructions</MyText>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={tw`flex-row items-center p-4 bg-white border border-gray-100 rounded-xl shadow-sm`}
+              onPress={() => {
+                setComplaintOrderId(menuOrderId);
+                setComplaintDialogOpen(true);
+              }}
+            >
+              <View style={tw`w-10 h-10 rounded-full bg-yellow-50 items-center justify-center mr-4`}>
+                <MaterialIcons name="report-problem" size={20} color="#D97706" />
+              </View>
+              <View style={tw`flex-1`}>
+                <MyText style={tw`text-gray-900 font-semibold text-base`}>Raise Complaint</MyText>
+                <MyText style={tw`text-gray-500 text-xs`}>Report an issue with this order</MyText>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={tw`flex-row items-center p-4 bg-white border border-gray-100 rounded-xl shadow-sm`}
+              onPress={() => {
+                setCancelOrderId(menuOrderId);
+                setCancelDialogOpen(true);
+              }}
+            >
+              <View style={tw`w-10 h-10 rounded-full bg-red-50 items-center justify-center mr-4`}>
+                <MaterialIcons name="cancel" size={20} color="#DC2626" />
+              </View>
+              <View style={tw`flex-1`}>
+                <MyText style={tw`text-gray-900 font-semibold text-base`}>Cancel Order</MyText>
+                <MyText style={tw`text-gray-500 text-xs`}>Request order cancellation</MyText>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </BottomDialog>
+
+      {/* Edit Notes Dialog */}
+      <BottomDialog open={editNotesDialogOpen} onClose={() => setEditNotesDialogOpen(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={tw`p-6`}>
-            <MyText style={tw`text-xl font-bold text-gray-800 mb-4`}>Edit Special Instructions</MyText>
+            <View style={tw`flex-row justify-between items-center mb-4`}>
+              <MyText style={tw`text-xl font-bold text-gray-900`}>Edit Instructions</MyText>
+              <TouchableOpacity onPress={() => setEditNotesDialogOpen(false)}>
+                <MaterialIcons name="close" size={24} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+
             <TextInput
-              style={tw`border border-gray-300 rounded-lg p-3 min-h-20 text-base mb-4`}
+              style={tw`bg-gray-50 border border-gray-200 rounded-xl p-4 min-h-32 text-base text-gray-800 mb-6`}
               value={editNotes}
               onChangeText={setEditNotes}
-              placeholder="Any special delivery instructions..."
+              placeholder="Add special delivery instructions here..."
+              placeholderTextColor="#9CA3AF"
               multiline
               numberOfLines={4}
               textAlignVertical="top"
             />
-            <View style={tw`flex-row space-x-4`}>
-              <TouchableOpacity
-                style={tw`flex-1 bg-gray-500 p-3 rounded-lg items-center`}
-                onPress={() => setEditNotesDialogOpen(false)}
-              >
-                <MyText style={tw`text-white font-medium`}>Cancel</MyText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={tw`flex-1 bg-blue-500 p-3 rounded-lg items-center`}
-                onPress={handleEditNotes}
-                disabled={updateNotesMutation.isPending}
-              >
-                <MyText style={tw`text-white font-medium`}>
-                  {updateNotesMutation.isPending ? 'Saving...' : 'Save'}
-                </MyText>
+
+            <TouchableOpacity
+              style={tw`bg-blue-600 py-4 rounded-xl shadow-sm items-center ${updateNotesMutation.isPending ? 'opacity-70' : ''}`}
+              onPress={handleEditNotes}
+              disabled={updateNotesMutation.isPending}
+            >
+              {updateNotesMutation.isPending ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <MyText style={tw`text-white font-bold text-lg`}>Save Instructions</MyText>
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </BottomDialog>
+
+      {/* Cancel Order Dialog */}
+      <BottomDialog open={cancelDialogOpen} onClose={() => setCancelDialogOpen(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={tw`p-6`}>
+            <View style={tw`flex-row justify-between items-center mb-4`}>
+              <MyText style={tw`text-xl font-bold text-gray-900`}>Cancel Order</MyText>
+              <TouchableOpacity onPress={() => setCancelDialogOpen(false)}>
+                <MaterialIcons name="close" size={24} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
-          </View>
-        </BottomDialog>
 
-        {/* Cancel Order Dialog */}
-        <BottomDialog open={cancelDialogOpen} onClose={() => setCancelDialogOpen(false)}>
-          <View style={tw`p-6`}>
-            <MyText style={tw`text-xl font-bold text-gray-800 mb-4`}>Cancel Order</MyText>
-            <MyText style={tw`text-gray-600 mb-4`}>Please provide a reason for cancellation:</MyText>
+            <View style={tw`bg-red-50 p-4 rounded-xl mb-4 border border-red-100`}>
+              <MyText style={tw`text-red-800 text-sm`}>
+                Are you sure you want to cancel this order? This action cannot be undone.
+              </MyText>
+            </View>
+
+            <MyText style={tw`text-gray-700 font-medium mb-2`}>Reason for cancellation</MyText>
             <TextInput
-              style={tw`border border-gray-300 rounded-lg p-3 min-h-20 text-base mb-4`}
+              style={tw`bg-gray-50 border border-gray-200 rounded-xl p-4 min-h-24 text-base text-gray-800 mb-6`}
               value={cancelReason}
               onChangeText={setCancelReason}
-              placeholder="Reason for cancellation..."
+              placeholder="Please tell us why you are cancelling..."
+              placeholderTextColor="#9CA3AF"
               multiline
               numberOfLines={3}
               textAlignVertical="top"
             />
-            <View style={tw`flex-row space-x-4`}>
-              <TouchableOpacity
-                style={tw`flex-1 bg-gray-500 p-3 rounded-lg items-center`}
-                onPress={() => setCancelDialogOpen(false)}
-              >
-                <MyText style={tw`text-white font-medium`}>Cancel</MyText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={tw`flex-1 bg-red-500 p-3 rounded-lg items-center`}
-                onPress={handleCancelOrder}
-                disabled={cancelOrderMutation.isPending}
-              >
-                <MyText style={tw`text-white font-medium`}>
-                  {cancelOrderMutation.isPending ? 'Cancelling...' : 'Confirm Cancel'}
-                </MyText>
+
+            <TouchableOpacity
+              style={tw`bg-red-600 py-4 rounded-xl shadow-sm items-center ${cancelOrderMutation.isPending ? 'opacity-70' : ''}`}
+              onPress={handleCancelOrder}
+              disabled={cancelOrderMutation.isPending}
+            >
+              {cancelOrderMutation.isPending ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <MyText style={tw`text-white font-bold text-lg`}>Confirm Cancellation</MyText>
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </BottomDialog>
+
+      {/* Raise Complaint Dialog */}
+      <BottomDialog open={complaintDialogOpen} onClose={() => setComplaintDialogOpen(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={tw`p-6`}>
+            <View style={tw`flex-row justify-between items-center mb-4`}>
+              <MyText style={tw`text-xl font-bold text-gray-900`}>Raise Complaint</MyText>
+              <TouchableOpacity onPress={() => setComplaintDialogOpen(false)}>
+                <MaterialIcons name="close" size={24} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
-          </View>
-        </BottomDialog>
 
-        {/* Raise Complaint Dialog */}
-        <BottomDialog open={complaintDialogOpen} onClose={() => setComplaintDialogOpen(false)}>
-          <View style={tw`p-6`}>
-            <MyText style={tw`text-xl font-bold text-gray-800 mb-4`}>Raise Complaint</MyText>
-            <MyText style={tw`text-gray-600 mb-4`}>Please describe your complaint:</MyText>
+            <MyText style={tw`text-gray-700 font-medium mb-2`}>Describe the issue</MyText>
             <TextInput
-              style={tw`border border-gray-300 rounded-lg p-3 min-h-20 text-base mb-4`}
+              style={tw`bg-gray-50 border border-gray-200 rounded-xl p-4 min-h-32 text-base text-gray-800 mb-6`}
               value={complaintBody}
               onChangeText={setComplaintBody}
-              placeholder="Describe your complaint..."
+              placeholder="Tell us what went wrong..."
+              placeholderTextColor="#9CA3AF"
               multiline
               numberOfLines={4}
               textAlignVertical="top"
             />
-            <View style={tw`flex-row space-x-4`}>
-              <TouchableOpacity
-                style={tw`flex-1 bg-gray-500 p-3 rounded-lg items-center`}
-                onPress={() => setComplaintDialogOpen(false)}
-              >
-                <MyText style={tw`text-white font-medium`}>Cancel</MyText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={tw`flex-1 bg-yellow-500 p-3 rounded-lg items-center`}
-                onPress={handleRaiseComplaint}
-                disabled={raiseComplaintMutation.isPending}
-              >
-                <MyText style={tw`text-white font-medium`}>
-                  {raiseComplaintMutation.isPending ? 'Submitting...' : 'Submit Complaint'}
-                </MyText>
-              </TouchableOpacity>
-            </View>
+
+            <TouchableOpacity
+              style={tw`bg-yellow-500 py-4 rounded-xl shadow-sm items-center ${raiseComplaintMutation.isPending ? 'opacity-70' : ''}`}
+              onPress={handleRaiseComplaint}
+              disabled={raiseComplaintMutation.isPending}
+            >
+              {raiseComplaintMutation.isPending ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <MyText style={tw`text-white font-bold text-lg`}>Submit Complaint</MyText>
+              )}
+            </TouchableOpacity>
           </View>
-        </BottomDialog>
+        </KeyboardAvoidingView>
+      </BottomDialog>
     </View>
   );
 }

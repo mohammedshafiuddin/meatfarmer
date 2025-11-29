@@ -1,0 +1,2 @@
+ALTER TABLE "mf"."product_info" ADD COLUMN "is_suspended" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "mf"."user_details" ADD COLUMN "is_suspended" boolean DEFAULT false NOT NULL;

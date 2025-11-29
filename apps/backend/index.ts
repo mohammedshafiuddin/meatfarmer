@@ -6,10 +6,13 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { db } from './src/db/db_index';
+import { staffUsers, userDetails } from './src/db/schema';
+import { eq } from 'drizzle-orm';
 import mainRouter from './src/main-router';
 import initFunc from './src/lib/init';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { appRouter } from './src/trpc/router';
+import { TRPCError } from '@trpc/server';
 import jwt from 'jsonwebtoken'
 import signedUrlCache from 'src/lib/signed-url-cache';
 import { seed } from 'src/db/seed';
@@ -72,10 +75,6 @@ app.use('/api/trpc', createExpressMiddleware({
         // Check if this is a staff token (has staffId)
         if (decoded.staffId) {
           // This is a staff token, verify staff exists
-          const { db } = await import('./src/db/db_index');
-          const { staffUsers } = await import('./src/db/schema');
-          const { eq } = await import('drizzle-orm');
-
           const staff = await db.query.staffUsers.findFirst({
             where: eq(staffUsers.id, decoded.staffId),
           });
@@ -90,6 +89,18 @@ app.use('/api/trpc', createExpressMiddleware({
         } else {
           // This is a regular user token
           user = decoded;
+
+          // Check if user is suspended
+          const details = await db.query.userDetails.findFirst({
+            where: eq(userDetails.userId, user.userId),
+          });
+
+          if (details?.isSuspended) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Account suspended',
+            });
+          }
         }
       } catch (err) {
         // Invalid token, both user and staffUser remain null

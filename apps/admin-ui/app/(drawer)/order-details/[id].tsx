@@ -153,30 +153,10 @@ export default function OrderDetails() {
   const statusStyle = getStatusColor(order.status);
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
-      <StatusBar barStyle="dark-content" />
+    <AppContainer>
 
-      {/* Header Bar */}
       <View
-        style={tw`bg-white px-4 pt-${Platform.OS === "ios" ? "12" : "4"
-          } pb-4 flex-row items-center justify-between border-b border-gray-100 shadow-sm z-10`}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={tw`w-10 h-10 bg-gray-50 rounded-full items-center justify-center`}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#374151" />
-        </TouchableOpacity>
-        <MyText style={tw`text-lg font-bold text-gray-900`}>
-          Order Details
-        </MyText>
-        <View style={tw`w-10`} />
-      </View>
-
-      <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={tw`p-4 pb-24`}
-        showsVerticalScrollIndicator={false}
       >
         {/* Order ID & Status Card */}
         <View
@@ -518,7 +498,7 @@ export default function OrderDetails() {
             )}
           </View>
         )}
-      </ScrollView>
+      </View>
 
       {/* Bottom Action Bar */}
       <View
@@ -691,7 +671,7 @@ export default function OrderDetails() {
           </View>
         </View>
       </BottomDialog>
-    </View>
+    </AppContainer>
   );
 }
 

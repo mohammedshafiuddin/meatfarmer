@@ -113,6 +113,11 @@ export const authRouter = router({
         throw new ApiError('Invalid credentials', 401);
       }
 
+      // Check if user is suspended
+      if (userDetail?.isSuspended) {
+        throw new ApiError('Account suspended', 403);
+      }
+
       const token = generateToken(foundUser.id);
 
       const response: AuthResponse = {
@@ -260,21 +265,32 @@ export const authRouter = router({
         where: eq(users.mobile, input.mobile),
       });
 
-       // If user doesn't exist, create one
-       if (!user) {
-         const [newUser] = await db
-           .insert(users)
-           .values({
-             name: null,
-             email: null,
-             mobile: input.mobile,
-           })
-           .returning();
-         user = newUser;
-       }
+        // If user doesn't exist, create one
+        if (!user) {
+          const [newUser] = await db
+            .insert(users)
+            .values({
+              name: null,
+              email: null,
+              mobile: input.mobile,
+            })
+            .returning();
+          user = newUser;
+        }
 
-      // Generate JWT
-      const token = generateToken(user.id);
+        // Check if user is suspended (only if userDetails exists)
+        const [userDetail] = await db
+          .select()
+          .from(userDetails)
+          .where(eq(userDetails.userId, user.id))
+          .limit(1);
+
+        if (userDetail?.isSuspended) {
+          throw new ApiError('Account suspended', 403);
+        }
+
+        // Generate JWT
+        const token = generateToken(user.id);
 
       return {
         success: true,

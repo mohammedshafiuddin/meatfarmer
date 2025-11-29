@@ -5,17 +5,11 @@ import {
   orders,
   orderStatus,
   payments,
-  orderCancellationsTable,
+  refunds,
 } from "../../db/schema";
 import { and, eq } from "drizzle-orm";
 import { ApiError } from "../../lib/api-error";
-import Razorpay from "razorpay";
-import { razorpayId, razorpaySecret } from "../../lib/env-exporter";
-
-const razorpayInstance = new Razorpay({
-  key_id: razorpayId,
-  key_secret: razorpaySecret,
-});
+import { RazorpayPaymentService } from "../../lib/payments-utils";
 
 const initiateRefundSchema = z
   .object({
@@ -93,31 +87,28 @@ export const adminPaymentsRouter = router({
 
         const payload = payment.payload as any;
         // Initiate Razorpay refund
-        const razorpayRefund = await razorpayInstance.payments.refund(
+        const razorpayRefund = await RazorpayPaymentService.initiateRefund(
           payload.payment_id,
-          {
-            amount: Math.round(calculatedRefundAmount * 100), // Convert to paisa
-          }
+          Math.round(calculatedRefundAmount * 100) // Convert to paisa
         );
 
         
 
         // Update or insert refund record
         await db
-          .insert(orderCancellationsTable)
+          .insert(refunds)
           .values({
             orderId,
-            userId: order.userId,
             refundAmount: calculatedRefundAmount.toString(),
             refundStatus: "initiated",
-            razorpayRefundId: razorpayRefund.id,
+            merchantRefundId: razorpayRefund.id,
           })
           .onConflictDoUpdate({
-            target: orderCancellationsTable.orderId,
+            target: refunds.orderId,
             set: {
               refundAmount: calculatedRefundAmount.toString(),
               refundStatus: "initiated",
-              razorpayRefundId: razorpayRefund.id,
+              merchantRefundId: razorpayRefund.id,
               refundProcessedAt: null,
             },
           });

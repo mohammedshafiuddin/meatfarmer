@@ -2,13 +2,13 @@
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { orders, payments, orderStatus, orderCancellationsTable } from '../../db/schema';
+import { orders, payments, orderStatus } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { ApiError } from '../../lib/api-error';
 import crypto from 'crypto';
 import { razorpayId, razorpaySecret } from "../../lib/env-exporter";
 import { DiskPersistedSet } from "src/lib/disk-persisted-set";
-import { createRazorpayOrder, insertPaymentRecord, razorpayInstance } from "../../lib/payments-utils";
+import { RazorpayPaymentService } from "../../lib/payments-utils";
 
 
 
@@ -47,9 +47,9 @@ export const paymentRouter = router({
          };
        }
 
-        // Create Razorpay order and insert payment record
-        const razorpayOrder = await createRazorpayOrder(parseInt(orderId), order.totalAmount);
-        await insertPaymentRecord(parseInt(orderId), razorpayOrder);
+         // Create Razorpay order and insert payment record
+         const razorpayOrder = await RazorpayPaymentService.createOrder(parseInt(orderId), order.totalAmount);
+         await RazorpayPaymentService.insertPaymentRecord(parseInt(orderId), razorpayOrder);
 
       return {
         razorpayOrderId: razorpayOrder.id,

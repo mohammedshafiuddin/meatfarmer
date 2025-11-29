@@ -2,7 +2,7 @@ import { router, publicProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { storeInfo, productInfo, units } from '../../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { generateSignedUrlsFromS3Urls } from '../../lib/s3-client';
 import { ApiError } from '../../lib/api-error';
 
@@ -42,7 +42,7 @@ export const storesRouter = router({
         })
         .from(productInfo)
         .innerJoin(units, eq(productInfo.unitId, units.id))
-        .where(eq(productInfo.storeId, storeId));
+        .where(and(eq(productInfo.storeId, storeId), eq(productInfo.isSuspended, false)));
 
       // Generate signed URLs for product images
       const productsWithSignedUrls = await Promise.all(

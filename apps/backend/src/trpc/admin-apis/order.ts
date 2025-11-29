@@ -1,9 +1,10 @@
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { orders, orderItems, orderStatus, users, addresses, productInfo, units, deliverySlotInfo, payments, paymentInfoTable, orderCancellationsTable, coupons, couponUsage } from '../../db/schema';
+import { orders, orderItems, orderStatus, users, addresses, productInfo, units, deliverySlotInfo, payments, paymentInfoTable, refunds, coupons, couponUsage } from '../../db/schema';
 import { eq, and, gte, lt, desc, SQL } from 'drizzle-orm';
 import dayjs from 'dayjs';
+import { ApiError } from '../../lib/api-error';
 import { sendOrderPackagedNotification, sendOrderDeliveredNotification } from '../../lib/notif-job';
 
 const updateOrderNotesSchema = z.object({
@@ -107,11 +108,11 @@ export const orderRouter = router({
          status = 'delivered';
        }
 
-       // Get cancellation details if order is cancelled
-      let cancellation = null;
+        // Get refund details if order is cancelled
+      let refund = null;
       if (status === 'cancelled') {
-        cancellation = await db.query.orderCancellationsTable.findFirst({
-          where: eq(orderCancellationsTable.orderId, orderId),
+        refund = await db.query.refunds.findFirst({
+          where: eq(refunds.orderId, orderId),
         });
       }
 
@@ -162,8 +163,8 @@ export const orderRouter = router({
         } : null,
         // Cancellation details (only present for cancelled orders)
         cancelReason: statusRecord?.cancelReason || null,
-        cancellationReviewed: cancellation?.cancellationReviewed || false,
-        isRefundDone: cancellation?.refundStatus === 'processed' || false,
+        cancellationReviewed: statusRecord?.cancellationReviewed || false,
+        isRefundDone: refund?.refundStatus === 'processed' || false,
       };
     }),
 
@@ -191,7 +192,7 @@ export const orderRouter = router({
           payment: true,
           paymentInfo: true,
           orderStatus: true,        // Include in main query
-          orderCancellations: true, // Include in main query
+          refunds: true, // Include in main query
         },
       });
 
@@ -246,8 +247,8 @@ export const orderRouter = router({
          status = 'delivered';
        }
 
-       // Always include cancellation data (will be null/undefined if not cancelled)
-      const cancellation = orderData.orderCancellations?.[0];
+        // Always include refund data (will be null/undefined if not cancelled)
+       const refund = orderData.refunds?.[0];
 
       return {
         id: orderData.id,
@@ -294,12 +295,12 @@ export const orderRouter = router({
           gateway: orderData.paymentInfo.gateway,
           merchantOrderId: orderData.paymentInfo.merchantOrderId,
         } : null,
-        // Cancellation details (always included, null if not cancelled)
-         cancelReason: statusRecord?.cancelReason || null,
-         cancellationReviewed: cancellation?.cancellationReviewed || false,
-         isRefundDone: cancellation?.refundStatus === 'processed' || false,
-         refundStatus: cancellation?.refundStatus as RefundStatus,
-         refundAmount: cancellation?.refundAmount ? parseFloat(cancellation.refundAmount.toString()) : null,
+         // Cancellation details (always included, null if not cancelled)
+          cancelReason: statusRecord?.cancelReason || null,
+          cancellationReviewed: statusRecord?.cancellationReviewed || false,
+          isRefundDone: refund?.refundStatus === 'processed' || false,
+          refundStatus: refund?.refundStatus as RefundStatus,
+          refundAmount: refund?.refundAmount ? parseFloat(refund.refundAmount.toString()) : null,
          // Coupon information
          couponCode: couponData?.couponCode || null,
          couponDescription: couponData?.couponDescription || null,
@@ -366,28 +367,31 @@ export const orderRouter = router({
         return order.isCod || (statusRecord && statusRecord.paymentStatus === 'success');
       });
 
-       const formattedOrders = filteredOrders.map(order => {
-         const statusRecord = order.orderStatus[0]; // assuming one status per order
-         let status: 'pending' | 'delivered' | 'cancelled' = 'pending';
-         if (statusRecord?.isCancelled) {
-           status = 'cancelled';
-         } else if (statusRecord?.isDelivered) {
-           status = 'delivered';
-         }
+        const formattedOrders = filteredOrders.map(order => {
+          const statusRecord = order.orderStatus[0]; // assuming one status per order
+          let status: 'pending' | 'delivered' | 'cancelled' = 'pending';
+          if (statusRecord?.isCancelled) {
+            status = 'cancelled';
+          } else if (statusRecord?.isDelivered) {
+            status = 'delivered';
+          }
 
          const items = order.orderItems.map(item => ({
-          name: item.product.name,
-          quantity: parseFloat(item.quantity),
-          price: parseFloat(item.price.toString()),
-          amount: parseFloat(item.quantity) * parseFloat(item.price.toString()),
-          unit: item.product.unit?.shortNotation || '',
-        }));
+           name: item.product.name,
+           quantity: parseFloat(item.quantity),
+           price: parseFloat(item.price.toString()),
+           amount: parseFloat(item.quantity) * parseFloat(item.price.toString()),
+           unit: item.product.unit?.shortNotation || '',
+         }));
 
         return {
-          orderId: order.id.toString(),
+          id: order.id,
           readableId: order.readableId,
           customerName: order.user.name,
-          address: `${order.address.addressLine1}${order.address.addressLine2 ? `, ${order.address.addressLine2}` : ''}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}`,
+          address: `${order.address.addressLine1}${order.address.addressLine2 ? `, ${order.address.addressLine2}` : ''}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}, Phone: ${order.address.phone}`,
+          addressId: order.addressId,
+          latitude: order.address.latitude,
+          longitude: order.address.longitude,
           totalAmount: parseFloat(order.totalAmount),
           items,
           deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('h:mm a') : 'N/A',
@@ -480,6 +484,30 @@ export const orderRouter = router({
       return { success: true, data: formattedOrders };
     }),
 
+  updateAddressCoords: protectedProcedure
+    .input(z.object({
+      addressId: z.number(),
+      latitude: z.number(),
+      longitude: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const { addressId, latitude, longitude } = input;
+
+      const result = await db.update(addresses)
+        .set({
+          latitude,
+          longitude,
+        })
+        .where(eq(addresses.id, addressId))
+        .returning();
+
+      if (result.length === 0) {
+        throw new ApiError("Address not found", 404);
+      }
+
+      return { success: true };
+    }),
+
   getAll: protectedProcedure
     .input(getAllOrdersSchema)
     .query(async ({ input }) => {
@@ -555,11 +583,14 @@ export const orderRouter = router({
         }));
 
         return {
-          id: order.id,
-          readableId: order.readableId,
-          customerName: order.user.name,
-          address: `${order.address.addressLine1}${order.address.addressLine2 ? `, ${order.address.addressLine2}` : ''}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}`,
-          totalAmount: parseFloat(order.totalAmount),
+           orderId: order.id.toString(),
+           readableId: order.readableId,
+           customerName: order.user.name,
+           address: `${order.address.addressLine1}${order.address.addressLine2 ? `, ${order.address.addressLine2}` : ''}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}, Phone: ${order.address.phone}`,
+           addressId: order.addressId,
+           latitude: order.address.latitude,
+           longitude: order.address.longitude,
+           totalAmount: parseFloat(order.totalAmount),
           items,
           createdAt: order.createdAt,
           deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('DD MMM, h:mm A') : 'N/A',

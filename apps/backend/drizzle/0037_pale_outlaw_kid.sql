@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."order_cancellations" RENAME COLUMN "razorpay_refund_id" TO "merchant_refund_id";

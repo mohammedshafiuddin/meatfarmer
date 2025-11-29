@@ -165,11 +165,12 @@ export default function Checkout() {
 
   const placeOrderMutation = trpc.user.order.placeOrder.useMutation({
     onSuccess: (data) => {
-      if (!data.data.isCod) {
-        createRazorpayOrderMutation.mutate({ orderId: data.data.id.toString() });
-      } else {
-        router.replace(`/order-success?orderId=${data.data.id}`);
-      }
+      router.replace(`/order-success?orderId=${data.data.id}`);
+      // if (!data.data.isCod) {
+      //   createRazorpayOrderMutation.mutate({ orderId: data.data.id.toString() });
+      // } else {
+      //   router.replace(`/order-success?orderId=${data.data.id}`);
+      // }
     },
     onError: (error: any) => {
       Alert.alert('Error', error.message || 'Failed to place order');

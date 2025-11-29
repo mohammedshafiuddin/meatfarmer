@@ -88,6 +88,9 @@ export const commonRouter = router({
         whereConditions.push(sql`LOWER(${productInfo.name}) LIKE LOWER(${ '%' + searchQuery + '%' })`);
       }
 
+      // Filter out suspended products
+      whereConditions.push(eq(productInfo.isSuspended, false));
+
       const whereCondition = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
       const productsWithUnits = await db

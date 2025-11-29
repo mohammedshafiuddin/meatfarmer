@@ -17,7 +17,7 @@ type CreateDeal = {
  * Create a new product
  */
 export const createProduct = async (req: Request, res: Response) => {
-  const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, deals, tagIds } = req.body;
+  const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, isSuspended, deals, tagIds } = req.body;
 
   console.log({name, unitId, storeId, price})
   
@@ -68,6 +68,7 @@ export const createProduct = async (req: Request, res: Response) => {
       storeId,
       price,
       marketPrice,
+      isSuspended: isSuspended || false,
       images: uploadedImageUrls,
     })
     .returning();
@@ -110,7 +111,7 @@ export const createProduct = async (req: Request, res: Response) => {
  */
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, deals:dealsRaw, imagesToDelete:imagesToDeleteRaw, tagIds } = req.body;
+  const { name, shortDescription, longDescription, unitId, storeId, price, marketPrice, isSuspended, deals:dealsRaw, imagesToDelete:imagesToDeleteRaw, tagIds } = req.body;
 
   const deals = dealsRaw ? JSON.parse(dealsRaw) : null;
   const imagesToDelete = imagesToDeleteRaw ? JSON.parse(imagesToDeleteRaw) : [];
@@ -184,6 +185,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       storeId,
       price,
       marketPrice,
+      isSuspended: isSuspended || false,
       images: finalImages.length > 0 ? finalImages : undefined,
     })
     .where(eq(productInfo.id, parseInt(id)))

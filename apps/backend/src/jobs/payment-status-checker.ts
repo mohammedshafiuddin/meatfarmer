@@ -1,8 +1,8 @@
 import * as cron from 'node-cron';
 import { db } from '../db/db_index';
-import { payments, orders, deliverySlotInfo, orderCancellationsTable } from '../db/schema';
+import { payments, orders, deliverySlotInfo, refunds } from '../db/schema';
 import { eq, and, gt, isNotNull } from 'drizzle-orm';
-import { razorpayInstance } from '../lib/payments-utils';
+import { RazorpayPaymentService } from '../lib/payments-utils';
 
 interface PendingPaymentRecord {
   payment: typeof payments.$inferSelect;
@@ -20,27 +20,27 @@ export const createPaymentNotification = (record: PendingPaymentRecord) => {
 
 export const checkRefundStatuses = async () => {
   try {
-    const initiatedRefunds = await db
-      .select()
-      .from(orderCancellationsTable)
-      .where(and(
-        eq(orderCancellationsTable.refundStatus, 'initiated'),
-        isNotNull(orderCancellationsTable.razorpayRefundId)
-      ));
+      const initiatedRefunds = await db
+        .select()
+        .from(refunds)
+        .where(and(
+          eq(refunds.refundStatus, 'initiated'),
+          isNotNull(refunds.merchantRefundId)
+        ));
 
-    // Process refunds concurrently using Promise.allSettled
-    const promises = initiatedRefunds.map(async (refund) => {
-      if (!refund.razorpayRefundId) return;
+      // Process refunds concurrently using Promise.allSettled
+      const promises = initiatedRefunds.map(async (refund) => {
+        if (!refund.merchantRefundId) return;
 
-      try {
-        const razorpayRefund = await razorpayInstance.refunds.fetch(refund.razorpayRefundId);
-        // console.log({refundId: refund.razorpayRefundId, refundStatus: JSON.stringify(razorpayRefund)});
+        try {
+          const razorpayRefund = await RazorpayPaymentService.fetchRefund(refund.merchantRefundId);
+        // console.log({refundId: refund.merchantRefundId, refundStatus: JSON.stringify(razorpayRefund)});
         
         if (razorpayRefund.status === 'processed') {
           await db
-            .update(orderCancellationsTable)
+            .update(refunds)
             .set({ refundStatus: 'success', refundProcessedAt: new Date() })
-            .where(eq(orderCancellationsTable.id, refund.id));
+            .where(eq(refunds.id, refund.id));
         }
       } catch (error) {
         console.error(`Error checking refund ${refund.id}:`, error);

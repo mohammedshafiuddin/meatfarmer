@@ -260,6 +260,34 @@
       "when": 1764331069699,
       "tag": "0036_eager_naoko",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1764356000382,
+      "tag": "0037_pale_outlaw_kid",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1764360189368,
+      "tag": "0038_volatile_jean_grey",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1764387227083,
+      "tag": "0039_last_silver_samurai",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1764387505378,
+      "tag": "0040_brief_albert_cleary",
+      "breakpoints": true
     }
   ]
 }

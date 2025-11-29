@@ -13,14 +13,14 @@ import {
   couponUsage,
   payments,
   cartItems,
-  orderCancellationsTable,
+  refunds,
 } from "../../db/schema";
 import { eq, and, inArray, desc } from "drizzle-orm";
 import { READABLE_ORDER_ID_KEY } from "../../lib/const-strings";
 import { generateSignedUrlsFromS3Urls } from "../../lib/s3-client";
 import { ApiError } from "../../lib/api-error";
 import { sendOrderPlacedNotification, sendOrderCancelledNotification } from "../../lib/notif-job";
-import { createRazorpayOrder, insertPaymentRecord } from "../../lib/payments-utils";
+import { RazorpayPaymentService } from "../../lib/payments-utils";
 
 type AppliedCoupon = typeof coupons.$inferSelect & {
   usages: (typeof couponUsage.$inferSelect)[];
@@ -178,19 +178,28 @@ export const orderRouter = router({
               (parseFloat(itemData.price.toString()) * parseFloat(coupon.discountPercent.toString())) / 100,
               coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Infinity
             );
-          } else if (coupon.flatDiscount) {
-            itemDiscount += Math.min(
-              parseFloat(coupon.flatDiscount.toString()),
-              coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : parseFloat(itemData.price.toString())
-            );
           }
         });
 
         itemData.discountedPrice = (parseFloat(itemData.price.toString()) - itemDiscount).toString();
       });
-
-      const finalAmount = orderItemsData.reduce((sum, item) => sum + parseFloat(item.discountedPrice), 0);
-
+      orderItemsData.forEach(item => console.log(JSON.stringify(item)))
+      let finalAmount = orderItemsData.reduce((sum, item) => sum + (parseFloat(item.discountedPrice)*(Number(item.quantity))), 0);
+      console.log({finalAmount}, '1')
+      
+      // Apply flat discounts to the order total
+      let flatDiscountAmount = 0;
+      appliedCoupons.forEach(coupon => {
+        if (coupon.flatDiscount) {
+          flatDiscountAmount += Math.min(
+            parseFloat(coupon.flatDiscount.toString()),
+            coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : finalAmount
+          );
+        }
+      });
+      finalAmount -= flatDiscountAmount;
+      
+      console.log({finalAmount}, '2')
        // Create order in transaction
        const newOrder = await db.transaction(async (tx) => {
          // Get and increment readable order ID
@@ -220,7 +229,7 @@ export const orderRouter = router({
              .insert(paymentInfoTable)
              .values({
                status: "pending",
-               gateway: "phonepe", // or whatever
+               gateway: "razorpay", // or whatever
                merchantOrderId: `order_${Date.now()}`, // generate unique
                // other fields as needed
              })
@@ -264,11 +273,11 @@ export const orderRouter = router({
 
          }
 
-         // Insert payment record for online payment
-         if (paymentMethod === "online") {
-           const razorpayOrder = await createRazorpayOrder(order.id, finalAmount.toString());
-           await insertPaymentRecord(order.id, razorpayOrder, tx);
-         }
+          // Insert payment record for online payment
+          if (paymentMethod === "online") {
+            const razorpayOrder = await RazorpayPaymentService.createOrder(order.id, finalAmount.toString());
+            await RazorpayPaymentService.insertPaymentRecord(order.id, razorpayOrder, tx);
+          }
 
          // Remove ordered items from cart
          await tx.delete(cartItems).where(
@@ -328,7 +337,7 @@ export const orderRouter = router({
       const totalCountResult = await db.$count(orders, eq(orders.userId, userId));
       const totalCount = totalCountResult;
 
-      const userOrders = await db.query.orders.findMany({
+       const userOrders = await db.query.orders.findMany({
         where: eq(orders.userId, userId),
         with: {
           orderItems: {
@@ -339,7 +348,7 @@ export const orderRouter = router({
           slot: true,
           paymentInfo: true,
           orderStatus: true,
-          orderCancellations: true,
+          refunds: true,
         },
         orderBy: (orders, { desc }) => [desc(orders.createdAt)],
         limit: pageSize,
@@ -349,7 +358,7 @@ export const orderRouter = router({
     const mappedOrders = await Promise.all(
       userOrders.map(async (order) => {
         const status = order.orderStatus[0]; // assuming one status per order
-        const cancellation = order.orderCancellations[0]; // assuming one cancellation per order
+        const refund = order.refunds[0]; // assuming one refund per order
         const deliveryStatus = status?.isCancelled
           ? "cancelled"
           : status?.isDelivered
@@ -358,8 +367,8 @@ export const orderRouter = router({
         const orderStatus = status?.isCancelled ? "cancelled" : "success";
         const paymentMode = order.isCod ? "CoD" : "Online";
         const paymentStatus = status?.paymentStatus || "pending";
-        const refundStatus = cancellation?.refundStatus || 'none';
-        const refundAmount = cancellation?.refundAmount ? parseFloat(cancellation.refundAmount.toString()) : null;
+        const refundStatus = refund?.refundStatus || 'none';
+        const refundAmount = refund?.refundAmount ? parseFloat(refund.refundAmount.toString()) : null;
 
         const items = await Promise.all(
           order.orderItems.map(async (item) => {
@@ -428,7 +437,7 @@ export const orderRouter = router({
           slot: true,
           paymentInfo: true,
           orderStatus: true,
-          orderCancellations: true,
+          refunds: true,
         },
       });
 
@@ -475,7 +484,7 @@ export const orderRouter = router({
       }
 
       const status = order.orderStatus[0]; // assuming one status per order
-      const cancellation = order.orderCancellations[0]; // assuming one cancellation per order
+      const refund = order.refunds[0]; // assuming one refund per order
       const deliveryStatus = status?.isCancelled
         ? "cancelled"
         : status?.isDelivered
@@ -484,8 +493,8 @@ export const orderRouter = router({
       const orderStatus = status?.isCancelled ? "cancelled" : "success";
       const paymentMode = order.isCod ? "CoD" : "Online";
       const paymentStatus = status?.paymentStatus || "pending";
-      const refundStatus = cancellation?.refundStatus || 'none';
-      const refundAmount = cancellation?.refundAmount ? parseFloat(cancellation.refundAmount.toString()) : null;
+      const refundStatus = refund?.refundStatus || 'none';
+      const refundAmount = refund?.refundAmount ? parseFloat(refund.refundAmount.toString()) : null;
 
       const items = await Promise.all(
         order.orderItems.map(async (item) => {
@@ -584,32 +593,30 @@ export const orderRouter = router({
         throw new ApiError("Cannot cancel delivered order", 400);
       }
 
-       // Perform database operations in transaction
-       const result = await db.transaction(async (tx) => {
-         // Update order status
-         await tx
-           .update(orderStatus)
-           .set({
-             isCancelled: true,
-             cancelReason: reason,
-           })
-           .where(eq(orderStatus.id, status.id));
+        // Perform database operations in transaction
+        const result = await db.transaction(async (tx) => {
+          // Update order status
+          await tx
+            .update(orderStatus)
+            .set({
+              isCancelled: true,
+              cancelReason: reason,
+              cancellationUserNotes: reason,
+              cancellationReviewed: false,
+            })
+            .where(eq(orderStatus.id, status.id));
 
-         // Determine refund status based on payment method
-         const refundStatus = order.isCod ? 'na' : 'pending';
+          // Determine refund status based on payment method
+          const refundStatus = order.isCod ? 'na' : 'pending';
 
-         // Insert cancellation record
-         await tx.insert(orderCancellationsTable).values({
-           orderId: order.id,
-           userId,
-           reason,
-           cancellationUserNotes: reason,
-           cancellationReviewed: false,
-           refundStatus,
-         });
+          // Insert refund record
+          await tx.insert(refunds).values({
+            orderId: order.id,
+            refundStatus,
+          });
 
-         return { orderId: order.id, userId };
-       });
+          return { orderId: order.id, userId };
+        });
 
        // Send notification outside transaction (idempotent operation)
        await sendOrderCancelledNotification(result.userId, result.orderId.toString());
