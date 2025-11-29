@@ -130,31 +130,7 @@ export default function Checkout() {
     [eligibleCoupons, selectedCouponId]
   );
 
-  const getItemDiscountInfo = (item: any) => {
-    const quantity = item.quantity;
-    const originalPrice = (item.product?.price || 0) * quantity;
-    let discount = 0;
-    const applicableCoupons = selectedCoupons.filter((coupon) => true);
-    applicableCoupons.forEach((coupon) => {
-      if (coupon.discountType === "percentage") {
-        discount += Math.min(
-          (originalPrice * coupon.discountValue) / 100,
-          coupon.maxValue || Infinity
-        );
-      } else {
-        discount += Math.min(
-          coupon.discountValue,
-          coupon.maxValue || originalPrice
-        );
-      }
-    });
-    const discountedPrice = Math.max(0, originalPrice - discount);
-    return {
-      discountedPrice,
-      discountAmount: discount,
-      couponCount: applicableCoupons.length,
-    };
-  };
+
 
   const discountAmount = useMemo(() => selectedCoupons?.reduce((sum, coupon) =>
     sum + (coupon.discountType === 'percentage'
@@ -165,12 +141,12 @@ export default function Checkout() {
 
   const placeOrderMutation = trpc.user.order.placeOrder.useMutation({
     onSuccess: (data) => {
-      router.replace(`/order-success?orderId=${data.data.id}`);
-      // if (!data.data.isCod) {
-      //   createRazorpayOrderMutation.mutate({ orderId: data.data.id.toString() });
-      // } else {
-      //   router.replace(`/order-success?orderId=${data.data.id}`);
-      // }
+      if (!data.data.isCod) {
+        // router.replace(`/order-success?orderId=${data.data.id}`);
+        createRazorpayOrderMutation.mutate({ orderId: data.data.id.toString() });
+      } else {
+        router.replace(`/order-success?orderId=${data.data.id}`);
+      }
     },
     onError: (error: any) => {
       Alert.alert('Error', error.message || 'Failed to place order');
@@ -352,33 +328,24 @@ export default function Checkout() {
         {/* Order Items */}
         <View style={tw`bg-white p-5 rounded-2xl shadow-sm mb-6 border border-gray-100`}>
           <Text style={tw`text-lg font-bold text-gray-900 mb-4`}>Order Items ({selectedItems.length})</Text>
-          {selectedItems.map((item, index) => {
-            const discountInfo = getItemDiscountInfo(item);
-            return (
-              <View key={item.id} style={tw`flex-row items-start ${index !== selectedItems.length - 1 ? 'mb-4 border-b border-gray-100 pb-4' : ''}`}>
-                <Image
-                  source={{ uri: item.product?.images?.[0] }}
-                  style={tw`w-16 h-16 rounded-lg bg-gray-100 mr-3`}
-                />
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-gray-900 font-bold text-base mb-1`}>{item.product.name}</Text>
-                  <Text style={tw`text-gray-500 text-sm`}>Quantity: {item.quantity}</Text>
+           {selectedItems.map((item, index) => (
+             <View key={item.id} style={tw`flex-row items-start ${index !== selectedItems.length - 1 ? 'mb-4 border-b border-gray-100 pb-4' : ''}`}>
+               <Image
+                 source={{ uri: item.product?.images?.[0] }}
+                 style={tw`w-16 h-16 rounded-lg bg-gray-100 mr-3`}
+               />
+               <View style={tw`flex-1`}>
+                 <Text style={tw`text-gray-900 font-bold text-base mb-1`}>{item.product.name}</Text>
+                 <Text style={tw`text-gray-500 text-sm`}>Quantity: {item.quantity}</Text>
 
-                  <View style={tw`flex-row justify-between items-center mt-2`}>
-                    <View style={tw`flex-row items-baseline`}>
-                      <Text style={tw`text-gray-900 font-bold`}>₹{discountInfo.discountedPrice}</Text>
-                      {discountInfo.discountAmount > 0 && (
-                        <Text style={tw`text-xs text-gray-400 line-through ml-2`}>₹{item.subtotal}</Text>
-                      )}
-                    </View>
-                    {discountInfo.discountAmount > 0 && (
-                      <Text style={tw`text-xs text-green-600 font-bold`}>Saved ₹{discountInfo.discountAmount}</Text>
-                    )}
-                  </View>
-                </View>
-              </View>
-            );
-          })}
+                 <View style={tw`flex-row justify-between items-center mt-2`}>
+                   <View style={tw`flex-row items-baseline`}>
+                     <Text style={tw`text-gray-900 font-bold`}>₹{item.subtotal}</Text>
+                   </View>
+                 </View>
+               </View>
+             </View>
+           ))}
         </View>
 
         {/* Coupons */}
@@ -414,14 +381,7 @@ export default function Checkout() {
             placeholder="Select coupons"
           />
 
-          {selectedCoupons && selectedCoupons.length > 0 && discountAmount > 0 && (
-            <View style={tw`mt-3 p-3 bg-green-50 border border-green-100 rounded-xl flex-row items-center`}>
-              <MaterialIcons name="check-circle" size={16} color="#10B981" style={tw`mr-2`} />
-              <Text style={tw`text-green-700 text-sm font-bold flex-1`}>
-                You saved ₹{discountAmount} with {selectedCoupons.map(c => c.code).join(', ')}
-              </Text>
-            </View>
-          )}
+
         </View>
 
         {/* Special Instructions */}

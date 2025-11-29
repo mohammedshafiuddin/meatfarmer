@@ -36,11 +36,7 @@ interface CartItem {
   } | null;
 }
 
-interface ItemDiscountInfo {
-  discountedPrice: number;
-  discountAmount: number;
-  couponCount: number;
-}
+
 
 export default function MyCart() {
   const [checkedProducts, setCheckedProducts] = useState<
@@ -64,7 +60,9 @@ export default function MyCart() {
   const baseTotalPrice = useMemo(
     () =>
       cartItems
-        .filter((item) => checkedProducts[item.id] && !item.product?.isOutOfStock)
+        .filter(
+          (item) => checkedProducts[item.id] && !item.product?.isOutOfStock
+        )
         .reduce(
           (sum, item) =>
             sum +
@@ -77,7 +75,7 @@ export default function MyCart() {
   const { data: couponsRaw } = trpc.user.coupon.getEligible.useQuery();
 
   const generateCouponDescription = (coupon: any): string => {
-    let desc = '';
+    let desc = "";
 
     if (coupon.discountPercent) {
       desc += `${coupon.discountPercent}% off`;
@@ -98,30 +96,39 @@ export default function MyCart() {
 
   const eligibleCoupons = useMemo(() => {
     if (!couponsRaw?.data) return [];
-    return couponsRaw.data.map(coupon => {
-      let isEligible = true;
-      let ineligibilityReason = '';
-      if (coupon.maxLimitForUser && coupon.usages.length >= coupon.maxLimitForUser) {
-        isEligible = false;
-        ineligibilityReason = 'Usage limit exceeded';
-      }
-      if (coupon.minOrder && parseFloat(coupon.minOrder) > baseTotalPrice) {
-        isEligible = false;
-        ineligibilityReason = `Min order ₹${coupon.minOrder}`;
-      }
-      return {
-        id: coupon.id,
-        code: coupon.couponCode,
-        discountType: coupon.discountPercent ? 'percentage' : 'flat',
-        discountValue: parseFloat(coupon.discountPercent || coupon.flatDiscount || '0'),
-        maxValue: coupon.maxValue ? parseFloat(coupon.maxValue) : undefined,
-        minOrder: coupon.minOrder ? parseFloat(coupon.minOrder) : undefined,
-        description: generateCouponDescription(coupon),
-        exclusiveApply: coupon.exclusiveApply,
-        isEligible,
-        ineligibilityReason: isEligible ? undefined : ineligibilityReason,
-      };
-    }).filter(coupon => coupon.ineligibilityReason !== 'Usage limit exceeded');
+    return couponsRaw.data
+      .map((coupon) => {
+        let isEligible = true;
+        let ineligibilityReason = "";
+        if (
+          coupon.maxLimitForUser &&
+          coupon.usages.length >= coupon.maxLimitForUser
+        ) {
+          isEligible = false;
+          ineligibilityReason = "Usage limit exceeded";
+        }
+        if (coupon.minOrder && parseFloat(coupon.minOrder) > baseTotalPrice) {
+          isEligible = false;
+          ineligibilityReason = `Min order ₹${coupon.minOrder}`;
+        }
+        return {
+          id: coupon.id,
+          code: coupon.couponCode,
+          discountType: coupon.discountPercent ? "percentage" : "flat",
+          discountValue: parseFloat(
+            coupon.discountPercent || coupon.flatDiscount || "0"
+          ),
+          maxValue: coupon.maxValue ? parseFloat(coupon.maxValue) : undefined,
+          minOrder: coupon.minOrder ? parseFloat(coupon.minOrder) : undefined,
+          description: generateCouponDescription(coupon),
+          exclusiveApply: coupon.exclusiveApply,
+          isEligible,
+          ineligibilityReason: isEligible ? undefined : ineligibilityReason,
+        };
+      })
+      .filter(
+        (coupon) => coupon.ineligibilityReason !== "Usage limit exceeded"
+      );
   }, [couponsRaw, baseTotalPrice]);
 
   const updateCartItem = trpc.user.cart.updateCartItem.useMutation();
@@ -172,52 +179,12 @@ export default function MyCart() {
       eligibleCoupons?.filter((coupon) => selectedCouponId.includes(coupon.id)),
     [eligibleCoupons, selectedCouponId]
   );
-  // Calculate discounted price for each item
-  const getItemDiscountInfo = (item: CartItem,): ItemDiscountInfo => {
-    const quantity = quantities[item.id] || item.quantity;
-    const originalPrice = (item.product?.price || 0) * quantity;
-    let discount = 0;
 
-    const applicableCoupons = selectedCoupons.filter((coupon) => {
-      // For cart, assume all coupons apply to all items, or check applicableProducts if available
-      return true; // Simplify for cart preview
-    });
-    applicableCoupons.forEach((coupon) => {
-      if (coupon.discountType === "percentage") {
-        discount += Math.min(
-          (originalPrice * coupon.discountValue) / 100,
-          coupon.maxValue || Infinity
-        );
-      } else {
-        discount += Math.min(
-          coupon.discountValue,
-          coupon.maxValue || originalPrice
-        );
-      }
-    });
-    const discountedPrice = Math.max(0, originalPrice - discount);
-
-    return {
-      discountedPrice,
-      discountAmount: discount,
-      couponCount: applicableCoupons.length,
-    };
-  };
   const totalPrice = cartItems
     .filter((item) => checkedProducts[item.id] && !item.product?.isOutOfStock)
     .reduce((sum, item) => {
-      try {
-
-        const discountInfo = getItemDiscountInfo(item);
-        const newSum = sum + discountInfo.discountedPrice;
-
-        return newSum;
-      }
-      catch (error) {
-        console.log({ error })
-
-        return sum;
-      }
+      const quantity = quantities[item.id] || item.quantity;
+      return sum + (item.product?.price || 0) * quantity;
     }, 0);
   const dropdownData = useMemo(
     () =>
@@ -225,13 +192,14 @@ export default function MyCart() {
         const discount =
           coupon.discountType === "percentage"
             ? Math.min(
-              (totalPrice * coupon.discountValue) / 100,
-              coupon.maxValue || Infinity
-            )
+                (totalPrice * coupon.discountValue) / 100,
+                coupon.maxValue || Infinity
+              )
             : Math.min(coupon.discountValue, coupon.maxValue || totalPrice);
         const saveString = !isNaN(discount) ? ` (Save ₹${discount})` : "";
-        const baseLabel = `${coupon.code} - ${coupon.description}${coupon.isEligible ? saveString : ""
-          }`;
+        const baseLabel = `${coupon.code} - ${coupon.description}${
+          coupon.isEligible ? saveString : ""
+        }`;
         const label = coupon.isEligible
           ? baseLabel
           : `${baseLabel} (${coupon.ineligibilityReason})`;
@@ -251,14 +219,16 @@ export default function MyCart() {
           sum +
           (coupon.discountType === "percentage"
             ? Math.min(
-              (totalPrice * coupon.discountValue) / 100,
-              coupon.maxValue || Infinity
-            )
+                (totalPrice * coupon.discountValue) / 100,
+                coupon.maxValue || Infinity
+              )
             : Math.min(coupon.discountValue, coupon.maxValue || totalPrice)),
         0
       ) || 0,
     [selectedCoupons, totalPrice]
   );
+
+  const finalTotal = totalPrice - discountAmount;
 
   useEffect(() => {
     const initial: Record<number, number> = {};
@@ -313,7 +283,6 @@ export default function MyCart() {
     }
   }, [selectedSlot, slotsData, cartItems]);
 
-
   if (isLoading) {
     return (
       <View style={tw`flex-1 justify-center items-center bg-gray-50`}>
@@ -334,22 +303,20 @@ export default function MyCart() {
 
   return (
     <View style={tw`flex-1 bg-gray-50`}>
-      <StatusBar barStyle="dark-content" />
-
-
-
-      <ScrollView
-        style={tw`flex-1`}
-        contentContainerStyle={tw`p-4 pb-32`}
-        showsVerticalScrollIndicator={false}
-      >
+      <AppContainer>
         {/* Delivery Slot Selection */}
-        <View style={tw`bg-white p-5 rounded-2xl shadow-sm mb-4 border border-gray-100`}>
+        <View
+          style={tw`bg-white p-5 rounded-2xl shadow-sm mb-4 border border-gray-100`}
+        >
           <View style={tw`flex-row items-center mb-3`}>
-            <View style={tw`w-8 h-8 bg-blue-50 rounded-full items-center justify-center mr-3`}>
+            <View
+              style={tw`w-8 h-8 bg-blue-50 rounded-full items-center justify-center mr-3`}
+            >
               <MaterialIcons name="schedule" size={18} color="#3B82F6" />
             </View>
-            <Text style={tw`text-base font-bold text-gray-900`}>Delivery Slot</Text>
+            <Text style={tw`text-base font-bold text-gray-900`}>
+              Delivery Slot
+            </Text>
           </View>
           <BottomDropdown
             label="Select Slot"
@@ -366,12 +333,18 @@ export default function MyCart() {
         </View>
 
         {/* Coupon Selection */}
-        <View style={tw`bg-white p-5 rounded-2xl shadow-sm mb-4 border border-gray-100`}>
+        <View
+          style={tw`bg-white p-5 rounded-2xl shadow-sm mb-4 border border-gray-100`}
+        >
           <View style={tw`flex-row items-center mb-3`}>
-            <View style={tw`w-8 h-8 bg-pink-50 rounded-full items-center justify-center mr-3`}>
+            <View
+              style={tw`w-8 h-8 bg-pink-50 rounded-full items-center justify-center mr-3`}
+            >
               <MaterialIcons name="local-offer" size={18} color="#EC4899" />
             </View>
-            <Text style={tw`text-base font-bold text-gray-900`}>Offers & Coupons</Text>
+            <Text style={tw`text-base font-bold text-gray-900`}>
+              Offers & Coupons
+            </Text>
           </View>
 
           <BottomDropdown
@@ -404,8 +377,8 @@ export default function MyCart() {
               eligibleCoupons.length === 0
                 ? "No coupons available"
                 : selectedSlot
-                  ? "Select coupons"
-                  : "Select delivery slot first"
+                ? "Select coupons"
+                : "Select delivery slot first"
             }
           />
 
@@ -421,14 +394,7 @@ export default function MyCart() {
             </Text>
           )}
 
-          {selectedCoupons && selectedCoupons.length > 0 && discountAmount > 0 && (
-            <View style={tw`mt-3 p-3 bg-green-50 border border-green-100 rounded-xl flex-row items-center`}>
-              <MaterialIcons name="check-circle" size={16} color="#10B981" style={tw`mr-2`} />
-              <Text style={tw`text-green-700 text-sm font-bold flex-1`}>
-                You saved ₹{discountAmount} with {selectedCoupons.map((c) => c.code).join(", ")}
-              </Text>
-            </View>
-          )}
+
 
           {selectedCoupons.length > 0 && (
             <TouchableOpacity
@@ -445,10 +411,14 @@ export default function MyCart() {
         {/* Cart Items */}
         {cartItems.length === 0 ? (
           <View style={tw`items-center justify-center py-12`}>
-            <View style={tw`w-20 h-20 bg-gray-100 rounded-full items-center justify-center mb-4`}>
+            <View
+              style={tw`w-20 h-20 bg-gray-100 rounded-full items-center justify-center mb-4`}
+            >
               <MaterialIcons name="shopping-cart" size={32} color="#9CA3AF" />
             </View>
-            <Text style={tw`text-lg font-bold text-gray-900`}>Your cart is empty</Text>
+            <Text style={tw`text-lg font-bold text-gray-900`}>
+              Your cart is empty
+            </Text>
             <Text style={tw`text-gray-500 mt-2 text-center px-8`}>
               Looks like you haven't added anything to your cart yet.
             </Text>
@@ -462,7 +432,9 @@ export default function MyCart() {
         ) : (
           <>
             <View style={tw`flex-row items-center justify-between mb-4 px-1`}>
-              <Text style={tw`text-lg font-bold text-gray-900`}>Items ({cartItems.length})</Text>
+              <Text style={tw`text-lg font-bold text-gray-900`}>
+                Items ({cartItems.length})
+              </Text>
               {!selectedSlot && (
                 <Text style={tw`text-red-500 text-xs font-medium`}>
                   Select slot to enable items
@@ -470,24 +442,30 @@ export default function MyCart() {
               )}
             </View>
 
-            {cartItems.map((item) => {
-              const isAvailable =
-                allowedProductIds.includes(item.productId) &&
-                !item.product.isOutOfStock;
-              const discountInfo = getItemDiscountInfo(item);
+             {cartItems.map((item) => {
+               const isAvailable =
+                 allowedProductIds.includes(item.productId) &&
+                 !item.product.isOutOfStock;
+               const quantity = quantities[item.id] || item.quantity;
+               const itemPrice = (item.product?.price || 0) * quantity;
 
-              return (
-                <View
-                  key={item.id}
-                  style={tw`bg-white p-4 rounded-2xl shadow-sm mb-4 border border-gray-100 ${!isAvailable ? 'opacity-60' : ''}`}
-                >
+               return (
+                 <View
+                   key={item.id}
+                   style={tw`bg-white p-4 rounded-2xl shadow-sm mb-4 border border-gray-100 ${
+                     !isAvailable ? "opacity-60" : ""
+                   }`}
+                 >
                   <View style={tw`flex-row items-start`}>
                     <View style={tw`mt-1 mr-3`}>
                       <Checkbox
                         checked={checkedProducts[item.id] || false}
                         onPress={() => {
                           if (!selectedSlot) {
-                            Alert.alert("Error", "Please select a delivery slot first.");
+                            Alert.alert(
+                              "Error",
+                              "Please select a delivery slot first."
+                            );
                             return;
                           }
                           if (!isAvailable) {
@@ -513,7 +491,10 @@ export default function MyCart() {
 
                     <View style={tw`flex-1`}>
                       <View style={tw`flex-row justify-between items-start`}>
-                        <Text style={tw`text-base font-bold text-gray-900 flex-1 mr-2`} numberOfLines={2}>
+                        <Text
+                          style={tw`text-base font-bold text-gray-900 flex-1 mr-2`}
+                          numberOfLines={2}
+                        >
                           {item.product.name}
                         </Text>
                         <TouchableOpacity
@@ -525,57 +506,64 @@ export default function MyCart() {
                                   refetch();
                                 },
                                 onError: (error: any) => {
-                                  Alert.alert("Error", error.message || "Failed to remove item");
+                                  Alert.alert(
+                                    "Error",
+                                    error.message || "Failed to remove item"
+                                  );
                                 },
                               }
                             );
                           }}
                           style={tw`p-1 bg-red-50 rounded-lg`}
                         >
-                          <MaterialIcons name="delete-outline" size={18} color="#EF4444" />
+                          <MaterialIcons
+                            name="delete-outline"
+                            size={18}
+                            color="#EF4444"
+                          />
                         </TouchableOpacity>
                       </View>
 
                       {!isAvailable && (
-                        <View style={tw`bg-red-50 self-start px-2 py-1 rounded-md mt-1 mb-1`}>
+                        <View
+                          style={tw`bg-red-50 self-start px-2 py-1 rounded-md mt-1 mb-1`}
+                        >
                           <Text style={tw`text-xs font-bold text-red-600`}>
-                            {item.product.isOutOfStock ? "Out of Stock" : "Unavailable in Slot"}
+                            {item.product.isOutOfStock
+                              ? "Out of Stock"
+                              : "Unavailable in Slot"}
                           </Text>
                         </View>
                       )}
 
-                      <View style={tw`flex-row items-center justify-between mt-3`}>
-                        <View style={tw`flex-row items-baseline`}>
-                          <Text style={tw`text-lg font-bold text-gray-900`}>
-                            ₹{discountInfo.discountedPrice}
-                          </Text>
-                          {discountInfo.discountAmount > 0 && (
-                            <Text style={tw`text-xs text-gray-400 line-through ml-2`}>
-                              ₹{(item.product?.price || 0) * (quantities[item.id] || item.quantity)}
-                            </Text>
-                          )}
-                        </View>
+                       <View
+                         style={tw`flex-row items-center justify-between mt-3`}
+                       >
+                         <View style={tw`flex-row items-baseline`}>
+                           <Text style={tw`text-lg font-bold text-gray-900`}>
+                             ₹{itemPrice}
+                           </Text>
+                         </View>
 
-                        <View style={tw`${!isAvailable ? 'opacity-50' : ''}`}>
+                        <View style={tw`${!isAvailable ? "opacity-50" : ""}`}>
                           <Quantifier
                             value={quantities[item.id] || item.quantity}
                             setValue={(value) => {
-                              setQuantities((prev) => ({ ...prev, [item.id]: value }));
-                              updateCartItem.mutate({ itemId: item.id, quantity: value });
+                              setQuantities((prev) => ({
+                                ...prev,
+                                [item.id]: value,
+                              }));
+                              updateCartItem.mutate({
+                                itemId: item.id,
+                                quantity: value,
+                              });
                             }}
                             step={1}
                           />
                         </View>
                       </View>
 
-                      {discountInfo.couponCount > 0 && (
-                        <View style={tw`flex-row items-center mt-2`}>
-                          <MaterialIcons name="local-offer" size={12} color="#10B981" />
-                          <Text style={tw`text-xs text-green-600 font-medium ml-1`}>
-                            Saved ₹{discountInfo.discountAmount} with coupons
-                          </Text>
-                        </View>
-                      )}
+
                     </View>
                   </View>
                 </View>
@@ -583,22 +571,32 @@ export default function MyCart() {
             })}
           </>
         )}
-      </ScrollView>
+        <View style={tw`h-36`}></View>
+      </AppContainer>
 
       {/* Bottom Checkout Bar */}
       {cartItems.length > 0 && (
-        <View style={tw`absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-${Platform.OS === 'ios' ? '8' : '4'} shadow-lg`}>
-          <View style={tw`flex-row justify-between items-center mb-4`}>
-            <View>
-              <Text style={tw`text-sm text-gray-500`}>Total ({Object.values(checkedProducts).filter(Boolean).length} items)</Text>
-              <Text style={tw`text-2xl font-bold text-gray-900`}>₹{totalPrice}</Text>
-            </View>
-            {discountAmount > 0 && (
-              <View style={tw`bg-green-100 px-3 py-1 rounded-full`}>
-                <Text style={tw`text-xs font-bold text-green-700`}>Saved ₹{discountAmount}</Text>
-              </View>
-            )}
-          </View>
+        <View
+          style={tw`absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-${
+            Platform.OS === "ios" ? "8" : "4"
+          } shadow-lg`}
+        >
+           <View style={tw`flex-row justify-between items-center mb-4`}>
+             <View>
+               <Text style={tw`text-sm text-gray-500`}>
+                 Total ({Object.values(checkedProducts).filter(Boolean).length}{" "}
+                 items)
+               </Text>
+               <Text style={tw`text-2xl font-bold text-gray-900`}>
+                 ₹{finalTotal}
+               </Text>
+               {discountAmount > 0 && (
+                 <Text style={tw`text-xs text-green-600`}>
+                   Saved ₹{discountAmount} with {selectedCoupons.map(c => c.code).join(', ')}
+                 </Text>
+               )}
+             </View>
+           </View>
 
           <View style={tw`flex-row gap-3`}>
             <TouchableOpacity
@@ -614,11 +612,17 @@ export default function MyCart() {
                   (id) => checkedProducts[Number(id)]
                 );
                 if (selectedItems.length === 0) {
-                  Alert.alert("Select Items", "Please select at least one item to checkout");
+                  Alert.alert(
+                    "Select Items",
+                    "Please select at least one item to checkout"
+                  );
                   return;
                 }
                 if (!selectedSlot) {
-                  Alert.alert("Select Slot", "Please select a delivery slot to proceed");
+                  Alert.alert(
+                    "Select Slot",
+                    "Please select a delivery slot to proceed"
+                  );
                   return;
                 }
                 router.push(
@@ -643,7 +647,9 @@ export default function MyCart() {
       >
         <View style={tw`p-6`}>
           <View style={tw`flex-row items-center mb-6`}>
-            <View style={tw`w-10 h-10 bg-pink-50 rounded-full items-center justify-center mr-3`}>
+            <View
+              style={tw`w-10 h-10 bg-pink-50 rounded-full items-center justify-center mr-3`}
+            >
               <MaterialIcons name="local-offer" size={20} color="#EC4899" />
             </View>
             <Text style={tw`text-xl font-bold text-gray-900`}>
@@ -652,10 +658,15 @@ export default function MyCart() {
           </View>
 
           {selectedCoupons.map((coupon) => (
-            <View key={coupon.id} style={tw`mb-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm`}>
+            <View
+              key={coupon.id}
+              style={tw`mb-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm`}
+            >
               <View style={tw`flex-row justify-between items-start`}>
                 <View>
-                  <Text style={tw`font-bold text-gray-900 text-lg`}>{coupon.code}</Text>
+                  <Text style={tw`font-bold text-gray-900 text-lg`}>
+                    {coupon.code}
+                  </Text>
                   <Text style={tw`text-sm text-gray-500 mt-1`}>
                     {coupon.description}
                   </Text>

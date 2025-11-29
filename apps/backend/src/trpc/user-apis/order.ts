@@ -164,42 +164,25 @@ export const orderRouter = router({
         }
       }
 
-      // Calculate per-product discounted prices
-      orderItemsData.forEach(itemData => {
-        let itemDiscount = 0;
-        const applicableCouponsForItem = appliedCoupons.filter(coupon => {
-          const applicableProducts = Array.isArray(coupon.applicableProducts) ? coupon.applicableProducts : [];
-          return applicableProducts.length === 0 || applicableProducts.some((ap: any) => ap.productId === itemData.productId);
-        });
+      // Calculate final amount with order-level discounts
+      let finalAmount = totalAmount;
 
-        applicableCouponsForItem.forEach(coupon => {
-          if (coupon.discountPercent) {
-            itemDiscount += Math.min(
-              (parseFloat(itemData.price.toString()) * parseFloat(coupon.discountPercent.toString())) / 100,
-              coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Infinity
-            );
-          }
-        });
-
-        itemData.discountedPrice = (parseFloat(itemData.price.toString()) - itemDiscount).toString();
-      });
-      orderItemsData.forEach(item => console.log(JSON.stringify(item)))
-      let finalAmount = orderItemsData.reduce((sum, item) => sum + (parseFloat(item.discountedPrice)*(Number(item.quantity))), 0);
-      console.log({finalAmount}, '1')
-      
-      // Apply flat discounts to the order total
-      let flatDiscountAmount = 0;
+      // Apply all coupon discounts to the order total
       appliedCoupons.forEach(coupon => {
-        if (coupon.flatDiscount) {
-          flatDiscountAmount += Math.min(
+        if (coupon.discountPercent) {
+          const discount = Math.min(
+            (totalAmount * parseFloat(coupon.discountPercent.toString())) / 100,
+            coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Infinity
+          );
+          finalAmount -= discount;
+        } else if (coupon.flatDiscount) {
+          const discount = Math.min(
             parseFloat(coupon.flatDiscount.toString()),
             coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : finalAmount
           );
+          finalAmount -= discount;
         }
       });
-      finalAmount -= flatDiscountAmount;
-      
-      console.log({finalAmount}, '2')
        // Create order in transaction
        const newOrder = await db.transaction(async (tx) => {
          // Get and increment readable order ID

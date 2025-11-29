@@ -21,7 +21,7 @@ export default function ProductDetail() {
   const [isLoadingDialogOpen, setIsLoadingDialogOpen] = useState(false);
   const { data: productDetail, isLoading, error, refetch } = trpc.user.product.getProductDetails.useQuery({ id: id.toString() });
   const addToCart = trpc.user.cart.addToCart.useMutation();
-  const { data: productCouponsRaw } = trpc.user.coupon.getProductCoupons.useQuery({ productId: Number(id) });
+
   
   useManualRefresh(() => {
     refetch();
@@ -61,41 +61,9 @@ export default function ProductDetail() {
     });
   };
 
-    const generateCouponDescription = (coupon: any): string => {
-    let desc = '';
-    if (coupon.discountPercent) {
-      desc += `${coupon.discountPercent}% off`;
-    } else if (coupon.flatDiscount) {
-      desc += `₹${coupon.flatDiscount} off`;
-    }
-    if (coupon.minOrder) {
-      desc += ` on orders above ₹${coupon.minOrder}`;
-    }
-    if (coupon.maxValue) {
-      desc += ` (max discount ₹${coupon.maxValue})`;
-    }
-    return desc;
-  };
-
-
     const discountPercentage = productDetail?.marketPrice
     ? Math.round(((Number(productDetail.marketPrice) - Number(productDetail.price)) / Number(productDetail.marketPrice)) * 100)
     : 0;
-
-    const productCoupons = useMemo(() => {
-    if (!productCouponsRaw?.data) return [];
-    return productCouponsRaw.data.map(coupon => {
-      const discount = coupon.discountPercent
-        ? Math.min((Number(productDetail?.price) * parseFloat(coupon.discountPercent.toString())) / 100, coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Infinity)
-        : Math.min(parseFloat(coupon.flatDiscount?.toString() || '0'), coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Number(productDetail?.price));
-      return {
-        id: coupon.id,
-        code: coupon.couponCode,
-        description: generateCouponDescription(coupon),
-        potentialSavings: Math.round(discount),
-      };
-    });
-  }, [productCouponsRaw, productDetail]);
 
 
   if (isLoading) {
@@ -202,31 +170,7 @@ export default function ProductDetail() {
           </View>
         </View>
 
-        {/* Coupons */}
-        {productCoupons && productCoupons.length > 0 && (
-          <View style={tw`px-4 mb-4`}>
-            <View style={tw`bg-white p-5 rounded-2xl shadow-sm border border-gray-100`}>
-              <View style={tw`flex-row items-center mb-4`}>
-                <View style={tw`w-8 h-8 bg-pink-50 rounded-full items-center justify-center mr-3`}>
-                  <MaterialIcons name="local-offer" size={18} color="#EC4899" />
-                </View>
-                <Text style={tw`text-lg font-bold text-gray-900`}>Offers for you</Text>
-              </View>
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`-mx-1`}>
-                {productCoupons.map((coupon) => (
-                  <View key={coupon.id} style={tw`bg-pink-50 p-3 rounded-xl border border-pink-100 mr-3 w-64`}>
-                    <View style={tw`flex-row justify-between items-start mb-1`}>
-                      <Text style={tw`font-bold text-gray-900`}>{coupon.code}</Text>
-                      <Text style={tw`text-pink1 font-bold text-xs`}>Save ₹{coupon.potentialSavings}</Text>
-                    </View>
-                    <Text style={tw`text-xs text-gray-600 leading-4`}>{coupon.description}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-        )}
 
         {/* Description */}
         <View style={tw`px-4 mb-4`}>

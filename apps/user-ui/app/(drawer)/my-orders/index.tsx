@@ -32,6 +32,7 @@ interface Order {
   refundAmount: number | null;
   userNotes: string | null;
   items: OrderItem[];
+  discountAmount?: number;
 }
 
 export default function MyOrders() {
@@ -368,12 +369,15 @@ export default function MyOrders() {
             </View>
           )}
 
-          {/* Footer Actions */}
-          <View style={tw`flex-row justify-between items-center pt-3 border-t border-gray-100`}>
-            <View>
-              <MyText style={tw`text-xs text-gray-500`}>Total Amount</MyText>
-              <MyText style={tw`text-lg font-bold text-gray-900`}>₹{totalAmount}</MyText>
-            </View>
+           {/* Footer Actions */}
+           <View style={tw`flex-row justify-between items-center pt-3 border-t border-gray-100`}>
+             <View>
+               <MyText style={tw`text-xs text-gray-500`}>Total Amount</MyText>
+               <MyText style={tw`text-lg font-bold text-gray-900`}>₹{totalAmount}</MyText>
+               {item.discountAmount && item.discountAmount > 0 && (
+                 <MyText style={tw`text-xs text-green-600`}>Saved ₹{item.discountAmount}</MyText>
+               )}
+             </View>
 
             {(item.paymentMode === 'Online' && (item.paymentStatus === 'pending' || item.paymentStatus === 'failed')) ? (
               <TouchableOpacity
