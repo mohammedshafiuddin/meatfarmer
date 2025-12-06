@@ -110,8 +110,7 @@ export default function OrderDetails() {
   const discountAmount = order.discountAmount || 0;
 
   const handleGenerateCoupon = () => {
-    const orderIdString = `ORD${order.id.toString().padStart(3, "0")}`;
-    generateCouponMutation.mutate({ orderId: orderIdString });
+    generateCouponMutation.mutate({ orderId: order.id });
   };
 
   const handleInitiateRefund = () => {
@@ -151,7 +150,32 @@ export default function OrderDetails() {
   };
 
   const statusStyle = getStatusColor(order.status);
+  const showRefundOptions = true;
 
+  const getRefundDotColor = (status: string) => {
+    if (status === 'success') return 'bg-green-500';
+    else if (status === 'pending') return 'bg-yellow-500';
+    else if (status === 'failed') return 'bg-red-500';
+    else return 'bg-gray-500';
+  };
+
+  const getRefundTextColor = (status: string) => {
+    if (status === 'success' || status === 'na') return 'text-green-700';
+    else if (status === 'pending') return 'text-yellow-700';
+    else if (status === 'failed') return 'text-red-700';
+    else return 'text-gray-700';
+  };
+
+  const getRefundStatusText = (status: string) => {
+    if (status === 'success' || status === 'na') return 'Completed';
+    else if (status === 'pending') return 'Pending';
+    else if (status === 'failed') return 'Failed';
+    else if (status === 'none') return 'Not Initiated';
+    else if (status === 'na') return 'Not Applicable';
+    else return 'Unknown';
+  };
+
+  {console.log({order})}
   return (
     <AppContainer>
 
@@ -423,60 +447,99 @@ export default function OrderDetails() {
           </View>
         )}
 
-        {/* Cancellation Details */}
-        {order.status === "cancelled" && (
+        {/* Refund Coupon Section */}
+        {order.orderStatus?.refundCouponId && (
+          <View style={tw`bg-blue-50 p-5 rounded-2xl shadow-sm mb-4 border border-blue-100`}>
+            <MyText style={tw`text-lg font-bold text-blue-800 mb-3`}>
+              Refund Coupon
+            </MyText>
+            <View style={tw`bg-blue-100 p-4 rounded-xl border border-blue-200`}>
+              <View style={tw`flex-row items-center mb-2`}>
+                <MaterialIcons name="local-offer" size={20} color="#2563EB" />
+                <MyText style={tw`text-blue-800 font-bold ml-2`}>
+                  {order.couponCode}
+                </MyText>
+              </View>
+              <MyText style={tw`text-blue-700 text-sm`}>
+                Generated refund coupon for order cancellation
+              </MyText>
+              <View style={tw`flex-row justify-between items-center mt-3`}>
+                <MyText style={tw`text-blue-600 font-medium`}>
+                  Value:
+                </MyText>
+                <MyText style={tw`text-blue-800 font-bold text-lg`}>
+                  ₹{order.couponData?.discountAmount}
+                </MyText>
+              </View>
+              {/* <View style={tw`flex-row justify-between items-center mt-2`}>
+                <MyText style={tw`text-blue-600 font-medium`}>
+                  Expires:
+                </MyText>
+                <MyText style={tw`text-blue-800 font-medium`}>
+                  {order.couponData?.
+                    ? dayjs(order.orderStatus.refundCoupon.validTill).format("DD MMM YYYY")
+                    : "N/A"}
+                </MyText>
+              </View> */}
+            </View>
+          </View>
+        )}
+
+        {/* Refund Details */}
+        {/* {(order.orderStatus?.paymentStatus === "success" ||
+          (order.isCod && order.isDelivered)) && ( */}
           <View
             style={tw`bg-red-50 p-5 rounded-2xl border border-red-100 mb-4`}
           >
             <MyText style={tw`text-sm font-bold text-red-800 mb-3`}>
-              Cancellation Details
+              {order.status === "cancelled" ? "Cancellation Details" : "Refund Details"}
             </MyText>
-            {order.cancelReason && (
+            {order.status === "cancelled" && order.cancelReason && (
               <View style={tw`mb-3`}>
                 <MyText
                   style={tw`text-xs text-red-600 uppercase font-bold mb-1`}
                 >
-                  Reason
+                  Cancellation Reason
                 </MyText>
                 <MyText style={tw`text-sm text-red-900`}>
                   {order.cancelReason}
                 </MyText>
-           </View>
-         )}
-            <View
-              style={tw`flex-row justify-between items-center bg-white/50 p-3 rounded-xl mb-4`}
-            >
-              <MyText style={tw`text-sm font-medium text-red-800`}>
-                Refund Status
-              </MyText>
-              <View style={tw`flex-row items-center`}>
-                <View
-                  style={tw`w-2 h-2 rounded-full mr-2 ${
-                    order.refundStatus === 'success' ? 'bg-green-500' :
-                    order.refundStatus === 'pending' ? 'bg-yellow-500' :
-                    order.refundStatus === 'failed' ? 'bg-red-500' : 'bg-gray-500'
-                  }`}
-                />
-                <MyText
-                  style={tw`text-sm font-bold ${
-                    order.refundStatus === 'success' ? 'text-green-700' :
-                    order.refundStatus === 'pending' ? 'text-yellow-700' :
-                    order.refundStatus === 'failed' ? 'text-red-700' : 'text-gray-700'
-                  }`}
-                >
-                  {order.refundStatus === 'success' ? 'Completed' :
-                   order.refundStatus === 'pending' ? 'Pending' :
-                   order.refundStatus === 'failed' ? 'Failed' :
-                   order.refundStatus === 'none' ? 'Not Initiated' :
-                   order.refundStatus === 'na' ? 'Not Applicable' : 'Unknown'}
-                </MyText>
-              </View>
             </View>
+          )}
+             <View
+               style={tw`flex-row justify-between items-center bg-white/50 p-3 rounded-xl mb-4`}
+             >
+               <MyText style={tw`text-sm font-medium text-red-800`}>
+                 Refund Status
+               </MyText>
+               <View style={tw`flex-row items-center`}>
+                 <View
+                   style={tw`w-2 h-2 rounded-full mr-2 ${getRefundDotColor(order.refundStatus)}`}
+                 />
+                  <MyText
+                    style={tw`text-sm font-bold ${getRefundTextColor(order.refundStatus)}`}
+                  >
+                    {getRefundStatusText(order.refundStatus)}
+                  </MyText>
+               </View>
+             </View>
+             {order.refundRecord && (
+               <View
+                 style={tw`flex-row justify-between items-center bg-white/50 p-3 rounded-xl mb-4`}
+               >
+                 <MyText style={tw`text-sm font-medium text-red-800`}>
+                   Refund Amount
+                 </MyText>
+                 <MyText style={tw`text-sm font-bold text-red-900`}>
+                   ₹{order.refundRecord.refundAmount}
+                 </MyText>
+               </View>
+             )}
 
-            {/* Refund Action Buttons */}
-            {order.refundStatus !== 'success' && (
-              <View style={tw`flex-row gap-3 mt-2`}>
-                <TouchableOpacity
+              {/* {((order.refundStatus !== 'success' || !order.refundStatus) && order.isDelivered ) && ( */}
+
+              {(!Boolean(order.refundRecord)) && <View style={tw`flex-row gap-3 mt-2`}>
+                {!order.isCod && (<TouchableOpacity
                   style={tw`flex-1 bg-red-500 py-3 px-4 rounded-xl items-center flex-row justify-center shadow-sm`}
                   onPress={() => setInitiateRefundDialogOpen(true)}
                 >
@@ -485,20 +548,22 @@ export default function OrderDetails() {
                     Initiate Refund
                   </MyText>
                 </TouchableOpacity>
+                )}
                 <TouchableOpacity
                   style={tw`flex-1 bg-emerald-500 py-3 px-4 rounded-xl items-center flex-row justify-center shadow-sm`}
                   onPress={() => setGenerateCouponDialogOpen(true)}
                 >
                   <MaterialIcons name="local-offer" size={18} color="white" style={tw`mr-2`} />
                   <MyText style={tw`text-white font-bold text-sm`}>
-                    Generate Coupon
+                    Generate Refund Coupon
                   </MyText>
                 </TouchableOpacity>
-              </View>
-            )}
+              </View>}
+
           </View>
-        )}
+        {/* )} */}
       </View>
+        <View style={tw`h-32`}></View>
 
       {/* Bottom Action Bar */}
       <View
@@ -643,12 +708,12 @@ export default function OrderDetails() {
             />
           </View>
 
-          <View style={tw`bg-amber-50 p-4 rounded-xl border border-amber-100 mb-6 flex-row items-start`}>
-            <MaterialIcons name="info-outline" size={20} color="#D97706" style={tw`mt-0.5`} />
-            <MyText style={tw`text-sm text-amber-800 ml-2 flex-1 leading-5`}>
-              This only works for online payment orders. COD orders cannot be refunded here.
-            </MyText>
-          </View>
+           <View style={tw`bg-amber-50 p-4 rounded-xl border border-amber-100 mb-6 flex-row items-start`}>
+             <MaterialIcons name="info-outline" size={20} color="#D97706" style={tw`mt-0.5`} />
+             <MyText style={tw`text-sm text-amber-800 ml-2 flex-1 leading-5`}>
+               For COD orders, refunds are processed immediately upon delivery confirmation.
+             </MyText>
+           </View>
 
           <View style={tw`flex-row gap-3`}>
             <TouchableOpacity

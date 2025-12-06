@@ -34,7 +34,7 @@ export const checkRefundStatuses = async () => {
 
         try {
           const razorpayRefund = await RazorpayPaymentService.fetchRefund(refund.merchantRefundId);
-        // console.log({refundId: refund.merchantRefundId, refundStatus: JSON.stringify(razorpayRefund)});
+        console.log({refundId: refund.merchantRefundId, refundStatus: JSON.stringify(razorpayRefund)});
         
         if (razorpayRefund.status === 'processed') {
           await db

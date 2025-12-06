@@ -183,6 +183,7 @@ export const orderStatus = mf.table('order_status', {
   cancellationAdminNotes: text('cancellation_admin_notes'),
   cancellationReviewed: boolean('cancellation_reviewed').notNull().default(false),
   cancellationReviewedAt: timestamp('cancellation_reviewed_at'),
+  refundCouponId: integer('refund_coupon_id').references(() => coupons.id),
 });
 
 export const paymentInfoTable = mf.table('payment_info', {
@@ -251,6 +252,7 @@ export const complaints = mf.table('complaints', {
   userId: integer('user_id').notNull().references(() => users.id),
   orderId: integer('order_id').references(() => orders.id),
   complaintBody: varchar('complaint_body', { length: 1000 }).notNull(),
+  images: jsonb('images'),
   response: varchar('response', { length: 1000 }),
   isResolved: boolean('is_resolved').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -394,6 +396,7 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
 export const orderStatusRelations = relations(orderStatus, ({ one }) => ({
   order: one(orders, { fields: [orderStatus.orderId], references: [orders.id] }),
   user: one(users, { fields: [orderStatus.userId], references: [users.id] }),
+  refundCoupon: one(coupons, { fields: [orderStatus.refundCouponId], references: [coupons.id] }),
 }));
 
 export const paymentInfoRelations = relations(paymentInfoTable, ({ one }) => ({

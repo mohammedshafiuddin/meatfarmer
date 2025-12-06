@@ -301,10 +301,13 @@ export const orderRouter = router({
           isRefundDone: refund?.refundStatus === 'processed' || false,
           refundStatus: refund?.refundStatus as RefundStatus,
           refundAmount: refund?.refundAmount ? parseFloat(refund.refundAmount.toString()) : null,
-         // Coupon information
-         couponCode: couponData?.couponCode || null,
-         couponDescription: couponData?.couponDescription || null,
-         discountAmount: couponData?.discountAmount || null,
+          // Coupon information
+          couponData: couponData,
+          couponCode: couponData?.couponCode || null,
+          couponDescription: couponData?.couponDescription || null,
+          discountAmount: couponData?.discountAmount || null,
+          orderStatus: statusRecord,
+          refundRecord: refund
       };
     }),
 
@@ -394,7 +397,7 @@ export const orderRouter = router({
           longitude: order.address.longitude,
           totalAmount: parseFloat(order.totalAmount),
           items,
-          deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('h:mm a') : 'N/A',
+          deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('ddd, MMM D • h:mm A') : 'Not scheduled',
           status,
           isPackaged: statusRecord?.isPackaged || false,
           isDelivered: statusRecord?.isDelivered || false,
@@ -470,7 +473,7 @@ export const orderRouter = router({
           address: `${order.address.addressLine1}${order.address.addressLine2 ? `, ${order.address.addressLine2}` : ''}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}`,
           totalAmount: parseFloat(order.totalAmount),
           items,
-          deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('h:mm a') : 'N/A',
+          deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('ddd, MMM D • h:mm A') : 'Not scheduled',
           status,
           isPackaged: statusRecord?.isPackaged || false,
           isDelivered: statusRecord?.isDelivered || false,
@@ -593,7 +596,7 @@ export const orderRouter = router({
            totalAmount: parseFloat(order.totalAmount),
           items,
           createdAt: order.createdAt,
-          deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('DD MMM, h:mm A') : 'N/A',
+          deliveryTime: order.slot ? dayjs(order.slot.deliveryTime).format('ddd, MMM D • h:mm A') : 'Not scheduled',
           status,
           isPackaged: statusRecord?.isPackaged || false,
           isDelivered: statusRecord?.isDelivered || false,

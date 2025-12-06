@@ -1,7 +1,7 @@
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { coupons, users, staffUsers, orders, couponApplicableUsers, couponApplicableProducts } from '../../db/schema';
+import { coupons, users, staffUsers, orders, couponApplicableUsers, couponApplicableProducts, orderStatus } from '../../db/schema';
 import { eq, and, like, or } from 'drizzle-orm';
 import dayjs from 'dayjs';
 
@@ -363,51 +363,44 @@ export const couponRouter = router({
        };
      }),
 
-      generateCancellationCoupon: protectedProcedure
-       .input(
-         z.object({
-           orderId: z.string().regex(/^ORD\d+$/, "Invalid order ID format"),
-         })
-       )
-       .mutation(async ({ input, ctx }) => {
-         const { orderId } = input;
+       generateCancellationCoupon: protectedProcedure
+        .input(
+          z.object({
+            orderId: z.number(),
+          })
+        )
+        .mutation(async ({ input, ctx }) => {
+          const { orderId } = input;
 
-         // Get staff user ID from auth middleware
-         const staffUserId = ctx.staffUser?.id;
-         if (!staffUserId) {
-           throw new Error("Unauthorized");
-         }
+          // Get staff user ID from auth middleware
+          const staffUserId = ctx.staffUser?.id;
+          if (!staffUserId) {
+            throw new Error("Unauthorized");
+          }
 
-         // Extract readable ID from orderId (e.g., ORD001 -> 1)
-         const readableIdMatch = orderId.match(/^ORD(\d+)$/);
-         if (!readableIdMatch) {
-           throw new Error("Invalid order ID format");
-         }
-         const readableId = parseInt(readableIdMatch[1]);
-
-         // Find the order with user and order status information
-         const order = await db.query.orders.findFirst({
-           where: eq(orders.id, readableId),
-           with: {
-             user: true,
-             orderStatus: true,
-           },
-         });
+          // Find the order with user and order status information
+          const order = await db.query.orders.findFirst({
+            where: eq(orders.id, orderId),
+            with: {
+              user: true,
+              orderStatus: true,
+            },
+          });
 
          if (!order) {
            throw new Error("Order not found");
          }
 
          // Check if order is cancelled (check if any status entry has isCancelled: true)
-         const isOrderCancelled = order.orderStatus?.some(status => status.isCancelled) || false;
-         if (!isOrderCancelled) {
-           throw new Error("Order is not cancelled");
-         }
+        //  const isOrderCancelled = order.orderStatus?.some(status => status.isCancelled) || false;
+        //  if (!isOrderCancelled) {
+        //    throw new Error("Order is not cancelled");
+        //  }
 
-         // Check if payment method is COD
-         if (order.isCod) {
-           throw new Error("Can't generate refund coupon for CoD Order");
-         }
+        //  // Check if payment method is COD
+        //  if (order.isCod) {
+        //    throw new Error("Can't generate refund coupon for CoD Order");
+        //  }
 
          // Verify user exists
          if (!order.user) {
@@ -434,21 +427,33 @@ export const couponRouter = router({
          const expiryDate = new Date();
          expiryDate.setDate(expiryDate.getDate() + 30);
 
-         // Create the coupon
-         const result = await db.insert(coupons).values({
-           couponCode,
-           isUserBased: true,
-           flatDiscount: orderAmount.toString(),
-           minOrder: "0",
-           targetUser: order.userId,
-           maxValue: orderAmount.toString(),
-           validTill: expiryDate,
-           maxLimitForUser: 1,
-           createdBy: staffUserId,
-           isApplyForAll: false,
-         }).returning();
+          // Create the coupon and update order status in a transaction
+          const coupon = await db.transaction(async (tx) => {
+            // Create the coupon
+            const result = await tx.insert(coupons).values({
+              couponCode,
+              isUserBased: true,
+              flatDiscount: orderAmount.toString(),
+              minOrder: orderAmount.toString(),
+              targetUser: order.userId,
+              maxValue: orderAmount.toString(),
+              validTill: expiryDate,
+              maxLimitForUser: 1,
+              createdBy: staffUserId,
+              isApplyForAll: false,
+            }).returning();
 
-          return result[0];
+            const coupon = result[0];
+
+            // Update order_status with refund coupon ID
+            await tx.update(orderStatus)
+              .set({ refundCouponId: coupon.id })
+              .where(eq(orderStatus.orderId, orderId));
+
+            return coupon;
+          });
+
+          return coupon;
         }),
 
   getUsersMiniInfo: protectedProcedure

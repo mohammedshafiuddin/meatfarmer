@@ -6,7 +6,7 @@ export const NOTIF_PERMISSION_DENIED = "Permission not granted to get push token
 export const REFRESH_EVENT = 'refresh_event';
 
 export const REFUND_STATUS = {
-  PENDING: 'none',
+  PENDING: 'pending',
   NOT_APPLICABLE: 'na',
   PROCESSING: 'initiated',
   SUCCESS: 'success',

@@ -50,25 +50,16 @@ export const adminPaymentsRouter = router({
           where: eq(orderStatus.orderId, orderId),
         });
 
-        console.log(orderStatusRecord);
+        if(order.isCod) {
+          throw new ApiError("Order is a Cash On Delivery. Not eligible for refund")
+        }
 
         if (
           !orderStatusRecord ||
-          orderStatusRecord.paymentStatus !== "success"
+          (orderStatusRecord.paymentStatus !== "success" &&
+           !(order.isCod && orderStatusRecord.isDelivered))
         ) {
-          throw new ApiError("Order is not paid or payment not verified", 400);
-        }
-
-        // Get payment record
-        const payment = await db.query.payments.findFirst({
-          where: and(
-            eq(payments.orderId, orderId),
-            eq(payments.status, "success")
-          ),
-        });
-
-        if (!payment || payment.status !== "success") {
-          throw new ApiError("Payment not found or not successful", 404);
+          throw new ApiError("Order payment not verified or not eligible for refund", 400);
         }
 
         // Calculate refund amount
@@ -85,44 +76,71 @@ export const adminPaymentsRouter = router({
           throw new ApiError("Invalid refund parameters", 400);
         }
 
-        const payload = payment.payload as any;
-        // Initiate Razorpay refund
-        const razorpayRefund = await RazorpayPaymentService.initiateRefund(
-          payload.payment_id,
-          Math.round(calculatedRefundAmount * 100) // Convert to paisa
-        );
+        let razorpayRefund = null;
+        let merchantRefundId = null;
 
-        
-
-        // Update or insert refund record
-        await db
-          .insert(refunds)
-          .values({
-            orderId,
-            refundAmount: calculatedRefundAmount.toString(),
-            refundStatus: "initiated",
-            merchantRefundId: razorpayRefund.id,
-          })
-          .onConflictDoUpdate({
-            target: refunds.orderId,
-            set: {
-              refundAmount: calculatedRefundAmount.toString(),
-              refundStatus: "initiated",
-              merchantRefundId: razorpayRefund.id,
-              refundProcessedAt: null,
-            },
+          // Get payment record for online payments
+          const payment = await db.query.payments.findFirst({
+            where: and(
+              eq(payments.orderId, orderId),
+              eq(payments.status, "success")
+            ),
           });
 
-        return {
-          refundId: razorpayRefund.id,
-          amount: calculatedRefundAmount,
-          status: "initiated",
-          message: "Refund initiated successfully",
-        };
-      } catch (e) {
-        console.log({e});
+          if (!payment || payment.status !== "success") {
+            throw new ApiError("Payment not found or not successful", 404);
+          }
+
+          const payload = payment.payload as any;
+          // Initiate Razorpay refund
+          razorpayRefund = await RazorpayPaymentService.initiateRefund(
+            payload.payment_id,
+            Math.round(calculatedRefundAmount * 100) // Convert to paisa
+          );
+          merchantRefundId = razorpayRefund.id;
+
         
-        throw new ApiError("Failed to Initiate Refund")
+
+        // Check if refund already exists for this order
+        const existingRefund = await db.query.refunds.findFirst({
+          where: eq(refunds.orderId, orderId),
+        });
+
+        const refundStatus = "initiated";
+
+        if (existingRefund) {
+          // Update existing refund
+          await db
+            .update(refunds)
+            .set({
+              refundAmount: calculatedRefundAmount.toString(),
+              refundStatus,
+              merchantRefundId,
+              refundProcessedAt: order.isCod ? new Date() : null,
+            })
+            .where(eq(refunds.id, existingRefund.id));
+        } else {
+          // Insert new refund
+          await db
+            .insert(refunds)
+            .values({
+              orderId,
+              refundAmount: calculatedRefundAmount.toString(),
+              refundStatus,
+              merchantRefundId,
+            });
+        }
+
+        return {
+          refundId: merchantRefundId || `cod_${orderId}`,
+          amount: calculatedRefundAmount,
+          status: refundStatus,
+          message: order.isCod ? "COD refund processed successfully" : "Refund initiated successfully",
+        };
+      }
+      catch(e) {
+        console.log(e);
+        throw new ApiError("Failed to initiate refund")
       }
     }),
 });

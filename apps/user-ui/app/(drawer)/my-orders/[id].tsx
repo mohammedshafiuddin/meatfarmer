@@ -367,6 +367,43 @@ export default function OrderDetails() {
           </View>
         )}
 
+        {/* Refund Coupon Section */}
+        {order.orderStatus?.refundCoupon && (
+          <View style={tw`bg-blue-50 p-4 mb-4 rounded-xl border border-blue-200`}>
+            <View style={tw`flex-row items-center mb-2`}>
+              <MaterialIcons name="local-offer" size={20} color="#2563EB" />
+              <MyText style={tw`text-blue-800 font-bold ml-2`}>
+                Refund Coupon
+              </MyText>
+            </View>
+            <MyText style={tw`text-blue-700 text-sm mb-3`}>
+              A refund coupon has been generated for this order
+            </MyText>
+            <View style={tw`bg-blue-100 p-3 rounded-lg`}>
+              <View style={tw`flex-row justify-between items-center mb-2`}>
+                <MyText style={tw`text-blue-700 font-medium`}>Code:</MyText>
+                <MyText style={tw`text-blue-800 font-bold`}>
+                  {order.orderStatus.refundCoupon.couponCode}
+                </MyText>
+              </View>
+              <View style={tw`flex-row justify-between items-center mb-2`}>
+                <MyText style={tw`text-blue-700 font-medium`}>Value:</MyText>
+                <MyText style={tw`text-blue-800 font-bold`}>
+                  ₹{order.orderStatus.refundCoupon.flatDiscount}
+                </MyText>
+              </View>
+              <View style={tw`flex-row justify-between items-center`}>
+                <MyText style={tw`text-blue-700 font-medium`}>Expires:</MyText>
+                <MyText style={tw`text-blue-800 font-medium`}>
+                  {order.orderStatus.refundCoupon.validTill
+                    ? dayjs(order.orderStatus.refundCoupon.validTill).format("DD MMM YYYY")
+                    : "N/A"}
+                </MyText>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Order Summary */}
         <View style={tw`bg-white p-4 mb-4`}>
           <MyText style={tw`text-lg font-semibold text-gray-800 mb-3`}>

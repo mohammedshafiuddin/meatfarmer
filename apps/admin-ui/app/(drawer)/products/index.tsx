@@ -122,6 +122,8 @@ export default function Products() {
   const inStockCount = products.filter(p => !p.isOutOfStock).length;
   const outOfStockCount = products.filter(p => p.isOutOfStock).length;
 
+  productsData?.products.forEach(p => console.log(p.images));
+  
   return (
     <AppContainer>
       <View style={tw`flex-1`}>

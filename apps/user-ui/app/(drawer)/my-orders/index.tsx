@@ -7,6 +7,7 @@ import { BottomDialog } from 'common-ui';
 
 import { trpc } from '@/src/trpc-client';
 import RazorpayCheckout from 'react-native-razorpay';
+import ComplaintForm from '@/components/ComplaintForm';
 
 // Type definitions
 interface OrderItem {
@@ -52,7 +53,7 @@ export default function MyOrders() {
   });
 
   const cancelOrderMutation = trpc.user.order.cancelOrder.useMutation();
-  const raiseComplaintMutation = trpc.user.complaint.raise.useMutation();
+
   const updateNotesMutation = trpc.user.order.updateUserNotes.useMutation({
     onSuccess: () => {
       refetch();
@@ -140,11 +141,10 @@ export default function MyOrders() {
   const [menuDialogOpen, setMenuDialogOpen] = useState<boolean>(false);
   const [menuOrderId, setMenuOrderId] = useState<string>('');
   const [complaintDialogOpen, setComplaintDialogOpen] = useState<boolean>(false);
-  const [complaintOrderId, setComplaintOrderId] = useState<string>('');
-  const [cancelDialogOpen, setCancelDialogOpen] = useState<boolean>(false);
-  const [cancelOrderId, setCancelOrderId] = useState<string>('');
-  const [cancelReason, setCancelReason] = useState<string>('');
-  const [complaintBody, setComplaintBody] = useState<string>('');
+   const [complaintOrderId, setComplaintOrderId] = useState<string>('');
+   const [cancelDialogOpen, setCancelDialogOpen] = useState<boolean>(false);
+   const [cancelOrderId, setCancelOrderId] = useState<string>('');
+   const [cancelReason, setCancelReason] = useState<string>('');
   const [editNotesDialogOpen, setEditNotesDialogOpen] = useState<boolean>(false);
   const [editNotesOrderId, setEditNotesOrderId] = useState<string>('');
   const [editNotes, setEditNotes] = useState<string>('');
@@ -269,7 +269,7 @@ export default function MyOrders() {
             <TouchableOpacity
               onPress={(e) => {
                 e.stopPropagation();
-                setMenuOrderId(item.orderId);
+                setMenuOrderId(item.id.toString());
                 setMenuDialogOpen(true);
               }}
               style={tw`p-1.5 rounded-full bg-white border border-gray-200`}
@@ -353,6 +353,7 @@ export default function MyOrders() {
 
           {item.cancelReason && (
             <View style={tw`bg-red-50 p-3 rounded-lg mb-3 border border-red-100`}>
+              
               <View style={tw`flex-row items-center mb-1`}>
                 <MaterialIcons name="info" size={14} color="#DC2626" />
                 <MyText style={tw`text-xs text-red-700 font-bold ml-1`}>Cancelled:</MyText>
@@ -425,22 +426,7 @@ export default function MyOrders() {
     }
   };
 
-  const handleRaiseComplaint = async () => {
-    if (!complaintBody.trim()) {
-      Alert.alert('Error', 'Please enter complaint details');
-      return;
-    }
-    try {
-      await raiseComplaintMutation.mutateAsync({ orderId: complaintOrderId, complaintBody: complaintBody.trim() });
-      Alert.alert('Success', 'Complaint raised successfully');
-      setComplaintDialogOpen(false);
-      setComplaintBody('');
-      setMenuDialogOpen(false);
-    } catch (error) {
 
-      Alert.alert('Error', 'Failed to raise complaint');
-    }
-  };
 
   const handleEditNotes = async () => {
     try {
@@ -695,40 +681,11 @@ export default function MyOrders() {
 
       {/* Raise Complaint Dialog */}
       <BottomDialog open={complaintDialogOpen} onClose={() => setComplaintDialogOpen(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={tw`p-6`}>
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-              <MyText style={tw`text-xl font-bold text-gray-900`}>Raise Complaint</MyText>
-              <TouchableOpacity onPress={() => setComplaintDialogOpen(false)}>
-                <MaterialIcons name="close" size={24} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
-
-            <MyText style={tw`text-gray-700 font-medium mb-2`}>Describe the issue</MyText>
-            <TextInput
-              style={tw`bg-gray-50 border border-gray-200 rounded-xl p-4 min-h-32 text-base text-gray-800 mb-6`}
-              value={complaintBody}
-              onChangeText={setComplaintBody}
-              placeholder="Tell us what went wrong..."
-              placeholderTextColor="#9CA3AF"
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-
-            <TouchableOpacity
-              style={tw`bg-yellow-500 py-4 rounded-xl shadow-sm items-center ${raiseComplaintMutation.isPending ? 'opacity-70' : ''}`}
-              onPress={handleRaiseComplaint}
-              disabled={raiseComplaintMutation.isPending}
-            >
-              {raiseComplaintMutation.isPending ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <MyText style={tw`text-white font-bold text-lg`}>Submit Complaint</MyText>
-              )}
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+        <ComplaintForm
+          open={complaintDialogOpen}
+          onClose={() => setComplaintDialogOpen(false)}
+          orderId={complaintOrderId}
+        />
       </BottomDialog>
     </View>
   );

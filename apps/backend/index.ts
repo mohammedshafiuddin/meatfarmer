@@ -87,6 +87,7 @@ app.use('/api/trpc', createExpressMiddleware({
             };
           }
         } else {
+          
           // This is a regular user token
           user = decoded;
 

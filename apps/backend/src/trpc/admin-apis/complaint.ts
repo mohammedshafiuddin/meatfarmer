@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '../../db/db_index';
 import { complaints, users } from '../../db/schema';
 import { eq } from 'drizzle-orm';
+import { generateSignedUrlsFromS3Urls } from '../../lib/s3-client';
 
 export const complaintRouter = router({
   getAll: protectedProcedure
@@ -25,6 +26,7 @@ export const complaintRouter = router({
             isResolved: complaints.isResolved,
             createdAt: complaints.createdAt,
             userName: users.name,
+            images: complaints.images,
           })
           .from(complaints)
           .leftJoin(users, eq(complaints.userId, users.id))
@@ -38,16 +40,28 @@ export const complaintRouter = router({
 
       const totalCount = totalCountResult[0].count;
 
+      // Generate signed URLs for images
+      const complaintsWithSignedImages = await Promise.all(
+        complaintsData.map(async (c) => {
+          const signedImages = c.images
+            ? await generateSignedUrlsFromS3Urls(c.images as string[])
+            : [];
+
+          return {
+            id: c.id,
+            text: c.complaintBody,
+            userId: c.userId,
+            userName: c.userName,
+            orderId: c.orderId,
+            status: c.isResolved ? 'resolved' : 'pending',
+            createdAt: c.createdAt,
+            images: signedImages,
+          };
+        })
+      );
+
       return {
-        complaints: complaintsData.map(c => ({
-          id: c.id,
-          text: c.complaintBody,
-          userId: c.userId,
-          userName: c.userName,
-          orderId: c.orderId,
-          status: c.isResolved ? 'resolved' : 'pending',
-          createdAt: c.createdAt,
-        })),
+        complaints: complaintsWithSignedImages,
         totalCount,
       };
     }),

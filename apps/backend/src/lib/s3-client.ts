@@ -25,7 +25,7 @@ export const imageUploadS3 = async(body: Buffer<ArrayBufferLike>, type: string, 
   })
   const resp = await s3Client.send(command)
   
-  const imageUrl = `${s3Url}${key}`
+  const imageUrl = `${key}`
   return imageUrl;
 }
 
@@ -63,10 +63,12 @@ export async function deleteImageUtil(bucket:string = s3BucketName, ...keys:stri
  * @param expiresIn Expiration time in seconds (default: 259200 seconds = 3 days)
  * @returns A pre-signed URL that provides temporary access to the object
  */
-export async function generateSignedUrlFromS3Url(s3Url: string|null, expiresIn: number = 259200): Promise<string> {
-  if (!s3Url) {
+export async function generateSignedUrlFromS3Url(s3UrlRaw: string|null, expiresIn: number = 259200): Promise<string> {
+  if (!s3UrlRaw) {
     return '';
   }
+
+  const s3Url = s3UrlRaw
   
   try {
     // Check if we have a cached signed URL
@@ -76,16 +78,10 @@ export async function generateSignedUrlFromS3Url(s3Url: string|null, expiresIn: 
       return cachedUrl;
     }
     
-    // Not in cache, generate a new signed URL
-    // Extract the key from the S3 URL
-    // Format: https://bucket-name.s3.region.amazonaws.com/path/to/object
-    const urlObj = new URL(s3Url);
-    const path = urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
-    
     // Create the command to get the object
     const command = new GetObjectCommand({
       Bucket: s3BucketName,
-      Key: path,
+      Key: s3Url,
     });
     
     // Generate the signed URL

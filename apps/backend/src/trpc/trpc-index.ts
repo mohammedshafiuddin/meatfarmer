@@ -62,7 +62,7 @@ export const publicProcedure = t.procedure.use(errorLoggerMiddleware);
 export const protectedProcedure = t.procedure.use(errorLoggerMiddleware).use(
   middleware(async ({ ctx, next }) => {
 
-    if ((!ctx.user && !ctx.staffUser) || (!ctx.user) ) {
+    if ((!ctx.user && !ctx.staffUser)) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
     return next();

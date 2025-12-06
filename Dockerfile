@@ -40,4 +40,6 @@ RUN npm ci --production --omit=dev
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/fallback-ui/dist ./apps/fallback-ui/dist
 EXPOSE 4000
-CMD ["node", "apps/backend/dist/index.js"]
+RUN npm i -g bun
+CMD ["bun", "apps/backend/dist/index.js"]
+# CMD ["node", "apps/backend/dist/index.js"]

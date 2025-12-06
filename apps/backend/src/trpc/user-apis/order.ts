@@ -32,7 +32,7 @@ type CouponUsageInsert = {
   userId: number;
   couponId: number;
   orderId: number;
-  orderItemId: number;
+  orderItemId: number | null;
   usedAt: Date;
 };
 
@@ -275,16 +275,18 @@ export const orderRouter = router({
 
         // Add coupon usage records if coupons were applied
         if (appliedCoupons.length > 0) {
+          // OLD CODE (commented out):
+          /*
           // Get inserted order items
           const insertedOrderItems = await db.query.orderItems.findMany({
             where: eq(orderItems.orderId, newOrder.id),
           });
 
           const couponUsageInserts: CouponUsageInsert[] = [];
-        appliedCoupons.forEach(coupon => {
-          insertedOrderItems.forEach(orderItem => {
-            const applicableProducts = Array.isArray(coupon.applicableProducts) ? coupon.applicableProducts : [];
-            if (applicableProducts.length === 0 || applicableProducts.some((ap: any) => ap.productId === orderItem.productId)) {
+          appliedCoupons.forEach(coupon => {
+            insertedOrderItems.forEach(orderItem => {
+              const applicableProducts = Array.isArray(coupon.applicableProducts) ? coupon.applicableProducts : [];
+              if (applicableProducts.length === 0 || applicableProducts.some((ap: any) => ap.productId === orderItem.productId)) {
                 couponUsageInserts.push({
                   userId,
                   couponId: coupon.id,
@@ -295,6 +297,16 @@ export const orderRouter = router({
               }
             });
           });
+          */
+
+          // NEW CODE: Single record per coupon per order
+          const couponUsageInserts: CouponUsageInsert[] = appliedCoupons.map(coupon => ({
+            userId,
+            couponId: coupon.id,
+            orderId: newOrder.id,
+            orderItemId: null, // Set to null for order-level tracking
+            usedAt: new Date(),
+          }));
 
           if (couponUsageInserts.length > 0) {
             await db.insert(couponUsage).values(couponUsageInserts);
@@ -409,7 +421,7 @@ export const orderRouter = router({
       const { orderId } = input;
       const userId = ctx.user.userId;
 
-      const order = await db.query.orders.findFirst({
+       const order = await db.query.orders.findFirst({
         where: and(eq(orders.id, parseInt(orderId)), eq(orders.userId, userId)),
         with: {
           orderItems: {
@@ -419,7 +431,11 @@ export const orderRouter = router({
           },
           slot: true,
           paymentInfo: true,
-          orderStatus: true,
+          orderStatus: {
+            with: {
+              refundCoupon: true,
+            },
+          },
           refunds: true,
         },
       });

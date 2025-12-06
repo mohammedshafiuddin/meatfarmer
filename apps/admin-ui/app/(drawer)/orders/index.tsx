@@ -154,7 +154,7 @@ const OrderItem = ({ order }: { order: OrderType }) => {
               <View style={tw`flex-row items-center mt-2`}>
                 <MaterialIcons name="event" size={14} color="#6B7280" />
                 <MyText style={tw`text-xs text-gray-600 ml-1`}>
-                  Slot: {dayjs(order.deliveryTime).format('ddd, MMM D • h:mm A')}
+                  Slot: {order.deliveryTime}
                 </MyText>
               </View>
             </View>

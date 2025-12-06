@@ -169,7 +169,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw error;
     }
   };
-  console.log(authState.userDetails)
+
   
   const register = async (data: FormData): Promise<void> => {
     try {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Alert } from "react-native";
-import { tw, ConfirmationDialog, MyText, MyFlatList, useMarkDataFetchers, usePagination } from "common-ui";
+import { tw, ConfirmationDialog, MyText, MyFlatList, useMarkDataFetchers, usePagination, ImageViewerURI } from "common-ui";
 import { trpc } from "@/src/trpc-client";
 
 export default function Complaints() {
@@ -76,8 +76,24 @@ export default function Complaints() {
          renderItem={({ item }) => (
            <View style={tw`bg-white p-4 mb-4 rounded-2xl shadow-lg`}>
              <MyText style={tw`text-lg font-bold mb-2 text-gray-800`}>Complaint #{item.id}</MyText>
-             <MyText style={tw`text-base mb-2 text-gray-700`}>{item.text}</MyText>
-             <View style={tw`flex-row items-center mb-2`}>
+              <MyText style={tw`text-base mb-2 text-gray-700`}>{item.text}</MyText>
+
+              {item.images && item.images.length > 0 && (
+                <View style={tw`mt-3 mb-3`}>
+                  <MyText style={tw`text-sm font-semibold text-gray-700 mb-2`}>Attached Images:</MyText>
+                  <View style={tw`flex-row flex-wrap gap-2`}>
+                    {item.images.map((imageUri: string, index: number) => (
+                      <ImageViewerURI
+                        key={index}
+                        uri={imageUri}
+                        style={tw`w-16 h-16 rounded-lg border border-gray-200`}
+                      />
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              <View style={tw`flex-row items-center mb-2`}>
                <TouchableOpacity
                  onPress={() =>
                    Alert.alert("User Page", "User page coming soon")
