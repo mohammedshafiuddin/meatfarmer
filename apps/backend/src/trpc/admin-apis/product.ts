@@ -1,10 +1,10 @@
 import { router, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { productInfo, units, specialDeals, productSlots, productTags } from '../../db/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { productInfo, units, specialDeals, productSlots, productTags, productReviews, users } from '../../db/schema';
+import { eq, and, inArray, desc, sql } from 'drizzle-orm';
 import { ApiError } from '../../lib/api-error';
-import { imageUploadS3, generateSignedUrlsFromS3Urls, getOriginalUrlFromSignedUrl } from '../../lib/s3-client';
+import { imageUploadS3, generateSignedUrlsFromS3Urls, getOriginalUrlFromSignedUrl, claimUploadUrl } from '../../lib/s3-client';
 import { deleteS3Image } from '../../lib/delete-image';
 import type { SpecialDeal } from '../../db/types';
 
@@ -248,5 +248,87 @@ export const productRouter = router({
       });
 
       return result;
+    }),
+
+  getProductReviews: protectedProcedure
+    .input(z.object({
+      productId: z.number().int().positive(),
+      limit: z.number().int().min(1).max(50).optional().default(10),
+      offset: z.number().int().min(0).optional().default(0),
+    }))
+    .query(async ({ input }) => {
+      const { productId, limit, offset } = input;
+
+      const reviews = await db
+        .select({
+          id: productReviews.id,
+          reviewBody: productReviews.reviewBody,
+          ratings: productReviews.ratings,
+          imageUrls: productReviews.imageUrls,
+          reviewTime: productReviews.reviewTime,
+          adminResponse: productReviews.adminResponse,
+          adminResponseImages: productReviews.adminResponseImages,
+          userName: users.name,
+        })
+        .from(productReviews)
+        .innerJoin(users, eq(productReviews.userId, users.id))
+        .where(eq(productReviews.productId, productId))
+        .orderBy(desc(productReviews.reviewTime))
+        .limit(limit)
+        .offset(offset);
+
+      // Generate signed URLs for images
+      const reviewsWithSignedUrls = await Promise.all(
+        reviews.map(async (review) => ({
+          ...review,
+          signedImageUrls: await generateSignedUrlsFromS3Urls((review.imageUrls as string[]) || []),
+          signedAdminImageUrls: await generateSignedUrlsFromS3Urls((review.adminResponseImages as string[]) || []),
+        }))
+      );
+
+      // Check if more reviews exist
+      const totalCountResult = await db
+        .select({ count: sql`count(*)` })
+        .from(productReviews)
+        .where(eq(productReviews.productId, productId));
+
+      const totalCount = Number(totalCountResult[0].count);
+      const hasMore = offset + limit < totalCount;
+
+      return { reviews: reviewsWithSignedUrls, hasMore };
+    }),
+
+  respondToReview: protectedProcedure
+    .input(z.object({
+      reviewId: z.number().int().positive(),
+      adminResponse: z.string().optional(),
+      adminResponseImages: z.array(z.string()).optional().default([]),
+      uploadUrls: z.array(z.string()).optional().default([]),
+    }))
+    .mutation(async ({ input }) => {
+      const { reviewId, adminResponse, adminResponseImages, uploadUrls } = input;
+
+      console.log({adminResponseImages, uploadUrls, adminResponse})
+      
+      const [updatedReview] = await db
+        .update(productReviews)
+        .set({
+          adminResponse,
+          adminResponseImages,
+        })
+        .where(eq(productReviews.id, reviewId))
+        .returning();
+
+      if (!updatedReview) {
+        throw new ApiError('Review not found', 404);
+      }
+
+      // Claim upload URLs
+      if (uploadUrls && uploadUrls.length > 0) {
+        // const { claimUploadUrl } = await import('../../lib/s3-client');
+        await Promise.all(uploadUrls.map(url => claimUploadUrl(url)));
+      }
+
+      return { success: true, review: updatedReview };
     }),
 });

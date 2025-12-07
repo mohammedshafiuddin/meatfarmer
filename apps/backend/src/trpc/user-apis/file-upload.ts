@@ -20,9 +20,14 @@ export const fileUploadRouter = router({
         let folder: string;
         if (contextString === 'review') {
           folder = 'review-images';
-        } else {
+        } else if(contextString === 'product_info') {
           folder = 'product-images';
+        } else if(contextString === 'review_response') {
+          folder = 'review-response-images'
+        } else {
+          folder = '';
         }
+
         const extension = mimeType === 'image/jpeg' ? '.jpg' :
                           mimeType === 'image/png' ? '.png' :
                           mimeType === 'image/gif' ? '.gif' : '.jpg';

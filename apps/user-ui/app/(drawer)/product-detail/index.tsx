@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Dimensions, StatusBar, Platform, TextInput, FlatList, RefreshControl } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ImageCarousel, tw, BottomDialog, useManualRefresh, useMarkDataFetchers, LoadingDialog, ImageUploader } from 'common-ui';
+import { LinearGradient } from 'expo-linear-gradient';
 import usePickImage from 'common-ui/src/components/use-pick-image';
 import { theme } from 'common-ui/src/theme';
 import dayjs from 'dayjs';
@@ -32,7 +33,7 @@ export default function ProductDetail() {
   const { data: productDetail, isLoading, error, refetch } = trpc.user.product.getProductDetails.useQuery({ id: id.toString() });
   const addToCart = trpc.user.cart.addToCart.useMutation();
 
-  
+
   useManualRefresh(() => {
     refetch();
   });
@@ -71,43 +72,43 @@ export default function ProductDetail() {
     });
   };
 
-     const discountPercentage = productDetail?.marketPrice
-     ? Math.round(((Number(productDetail.marketPrice) - Number(productDetail.price)) / Number(productDetail.marketPrice)) * 100)
-     : 0;
+  const discountPercentage = productDetail?.marketPrice
+    ? Math.round(((Number(productDetail.marketPrice) - Number(productDetail.price)) / Number(productDetail.marketPrice)) * 100)
+    : 0;
 
-   const loadReviews = async (reset = false) => {
-     if (reviewsLoading || (!hasMore && !reset)) return;
-     setReviewsLoading(true);
-     try {
-       const { reviews: newReviews, hasMore: newHasMore } = await trpcClient.user.product.getProductReviews.query({
-         productId: Number(id),
-         limit: 10,
-         offset: reset ? 0 : reviewsOffset,
-       });
-       setReviews(reset ? newReviews : [...reviews, ...newReviews]);
-       setHasMore(newHasMore);
-       setReviewsOffset(reset ? 10 : reviewsOffset + 10);
-     } catch (error) {
-       console.error('Error loading reviews:', error);
-     } finally {
-       setReviewsLoading(false);
-     }
-   };
+  const loadReviews = async (reset = false) => {
+    if (reviewsLoading || (!hasMore && !reset)) return;
+    setReviewsLoading(true);
+    try {
+      const { reviews: newReviews, hasMore: newHasMore } = await trpcClient.user.product.getProductReviews.query({
+        productId: Number(id),
+        limit: 10,
+        offset: reset ? 0 : reviewsOffset,
+      });
+      setReviews(reset ? newReviews : [...reviews, ...newReviews]);
+      setHasMore(newHasMore);
+      setReviewsOffset(reset ? 10 : reviewsOffset + 10);
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
-    const onRefresh = async () => {
-      setRefreshing(true);
-      await refetch(); // Refetch product details
-      await loadReviews(true); // Reset and reload reviews
-      setRefreshing(false);
-    };
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch(); // Refetch product details
+    await loadReviews(true); // Reset and reload reviews
+    setRefreshing(false);
+  };
 
-    React.useEffect(() => {
-      if (productDetail?.id) {
-        loadReviews(true);
-      }
-    }, [productDetail?.id]);
+  React.useEffect(() => {
+    if (productDetail?.id) {
+      loadReviews(true);
+    }
+  }, [productDetail?.id]);
 
-   if (isLoading) {
+  if (isLoading) {
     return (
       <View style={tw`flex-1 justify-center items-center bg-gray-50`}>
         <Text style={tw`text-gray-500 font-medium`}>Loading product details...</Text>
@@ -247,10 +248,10 @@ export default function ProductDetail() {
                 </View>
               </View>
             )}
-           </View>
-           </View>
+          </View>
+        </View>
 
-          {/* Package Deals */}
+        {/* Package Deals */}
         {productDetail.specialPackageDeals && productDetail.specialPackageDeals.length > 0 && (
           <View style={tw`px-4 mb-4`}>
             <View style={tw`bg-white p-5 rounded-2xl shadow-sm border border-gray-100`}>
@@ -267,58 +268,123 @@ export default function ProductDetail() {
                   <Text style={tw`text-amber-900 font-bold text-lg`}>₹{deal.price}</Text>
                 </View>
               ))}
-             </View>
-           </View>
-         )}
+            </View>
+          </View>
+        )}
 
-         {/* Review Form */}
-         <ReviewForm productId={productDetail.id} />
+        {/* Reviews Section */}
+        <View style={tw`px-4 mb-8`}>
 
-         {/* Reviews */}
-         <View style={tw`px-4 mb-4`}>
-           <View style={tw`bg-white p-5 rounded-2xl shadow-sm border border-gray-100`}>
-             <Text style={tw`text-lg font-bold text-gray-900 mb-3`}>Customer Reviews</Text>
-             <FlatList
-               data={reviews}
-               keyExtractor={(item) => item.id.toString()}
-               renderItem={({ item }) => (
-                 <View style={tw`mb-4 pb-4 border-b border-gray-100`}>
-                   <View style={tw`flex-row items-center mb-2`}>
-                     <Text style={tw`font-bold text-gray-900`}>{item.userName}</Text>
-                     <View style={tw`flex-row ml-2`}>
-                       {[1, 2, 3, 4, 5].map((star) => (
-                         <MaterialIcons
-                           key={star}
-                           name={star <= item.ratings ? 'star' : 'star-border'}
-                           size={16}
-                           color="#F59E0B"
-                         />
-                       ))}
-                     </View>
-                   </View>
-                   <Text style={tw`text-gray-600 mb-2`}>{item.reviewBody}</Text>
+          {/* Review Form - Moved above or keep below? Usually users want to read reviews first, but if few reviews, writing is good. The original had form then reviews. I will keep format but make it nicer. */}
+          <View style={tw`mb-6`}>
+            <ReviewForm productId={productDetail.id} />
+          </View>
+
+          <View style={tw`bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden`}>
+            <View style={tw`p-5 border-b border-gray-100 bg-gray-50 flex-row justify-between items-center`}>
+              <View>
+                <Text style={tw`text-xl font-bold text-gray-900`}>Customer Reviews</Text>
+                <Text style={tw`text-gray-500 text-xs mt-1`}>What others are saying</Text>
+              </View>
+              <MaterialIcons name="forum" size={24} color={theme.colors.pink1} style={tw`opacity-80`} />
+            </View>
+
+            <View style={tw`p-2`}>
+              <FlatList
+                data={reviews}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                  <View style={tw`mb-3 mx-2 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm`}>
+                    <View style={tw`flex-row items-start mb-3`}>
+                      {/* User Avatar Placeholder */}
+                      <View style={tw`w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3`}>
+                        <Text style={tw`text-blue-600 font-bold text-lg`}>
+                          {item.userName ? item.userName.charAt(0).toUpperCase() : 'U'}
+                        </Text>
+                      </View>
+
+                      <View style={tw`flex-1`}>
+                        <View style={tw`flex-row justify-between items-center`}>
+                          <Text style={tw`font-bold text-gray-900 text-base`}>{item.userName}</Text>
+                          <Text style={tw`text-xs text-gray-400`}>{dayjs(item.reviewTime).format('MMM DD, YYYY')}</Text>
+                        </View>
+                        <View style={tw`flex-row mt-0.5`}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <MaterialIcons
+                              key={star}
+                              name={star <= item.ratings ? 'star' : 'star-border'}
+                              size={14}
+                              color="#F59E0B"
+                            />
+                          ))}
+                        </View>
+                      </View>
+                    </View>
+
+                    <Text style={tw`text-gray-700 leading-6 mb-3 text-sm`}>{item.reviewBody}</Text>
+
                     {item.signedImageUrls && item.signedImageUrls.length > 0 && (
-                      <View style={{ alignSelf: 'flex-start' }}>
-                        <ImageCarousel
-                          urls={item.signedImageUrls}
-                          imageWidth={100}
-                          imageHeight={100}
-                          showPaginationDots={false}
-                        />
+                      <View style={tw`my-2`}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          {/* Using ImageCarousel for simplicity if it handles list, but it seems to be a slideshow. 
+                                  Original code used ImageCarousel. Let's make it more "gallery" like if possible or stick to carousel if it's robust.
+                                  Actually, a row of thumbnails is better for reviews. 
+                                  But to avoid breaking changes if ImageCarousel is needed for signed URLs logic (headers etc), I will trust ImageCarousel or just map standard Images if standard urls.
+                                  The original code used ImageCarousel. I'll stick to it to ensure images load correctly.
+                              */}
+                          <View style={{ height: 100, width: 200 }}>
+                            <ImageCarousel
+                              urls={item.signedImageUrls}
+                              imageWidth={200}
+                              imageHeight={100}
+                              showPaginationDots={true}
+                            />
+                          </View>
+                        </ScrollView>
                       </View>
                     )}
-                   <Text style={tw`text-xs text-gray-500`}>{dayjs(item.reviewTime).format('MMM DD, YYYY')}</Text>
-                 </View>
-               )}
-               onEndReached={() => loadReviews()}
-               onEndReachedThreshold={0.5}
-               ListEmptyComponent={<Text style={tw`text-gray-400 italic`}>No reviews yet. Be the first!</Text>}
-               ListFooterComponent={reviewsLoading ? <Text style={tw`text-center text-gray-500`}>Loading more reviews...</Text> : null}
-               scrollEnabled={false}
-             />
-           </View>
-         </View>
-       </ScrollView>
+
+                    {item.adminResponse && (
+                      <View style={tw`mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100`}>
+                        <View style={tw`flex-row items-center mb-2`}>
+                          <View style={tw`w-5 h-5 rounded-full bg-green-100 items-center justify-center mr-2`}>
+                            <MaterialIcons name="store" size={12} color="green" />
+                          </View>
+                          <Text style={tw`text-gray-900 font-bold text-sm`}>Seller Response</Text>
+                        </View>
+                        <Text style={tw`text-gray-600 text-sm leading-5`}>{item.adminResponse}</Text>
+                        {item.signedAdminImageUrls && item.signedAdminImageUrls.length > 0 && (
+                          <View style={{ marginTop: 8, height: 100, width: 200 }}>
+                            <ImageCarousel
+                              urls={item.signedAdminImageUrls}
+                              imageWidth={200}
+                              imageHeight={100}
+                              showPaginationDots={false}
+                            />
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                )}
+                onEndReached={() => loadReviews()}
+                onEndReachedThreshold={0.5}
+                ListEmptyComponent={
+                  <View style={tw`items-center justify-center py-10`}>
+                    <View style={tw`w-16 h-16 bg-gray-50 rounded-full items-center justify-center mb-3`}>
+                      <MaterialIcons name="rate-review" size={32} color={theme.colors.gray2} style={tw`opacity-50 text-gray-300`} />
+                    </View>
+                    <Text style={tw`text-gray-400 font-medium`}>No reviews yet.</Text>
+                    <Text style={tw`text-gray-300 text-xs mt-1`}>Be the first to share your thoughts!</Text>
+                  </View>
+                }
+                ListFooterComponent={reviewsLoading ? <View style={tw`py-4`}><Text style={tw`text-center text-gray-400 text-xs`}>Loading more reviews...</Text></View> : null}
+                scrollEnabled={false}
+              />
+            </View>
+          </View>
+        </View>
+      </ScrollView>
 
       {/* Bottom Action Bar */}
       <View style={tw`absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-${Platform.OS === 'ios' ? '8' : '4'} shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex-row gap-3`}>
@@ -385,9 +451,9 @@ export default function ProductDetail() {
         </View>
       </BottomDialog>
 
-       <LoadingDialog open={isLoadingDialogOpen} message="Processing..." />
-     </View>
-   );
+      <LoadingDialog open={isLoadingDialogOpen} message="Processing..." />
+    </View>
+  );
 }
 
 interface ReviewFormProps {
@@ -452,7 +518,7 @@ const ReviewForm = ({ productId }: ReviewFormProps) => {
         mimeTypes,
       });
       const keys = generatedUrls.map(extractKeyFromUrl);
-            
+
       // Upload images
       for (let i = 0; i < generatedUrls.length; i++) {
         const uploadUrl = generatedUrls[i];
@@ -489,58 +555,73 @@ const ReviewForm = ({ productId }: ReviewFormProps) => {
       setSelectedImages([]);
       setDisplayImages([]);
     } catch (error) {
-      console.log({error: JSON.stringify(error)})
-      
+      console.log({ error: JSON.stringify(error) })
+
       Alert.alert('Error', 'Failed to submit review.');
     }
   };
 
   return (
-    <View style={tw`bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mx-4 mb-4`}>
-      <Text style={tw`text-lg font-bold text-gray-900 mb-4`}>Write a Review</Text>
+    <View style={tw`bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mx-1`}>
+      <Text style={tw`text-xl font-bold text-gray-900 mb-2 text-center`}>Rate this Product</Text>
+      <Text style={tw`text-sm text-gray-500 mb-6 text-center`}>Share your experience with others</Text>
 
       {/* Rating */}
-      <View style={tw`mb-4`}>
-        <Text style={tw`text-gray-700 mb-2`}>Rating:</Text>
-        <View style={tw`flex-row`}>
+      <View style={tw`mb-6 items-center`}>
+        <View style={tw`flex-row justify-center gap-2`}>
           {[1, 2, 3, 4, 5].map((star) => (
-            <TouchableOpacity key={star} onPress={() => setRatings(star)}>
+            <TouchableOpacity key={star} onPress={() => setRatings(star)} activeOpacity={0.7}>
               <MaterialIcons
                 name={star <= ratings ? 'star' : 'star-border'}
-                size={30}
-                color={star <= ratings ? '#F59E0B' : '#D1D5DB'}
+                size={36}
+                color={star <= ratings ? '#F59E0B' : '#E5E7EB'}
               />
             </TouchableOpacity>
           ))}
         </View>
+        <Text style={tw`text-xs text-gray-400 mt-2 font-medium`}>
+          {ratings === 0 ? 'Tap to Rate' : ratings === 1 ? 'Poor' : ratings === 2 ? 'Fair' : ratings === 3 ? 'Good' : ratings === 4 ? 'Very Good' : 'Excellent'}
+        </Text>
       </View>
 
       {/* Review Text */}
-      <TextInput
-        style={tw`border border-gray-300 rounded-lg p-3 mb-4 h-24 text-gray-900`}
-        placeholder="Write your review..."
-        value={reviewBody}
-        onChangeText={setReviewBody}
-        multiline
-      />
+      <View style={tw`bg-gray-50 rounded-2xl p-3 mb-4 border border-gray-200`}>
+        <TextInput
+          style={[tw`text-gray-900 text-base`, { minHeight: 100, textAlignVertical: 'top' }]}
+          placeholder="What did you like or dislike?"
+          placeholderTextColor="#9CA3AF"
+          value={reviewBody}
+          onChangeText={setReviewBody}
+          multiline
+        />
+      </View>
 
       {/* Images */}
-      <ImageUploader
-        images={displayImages}
-        existingImageUrls={[]}
-        onAddImage={handleImagePick}
-        onRemoveImage={handleRemoveImage}
-      />
+      <View style={tw`mb-6`}>
+        <ImageUploader
+          images={displayImages}
+          existingImageUrls={[]}
+          onAddImage={handleImagePick}
+          onRemoveImage={handleRemoveImage}
+        />
+      </View>
 
       {/* Submit */}
       <TouchableOpacity
-        style={tw`bg-pink1 py-3 rounded-lg items-center`}
         onPress={handleSubmit}
         disabled={createReview.isPending}
+        activeOpacity={0.9}
       >
-        <Text style={tw`text-white font-bold`}>
-          {createReview.isPending ? 'Submitting...' : 'Submit Review'}
-        </Text>
+        <LinearGradient
+          colors={createReview.isPending ? ['#d1d5db', '#d1d5db'] : [theme.colors.pink1 || '#F83758', theme.colors.red1 || '#D84343']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={tw`py-4 rounded-xl items-center shadow-md`}
+        >
+          <Text style={tw`text-white font-bold text-lg`}>
+            {createReview.isPending ? 'Submitting...' : 'Submit Review'}
+          </Text>
+        </LinearGradient>
       </TouchableOpacity>
     </View>
   );

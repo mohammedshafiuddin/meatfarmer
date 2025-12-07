@@ -184,15 +184,16 @@ export function extractKeyFromPresignedUrl(url: string): string {
 
 export async function claimUploadUrl(url: string): Promise<void> {
   try {
-    const key = s3BucketName+'/'+ extractKeyFromPresignedUrl(url);
+    const semiKey = extractKeyFromPresignedUrl(url);
+    const key = s3BucketName+'/'+ semiKey
 
     // Update status to 'claimed' if currently 'pending'
     const result = await db
       .update(uploadUrlStatus)
       .set({ status: 'claimed' })
-      .where(and(eq(uploadUrlStatus.key, key), eq(uploadUrlStatus.status, 'pending')))
+      .where(and(eq(uploadUrlStatus.key, semiKey), eq(uploadUrlStatus.status, 'pending')))
       .returning();
-
+    
     if (result.length === 0) {
       throw new Error('Upload URL not found or already claimed');
     }
