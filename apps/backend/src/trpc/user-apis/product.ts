@@ -1,9 +1,10 @@
-import { router, publicProcedure } from '../trpc-index';
+import { router, publicProcedure, protectedProcedure } from '../trpc-index';
 import { z } from 'zod';
 import { db } from '../../db/db_index';
-import { productInfo, units, productSlots, deliverySlotInfo, specialDeals, storeInfo, productTagInfo, productTags } from '../../db/schema';
-import { generateSignedUrlsFromS3Urls, generateSignedUrlFromS3Url } from '../../lib/s3-client';
-import { eq, and, gt, sql, inArray } from 'drizzle-orm';
+import { productInfo, units, productSlots, deliverySlotInfo, specialDeals, storeInfo, productTagInfo, productTags, productReviews, users } from '../../db/schema';
+import { generateSignedUrlsFromS3Urls, generateSignedUrlFromS3Url, generateUploadUrl, claimUploadUrl, extractKeyFromPresignedUrl } from '../../lib/s3-client';
+import { ApiError } from '../../lib/api-error';
+import { eq, and, gt, sql, inArray, desc } from 'drizzle-orm';
 
 export const productRouter = router({
   getDashboardTags: publicProcedure
@@ -126,5 +127,92 @@ export const productRouter = router({
       };
 
       return response;
+     }),
+
+  getProductReviews: publicProcedure
+    .input(z.object({
+      productId: z.number().int().positive(),
+      limit: z.number().int().min(1).max(50).optional().default(10),
+      offset: z.number().int().min(0).optional().default(0),
+    }))
+    .query(async ({ input }) => {
+      const { productId, limit, offset } = input;
+
+      const reviews = await db
+        .select({
+          id: productReviews.id,
+          reviewBody: productReviews.reviewBody,
+          ratings: productReviews.ratings,
+          imageUrls: productReviews.imageUrls,
+          reviewTime: productReviews.reviewTime,
+          userName: users.name,
+        })
+        .from(productReviews)
+        .innerJoin(users, eq(productReviews.userId, users.id))
+        .where(eq(productReviews.productId, productId))
+        .orderBy(desc(productReviews.reviewTime))
+        .limit(limit)
+        .offset(offset);
+
+      // Generate signed URLs for images
+      const reviewsWithSignedUrls = await Promise.all(
+        reviews.map(async (review) => ({
+          ...review,
+          signedImageUrls: await generateSignedUrlsFromS3Urls((review.imageUrls as string[]) || []),
+        }))
+      );
+
+      // Check if more reviews exist
+      const totalCountResult = await db
+        .select({ count: sql`count(*)` })
+        .from(productReviews)
+        .where(eq(productReviews.productId, productId));
+
+      const totalCount = Number(totalCountResult[0].count);
+      const hasMore = offset + limit < totalCount;
+
+      return { reviews: reviewsWithSignedUrls, hasMore };
+    }),
+
+  createReview: protectedProcedure
+    .input(z.object({
+      productId: z.number().int().positive(),
+      reviewBody: z.string().min(1, 'Review body is required'),
+      ratings: z.number().int().min(1).max(5),
+      imageUrls: z.array(z.string()).optional().default([]),
+      uploadUrls: z.array(z.string()).optional().default([]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { productId, reviewBody, ratings, imageUrls, uploadUrls } = input;
+      const userId = ctx.user.userId;
+
+      // Optional: Check if product exists
+      const product = await db.query.productInfo.findFirst({
+        where: eq(productInfo.id, productId),
+      });
+      if (!product) {
+        throw new ApiError('Product not found', 404);
+      }
+
+      // Insert review
+      const [newReview] = await db.insert(productReviews).values({
+        userId,
+        productId,
+        reviewBody,
+        ratings,
+        imageUrls: uploadUrls.map(item => extractKeyFromPresignedUrl(item)),
+      }).returning();
+
+      // Claim upload URLs
+      if (uploadUrls && uploadUrls.length > 0) {
+        try {
+          await Promise.all(uploadUrls.map(url => claimUploadUrl(url)));
+        } catch (error) {
+          console.error('Error claiming upload URLs:', error);
+          // Don't fail the review creation
+        }
+      }
+
+      return { success: true, review: newReview };
     }),
 });

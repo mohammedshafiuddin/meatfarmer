@@ -1,5 +1,5 @@
-import { pgTable, pgSchema, integer, varchar, date, boolean, timestamp, numeric, jsonb, pgEnum, unique, real, text } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, pgSchema, integer, varchar, date, boolean, timestamp, numeric, jsonb, pgEnum, unique, real, text, check } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 
 const mf = pgSchema('mf');
 
@@ -87,6 +87,29 @@ export const productInfo = mf.table('product_info', {
   isSuspended: boolean('is_suspended').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   storeId: integer('store_id').notNull().references(() => storeInfo.id),
+});
+
+export const productReviews = mf.table('product_reviews', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  productId: integer('product_id').notNull().references(() => productInfo.id),
+  reviewBody: text('review_body').notNull(),
+  imageUrls: jsonb('image_urls').$defaultFn(() => []),
+  reviewTime: timestamp('review_time').notNull().defaultNow(),
+  ratings: real('ratings').notNull(),
+  adminResponse: text('admin_response'),
+  adminResponseImages: jsonb('admin_response_images').$defaultFn(() => []),
+}, (t) => ({
+  ratingCheck: check('rating_check', sql`${t.ratings} >= 1 AND ${t.ratings} <= 5`),
+}));
+
+export const uploadStatusEnum = pgEnum('upload_status', ['pending', 'claimed']);
+
+export const uploadUrlStatus = mf.table('upload_url_status', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  key: varchar('key', { length: 500 }).notNull(),
+  status: uploadStatusEnum('status').notNull().default('pending'),
 });
 
 export const productTagInfo = mf.table('product_tag_info', {
@@ -351,6 +374,7 @@ export const productInfoRelations = relations(productInfo, ({ one, many }) => ({
   cartItems: many(cartItems),
   tags: many(productTags),
   applicableCoupons: many(couponApplicableProducts),
+  reviews: many(productReviews),
 }));
 
 export const productTagInfoRelations = relations(productTagInfo, ({ many }) => ({
@@ -463,4 +487,9 @@ export const couponApplicableUsersRelations = relations(couponApplicableUsers, (
 export const couponApplicableProductsRelations = relations(couponApplicableProducts, ({ one }) => ({
   coupon: one(coupons, { fields: [couponApplicableProducts.couponId], references: [coupons.id] }),
   product: one(productInfo, { fields: [couponApplicableProducts.productId], references: [productInfo.id] }),
+}));
+
+export const productReviewsRelations = relations(productReviews, ({ one }) => ({
+  user: one(users, { fields: [productReviews.userId], references: [users.id] }),
+  product: one(productInfo, { fields: [productReviews.productId], references: [productInfo.id] }),
 }));

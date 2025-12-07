@@ -3,6 +3,9 @@ import { DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand, S3Client, 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import signedUrlCache from "./signed-url-cache"
 import { s3AccessKeyId, s3Region, s3Url, s3SecretAccessKey, s3BucketName } from "./env-exporter";
+import { db } from "../db/db_index"; // Adjust path if needed
+import { uploadUrlStatus } from "../db/schema";
+import { and, eq } from 'drizzle-orm';
 
 const s3Client = new S3Client({
   region: s3Region,
@@ -135,5 +138,66 @@ export async function generateSignedUrlsFromS3Urls(s3Urls: (string|null)[], expi
     console.error("Error generating multiple signed URLs:", error);
     // Return an array of empty strings with the same length as input
     return s3Urls.map(() => '');
+  }
+}
+
+export async function generateUploadUrl(key: string, mimeType: string, expiresIn: number = 180): Promise<string> {
+  try {
+    // Insert record into upload_url_status
+    await db.insert(uploadUrlStatus).values({
+      key: key,
+      status: 'pending',
+    });
+
+    // Generate signed upload URL
+    const command = new PutObjectCommand({
+      Bucket: s3BucketName,
+      Key: key,
+      ContentType: mimeType,
+    });
+
+    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+    return signedUrl;
+  } catch (error) {
+    console.error('Error generating upload URL:', error);
+    throw new Error('Failed to generate upload URL');
+  }
+}
+
+
+// export function extractKeyFromPresignedUrl(url:string) {
+//   const u = new URL(url);
+//   const rawKey = u.pathname.replace(/^\/+/, ""); // remove leading slash
+//   return decodeURIComponent(rawKey);
+// }
+
+// New function (excludes bucket name)
+export function extractKeyFromPresignedUrl(url: string): string {
+  const u = new URL(url);
+  const rawKey = u.pathname.replace(/^\/+/, ""); // remove leading slash
+  const decodedKey = decodeURIComponent(rawKey);
+  // Remove bucket prefix
+  const parts = decodedKey.split('/');
+  parts.shift(); // Remove bucket name
+  return parts.join('/');
+}
+
+export async function claimUploadUrl(url: string): Promise<void> {
+  try {
+    const key = s3BucketName+'/'+ extractKeyFromPresignedUrl(url);
+
+    // Update status to 'claimed' if currently 'pending'
+    const result = await db
+      .update(uploadUrlStatus)
+      .set({ status: 'claimed' })
+      .where(and(eq(uploadUrlStatus.key, key), eq(uploadUrlStatus.status, 'pending')))
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error('Upload URL not found or already claimed');
+    }
+  } catch (error) {
+    console.error('Error claiming upload URL:', error);
+    throw new Error('Failed to claim upload URL');
   }
 }

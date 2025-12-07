@@ -10,6 +10,7 @@ import { userRouter as userDataRouter } from './user';
 import { userCouponRouter } from './coupon';
 import { paymentRouter } from './payments';
 import { storesRouter } from './stores';
+import { fileUploadRouter } from './file-upload';
 
 export const userRouter = router({
   address: addressRouter,
@@ -23,6 +24,7 @@ export const userRouter = router({
   coupon: userCouponRouter,
   payment: paymentRouter,
   stores: storesRouter,
+  fileUpload: fileUploadRouter,
 });
 
 export type UserRouter = typeof userRouter;
