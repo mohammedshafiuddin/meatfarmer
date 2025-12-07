@@ -301,7 +301,7 @@ export default function ProductDetail() {
                 <Text style={tw`text-lg font-bold text-gray-900`}>{reviewsData?.reviews.length || 0}</Text>
                 <Text style={tw`text-xs text-gray-400 font-medium mt-1 uppercase`}>Reviews</Text>
               </View>
-               <View style={tw`flex-1 items-center`}>
+               {/* <View style={tw`flex-1 items-center`}>
                  <TouchableOpacity
                    onPress={() => {
                      toggleOutOfStock.mutate({ id: productId }, {
@@ -323,7 +323,7 @@ export default function ProductDetail() {
                    </LinearGradient>
                  </TouchableOpacity>
                  <Text style={tw`text-xs text-gray-400 font-medium mt-1 uppercase`}>Stock</Text>
-               </View>
+               </View> */}
             </View>
           </Animated.View>
 
@@ -345,9 +345,43 @@ export default function ProductDetail() {
                 {product.longDescription || "No detailed description available for this product."}
               </Text>
             </View>
-          </Animated.View>
+           </Animated.View>
 
-          {/* Special Deals */}
+           {/* Availability */}
+           <Animated.View entering={FadeInDown.delay(250).duration(500)} style={tw`px-4 mb-4`}>
+             <View style={tw`bg-white p-6 rounded-3xl shadow-sm`}>
+               <View style={tw`flex-row items-center mb-4`}>
+                 <View style={tw`w-10 h-10 bg-blue-50 rounded-full items-center justify-center mr-3`}>
+                   <MaterialIcons name="inventory" size={22} color="#2563EB" />
+                 </View>
+                 <Text style={tw`text-lg font-bold text-gray-900`}>Availability</Text>
+               </View>
+
+               <Text style={tw`text-gray-600 mb-4`}>
+                 This product is currently {product.isOutOfStock ? 'out of stock' : 'in stock'}.
+               </Text>
+
+               <TouchableOpacity
+                 onPress={() => {
+                   toggleOutOfStock.mutate({ id: productId }, {
+                     onSuccess: () => {
+                       Alert.alert('Success', 'Stock status updated');
+                       refetch();
+                     },
+                     onError: (err) => Alert.alert('Error', err.message)
+                   });
+                 }}
+                 activeOpacity={0.8}
+                 style={tw`bg-gray-100 px-4 py-2 rounded-full border border-gray-200 self-start`}
+               >
+                 <Text style={tw`text-gray-700 font-bold text-sm`}>
+                   Mark as {product.isOutOfStock ? 'In Stock' : 'Out of Stock'}
+                 </Text>
+               </TouchableOpacity>
+             </View>
+           </Animated.View>
+
+           {/* Special Deals */}
           {product.deals && product.deals.length > 0 && (
             <Animated.View entering={FadeInDown.delay(300).duration(500)} style={tw`px-4 mb-4`}>
               <LinearGradient
