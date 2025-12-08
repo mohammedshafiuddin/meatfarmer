@@ -15,7 +15,7 @@ export default function AuthLayout() {
   }
 
   if (isAuthenticated) {
-    return <Redirect href="/(drawer)/dashboard" />;
+    return <Redirect href="/(drawer)/(tabs)/home" />;
   }
 
   return (

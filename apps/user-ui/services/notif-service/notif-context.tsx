@@ -83,9 +83,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data;
         if (data && data.doctorId) {
-          router.push(`/(drawer)/dashboard`);
+          router.push(`/(drawer)/(tabs)/home`);
         } else if (data && data.tokenId) {
-          router.push(`/(drawer)/dashboard`);
+          router.push(`/(drawer)/(tabs)/home`);
         }
       });
 

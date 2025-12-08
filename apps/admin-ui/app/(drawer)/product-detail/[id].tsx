@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Alert, TextInput, Dimensions, ActivityIndicator, StatusBar, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Alert, TextInput, Dimensions, ActivityIndicator, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { tw, AppContainer, MyText, useMarkDataFetchers, BottomDialog, ImageUploader, ImageCarousel } from 'common-ui';
 import { MaterialIcons, FontAwesome5, Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -204,7 +204,6 @@ export default function ProductDetail() {
 
   return (
     <View style={tw`flex-1 bg-gray-50`}>
-      <StatusBar barStyle="light-content" />
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView style={tw`flex-1`} contentContainerStyle={tw`pb-32`} showsVerticalScrollIndicator={false}>

@@ -57,8 +57,8 @@ import { RefreshProvider, useRefresh } from "./src/lib/refresh-context";
 
 // const BASE_API_URL = API_URL;
 // const BASE_API_URL = 'http://10.0.2.2:4000';
-const BASE_API_URL = 'http://192.168.100.100:4000';
-// const BASE_API_URL = "https://mf.technocracy.ovh";
+// const BASE_API_URL = 'http://192.168.100.100:4000';
+const BASE_API_URL = "https://mf.technocracy.ovh";
 export {
   RolesDropdown,
   StorageService,

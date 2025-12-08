@@ -24,7 +24,7 @@ const CustomHeader = () => {
       </TouchableOpacity>
       <View style={tw`flex-row`}>
         <TouchableOpacity
-          onPress={() => router.push('/my-cart')}
+          onPress={() => router.push('/(drawer)/(tabs)/cart')}
           style={{
             width: 40,
             height: 40,
@@ -38,7 +38,7 @@ const CustomHeader = () => {
           <MaterialIcons name="shopping-cart" size={24} color="black" />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => router.push('/me')}
+          onPress={() => router.push('/(drawer)/(tabs)/me')}
           style={{
             width: 40,
             height: 40,
