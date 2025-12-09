@@ -62,6 +62,7 @@ export const storeInfo = mf.table('store_info', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   name: varchar({ length: 255 }).notNull(),
   description: varchar({ length: 500 }),
+  imageUrl: varchar('image_url', { length: 500 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   owner: integer('owner').notNull().references(() => staffUsers.id),
 });

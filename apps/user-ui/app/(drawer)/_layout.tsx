@@ -58,6 +58,15 @@ export default function Layout() {
           }}
         />
         <Tabs.Screen
+          name="(tabs)/stores"
+          options={{
+            tabBarLabel: 'Stores',
+            tabBarIcon: ({ color, size }) => (
+              <MaterialIcons name="storefront" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="(tabs)/cart"
           options={{
             tabBarLabel: 'Cart',

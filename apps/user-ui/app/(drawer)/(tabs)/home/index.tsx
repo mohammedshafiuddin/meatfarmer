@@ -9,14 +9,15 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
   theme,
   tw,
   useManualRefresh,
-  MyFlatList,
   useMarkDataFetchers,
   LoadingDialog,
+  AppContainer,
 } from "common-ui";
 import dayjs from "dayjs";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -25,7 +26,7 @@ import SearchBar from "common-ui/src/components/search-bar";
 import { trpc } from "@/src/trpc-client";
 
 const { width: screenWidth } = Dimensions.get("window");
-const itemWidth = (screenWidth - 48) / 2; // 48 = padding horizontal (16*2) + gap (16)
+const itemWidth = screenWidth * 0.45; // 45% of screen width
 
 const renderProduct = ({
   item,
@@ -105,6 +106,47 @@ const renderProduct = ({
   );
 };
 
+const renderStore = ({
+  item,
+  router,
+}: {
+  item: any;
+  router: any;
+}) => {
+  return (
+    <TouchableOpacity
+      style={[
+        tw`bg-white rounded-2xl shadow-sm mb-2 overflow-hidden border border-gray-100`,
+        { width: itemWidth },
+      ]}
+      onPress={() => router.push(`/(drawer)/(tabs)/home/stores?storeId=${item.id}`)}
+      activeOpacity={0.9}
+    >
+      <View style={tw`relative`}>
+        <Image
+          source={{ uri: item.signedImageUrl || undefined }}
+          style={{ width: "100%", height: itemWidth, resizeMode: "cover" }}
+        />
+        {!item.signedImageUrl && (
+          <View style={tw`absolute inset-0 bg-gray-200 items-center justify-center`}>
+            <MaterialIcons name="storefront" size={48} color="#9CA3AF" />
+          </View>
+        )}
+      </View>
+
+      <View style={tw`p-3`}>
+        <Text style={tw`text-gray-900 font-bold text-sm mb-1`} numberOfLines={2}>
+          {item.name}
+        </Text>
+
+        <Text style={tw`text-gray-500 text-xs`}>
+          {item.productCount} {item.productCount === 1 ? 'item' : 'items'}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
 export default function Dashboard() {
   const router = useRouter();
   const [inputQuery, setInputQuery] = useState("");
@@ -124,6 +166,7 @@ export default function Dashboard() {
 
   const { data: tagsData } = trpc.common.product.getDashboardTags.useQuery();
   const { data: cartData, refetch: refetchCart } = trpc.user.cart.getCart.useQuery();
+  const { data: storesData } = trpc.user.stores.getStores.useQuery();
 
   const products = productsData?.products || [];
   const dashboardTags = tagsData?.tags || [];
@@ -202,91 +245,142 @@ export default function Dashboard() {
   }
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <AppContainer>
+      <View style={tw`pt-4 pb-2`}>
+        {/* Search Bar */}
+        <SearchBar
+          value={inputQuery}
+          onChangeText={setInputQuery}
+          onSearch={() => {
+            if (inputQuery.trim()) {
+              router.push(`/(drawer)/(tabs)/home/search-results?q=${encodeURIComponent(inputQuery.trim())}`);
+            }
+          }}
+          placeholder="Search fresh meat..."
+          containerStyle={tw`mb-6 shadow-sm border-0 bg-white rounded-xl`}
+        />
 
-      <MyFlatList
-        data={products}
-        numColumns={2}
-        renderItem={({ item }) =>
-          renderProduct({ item, router, handleAddToCart, handleBuyNow })
-        }
-        keyExtractor={(item, index) => index.toString()}
-        columnWrapperStyle={{ gap: 16 }}
-        contentContainerStyle={[tw`px-4 pb-24`, { gap: 16 }]}
-        ListHeaderComponent={
-          <View style={tw`pt-4 pb-2`}>
-
-
-            {/* Search Bar */}
-            <SearchBar
-              value={inputQuery}
-              onChangeText={setInputQuery}
-              onSearch={() => {
-                setSearchQuery(inputQuery);
-                setSelectedTagId(null);
-              }}
-              placeholder="Search fresh meat..."
-              containerStyle={tw`mb-6 shadow-sm border-0 bg-white rounded-xl`}
-            />
-
-            {/* Categories / Tags */}
-            {dashboardTags.length > 0 && (
-              <View style={tw`mb-6`}>
-                <View style={tw`flex-row justify-between items-center mb-3`}>
-                  <Text style={tw`text-lg font-bold text-gray-900`}>Categories</Text>
-                </View>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={tw`pr-4`}
-                >
-                  {dashboardTags.map((tag) => (
-                    <TouchableOpacity
-                      key={tag.id}
-                      onPress={() => handleTagSelect(tag.id)}
-                      style={tw`flex-row items-center px-4 py-2.5 mr-3 rounded-xl border ${selectedTagId === tag.id
-                        ? "bg-pink1 border-pink1"
-                        : "bg-white border-gray-200"
-                        } shadow-sm`}
+        {/* Categories / Tags */}
+        {dashboardTags.length > 0 && (
+          <View style={tw`mb-6`}>
+            <View style={tw`flex-row justify-between items-center mb-3 pr-4`}>
+              <Text style={tw`text-lg font-bold text-gray-900`}>Categories</Text>
+            </View>
+            <View style={tw`relative`}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={tw`pr-4`}
+              >
+                {dashboardTags.map((tag) => (
+                  <TouchableOpacity
+                    key={tag.id}
+                    onPress={() => handleTagSelect(tag.id)}
+                    style={tw`flex-row items-center px-4 py-2.5 mr-3 rounded-xl border ${selectedTagId === tag.id
+                      ? "bg-pink1 border-pink1"
+                      : "bg-white border-gray-200"
+                      } shadow-sm`}
+                  >
+                    {tag.imageUrl && (
+                      <Image
+                        source={{ uri: tag.imageUrl }}
+                        style={tw`w-5 h-5 rounded mr-2`}
+                        resizeMode="cover"
+                      />
+                    )}
+                    <Text
+                      style={tw`text-sm font-bold ${selectedTagId === tag.id
+                        ? "text-white"
+                        : "text-gray-700"
+                        }`}
                     >
-                      {tag.imageUrl && (
-                        <Image
-                          source={{ uri: tag.imageUrl }}
-                          style={tw`w-5 h-5 rounded mr-2`}
-                          resizeMode="cover"
-                        />
-                      )}
-                      <Text
-                        style={tw`text-sm font-bold ${selectedTagId === tag.id
-                          ? "text-white"
-                          : "text-gray-700"
-                          }`}
-                      >
-                        {tag.tagName}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {/* Section Title */}
-            <View style={tw`flex-row justify-between items-center mb-2`}>
-              {searchQuery ? (
-                <Text style={tw`text-lg font-bold text-gray-900`}>Results for "{searchQuery}"</Text>
-              ) : selectedTagId ? (
-                <Text style={tw`text-lg font-bold text-gray-900`}>
-                  {dashboardTags.find(t => t.id === selectedTagId)?.tagName}
-                </Text>
-              ) : (
-                <Text style={tw`text-lg font-bold text-gray-900`}>Popular Items</Text>
-              )}
+                      {tag.tagName}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.08)']}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={tw`absolute right-0 top-0 bottom-0 w-8 rounded-l-xl`}
+                pointerEvents="none"
+              />
             </View>
           </View>
-        }
-      />
+        )}
+
+        {/* Section Title */}
+        <View style={tw`flex-row justify-between items-center mb-2 pr-4`}>
+          {searchQuery ? (
+            <Text style={tw`text-lg font-bold text-gray-900`}>Results for "{searchQuery}"</Text>
+          ) : selectedTagId ? (
+            <Text style={tw`text-lg font-bold text-gray-900`}>
+              {dashboardTags.find(t => t.id === selectedTagId)?.tagName}
+            </Text>
+          ) : (
+            <Text style={tw`text-lg font-bold text-gray-900`}>Popular Items</Text>
+          )}
+          <TouchableOpacity onPress={() => router.push('/(drawer)/(tabs)/home/search-results')}>
+            <Text style={tw`text-pink1 font-bold text-xs`}>See all</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={tw`relative`}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={tw`px-4 pb-4`}
+        >
+          {products.map((item, index) => (
+            <View key={index} style={tw`mr-4`}>
+              {renderProduct({ item, router, handleAddToCart, handleBuyNow })}
+            </View>
+          ))}
+        </ScrollView>
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.08)']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={tw`absolute right-0 top-0 bottom-4 w-12 rounded-l-xl`}
+          pointerEvents="none"
+        />
+      </View>
+
+      {/* Stores Section */}
+      {storesData?.stores && storesData.stores.length > 0 && (
+        <View style={tw`mt-6`}>
+          <View style={tw`flex-row justify-between items-center mb-2 px-4`}>
+            <Text style={tw`text-lg font-bold text-gray-900`}>Stores</Text>
+            <TouchableOpacity onPress={() => router.push('/(drawer)/(tabs)/home/stores' as any)}>
+              <Text style={tw`text-pink1 font-bold text-xs`}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={tw`relative`}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={tw`px-4 pb-4`}
+            >
+              {storesData.stores.map((store, index) => (
+                <View key={store.id} style={tw`mr-4`}>
+                  {renderStore({ item: store, router })}
+                </View>
+              ))}
+            </ScrollView>
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.08)']}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={tw`absolute right-0 top-0 bottom-4 w-12 rounded-l-xl`}
+              pointerEvents="none"
+            />
+          </View>
+        </View>
+      )}
 
       <LoadingDialog open={isLoadingDialogOpen} message="Adding to cart..." />
-    </View>
+    </AppContainer>
   );
 }

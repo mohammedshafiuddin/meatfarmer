@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AppContainer, MyText, tw } from 'common-ui';
-import StoreForm from '@/components/StoreForm';
+import StoreForm, { StoreFormData } from '@/components/StoreForm';
 import { trpc } from '@/src/trpc-client';
 
 export default function EditStore() {
@@ -11,16 +11,17 @@ export default function EditStore() {
 
   const storeId = parseInt(id as string);
 
-  const { data: storeData, isLoading: isLoadingStore } = trpc.admin.store.getStoreById.useQuery(
+  const { data: storeData, isLoading: isLoadingStore, refetch } = trpc.admin.store.getStoreById.useQuery(
     { id: storeId },
     { enabled: !!storeId }
   );
 
   const updateStoreMutation = trpc.admin.store.updateStore.useMutation();
 
-  const handleSubmit = (values: any) => {
+  const handleSubmit = (values: StoreFormData) => {
     updateStoreMutation.mutate({ id: storeId, ...values }, {
       onSuccess: (data) => {
+        refetch();
         Alert.alert('Success', data.message);
         router.push('/(drawer)/stores' as any);
       },
@@ -53,6 +54,7 @@ export default function EditStore() {
   const initialValues = {
     name: storeData.store.name,
     description: storeData.store.description || '',
+    imageUrl: storeData.store.imageUrl || '',
     owner: storeData.store.owner.id,
   };
 

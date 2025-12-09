@@ -4,6 +4,8 @@ import { db } from '../../db/db_index';
 import { storeInfo } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { ApiError } from '../../lib/api-error';
+ import { extractKeyFromPresignedUrl, deleteImageUtil, generateSignedUrlFromS3Url } from '../../lib/s3-client';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export const storeRouter = router({
   getStores: protectedProcedure
@@ -14,6 +16,13 @@ export const storeRouter = router({
         },
       });
 
+      Promise.all(stores.map(async store => {
+        if(store.imageUrl)
+          store.imageUrl = await generateSignedUrlFromS3Url(store.imageUrl)
+      })).catch((e) => {
+        throw new ApiError("Unable to find store image urls")
+      }
+      )
       return {
         stores,
         count: stores.length,
@@ -37,7 +46,7 @@ export const storeRouter = router({
       if (!store) {
         throw new ApiError("Store not found", 404);
       }
-
+      store.imageUrl = await generateSignedUrlFromS3Url(store.imageUrl);
       return {
         store,
       };
@@ -47,16 +56,20 @@ export const storeRouter = router({
     .input(z.object({
       name: z.string().min(1, "Name is required"),
       description: z.string().optional(),
+      imageUrl: z.string().optional(),
       owner: z.number().min(1, "Owner is required"),
     }))
     .mutation(async ({ input, ctx }) => {
-      const { name, description, owner } = input;
+      const { name, description, imageUrl, owner } = input;
+
+      const imageKey = imageUrl ? extractKeyFromPresignedUrl(imageUrl) : undefined;
 
       const [newStore] = await db
         .insert(storeInfo)
         .values({
           name,
           description,
+          imageUrl: imageKey,
           owner,
         })
         .returning();
@@ -67,35 +80,63 @@ export const storeRouter = router({
       };
     }),
 
-  updateStore: protectedProcedure
-    .input(z.object({
-      id: z.number(),
-      name: z.string().min(1, "Name is required"),
-      description: z.string().optional(),
-      owner: z.number().min(1, "Owner is required"),
-    }))
-    .mutation(async ({ input, ctx }) => {
-      const { id, name, description, owner } = input;
+   updateStore: protectedProcedure
+     .input(z.object({
+       id: z.number(),
+       name: z.string().min(1, "Name is required"),
+       description: z.string().optional(),
+       imageUrl: z.string().optional(),
+       owner: z.number().min(1, "Owner is required"),
+     }))
+     .mutation(async ({ input, ctx }) => {
+       const { id, name, description, imageUrl, owner } = input;
 
-      const [updatedStore] = await db
-        .update(storeInfo)
-        .set({
-          name,
-          description,
-          owner,
-        })
-        .where(eq(storeInfo.id, id))
-        .returning();
+       const existingStore = await db.query.storeInfo.findFirst({
+         where: eq(storeInfo.id, id),
+       });
 
-      if (!updatedStore) {
-        throw new ApiError("Store not found", 404);
-      }
+       if (!existingStore) {
+         throw new ApiError("Store not found", 404);
+       }
 
-      return {
-        store: updatedStore,
-        message: "Store updated successfully",
-      };
-    }),
+        const oldImageKey = existingStore.imageUrl;
+        const newImageKey = imageUrl ? extractKeyFromPresignedUrl(imageUrl) : oldImageKey;
+
+        // Delete old image only if:
+        // 1. New image provided and keys are different, OR
+        // 2. No new image but old exists (clearing the image)
+        if (oldImageKey && (
+          (newImageKey && newImageKey !== oldImageKey) ||
+          (!newImageKey)
+        )) {
+          try {
+            await deleteImageUtil({keys: [oldImageKey]});
+          } catch (error) {
+            console.error('Failed to delete old image:', error);
+            // Continue with update even if deletion fails
+          }
+        }
+
+        const [updatedStore] = await db
+          .update(storeInfo)
+          .set({
+            name,
+            description,
+            imageUrl: newImageKey,
+            owner,
+          })
+          .where(eq(storeInfo.id, id))
+          .returning();
+
+       if (!updatedStore) {
+         throw new ApiError("Store not found", 404);
+       }
+
+       return {
+         store: updatedStore,
+         message: "Store updated successfully",
+       };
+     }),
 
   deleteStore: protectedProcedure
     .input(z.object({

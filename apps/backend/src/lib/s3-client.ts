@@ -33,9 +33,11 @@ export const imageUploadS3 = async(body: Buffer<ArrayBufferLike>, type: string, 
 }
 
 
-export async function deleteImageUtil(...keys:string[]):Promise<boolean>;
+// export async function deleteImageUtil(...keys:string[]):Promise<boolean>;
 
-export async function deleteImageUtil(bucket:string = s3BucketName, ...keys:string[]) {
+export async function deleteImageUtil({bucket = s3BucketName, keys}:{bucket?:string, keys: string[]}) {
+  console.log({bucket, keys})
+  
   if (keys.length === 0) {
     return true;
   }

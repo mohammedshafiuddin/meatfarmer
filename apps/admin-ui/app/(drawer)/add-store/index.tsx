@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppContainer, MyText, tw } from 'common-ui';
-import StoreForm from '@/components/StoreForm';
+import StoreForm, { StoreFormData } from '@/components/StoreForm';
 import { trpc } from '@/src/trpc-client';
 
 export default function AddStore() {
@@ -10,7 +10,7 @@ export default function AddStore() {
 
   const createStoreMutation = trpc.admin.store.createStore.useMutation();
 
-  const handleSubmit = (values: any) => {
+  const handleSubmit = (values: StoreFormData) => {
     createStoreMutation.mutate(values, {
       onSuccess: (data) => {
         Alert.alert('Success', data.message);

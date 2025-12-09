@@ -10,7 +10,8 @@
     "db:push": "drizzle-kit push:pg",
     "db:seed": "tsx src/db/seed.ts",
     "dev2": "npx tsx watch index.ts",
-    "dev": "node ../../node_modules/tsx/dist/cli.mjs watch index.ts",
+    "dev_node": "node ../../node_modules/tsx/dist/cli.mjs watch index.ts",
+    "dev": "bun --watch index.ts",
     "docker:build": "cd .. && docker buildx build --platform linux/amd64 -t mohdshafiuddin54/health_petal:latest --progress=plain -f backend/Dockerfile .",
     "docker:push": "docker push mohdshafiuddin54/health_petal:latest"
   },

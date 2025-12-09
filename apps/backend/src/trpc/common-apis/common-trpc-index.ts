@@ -1,10 +1,12 @@
-import { router, publicProcedure } from '../trpc-index';
+import { router, publicProcedure, protectedProcedure } from '../trpc-index';
 import { commonRouter } from './common';
 import { db } from '../../db/db_index';
 import { storeInfo } from '../../db/schema';
 import * as turf from '@turf/turf';
 import { z } from 'zod';
 import { mbnrGeoJson } from '../../lib/mbnr-geojson';
+import { generateUploadUrl } from '../../lib/s3-client';
+import { ApiError } from '../../lib/api-error';
 
 const polygon = turf.polygon(mbnrGeoJson.features[0].geometry.coordinates);
 
@@ -38,6 +40,50 @@ export const commonApiRouter = router({
       } catch (error) {
         throw new Error('Invalid coordinates or polygon data');
       }
+    }),
+
+  generateUploadUrls: protectedProcedure
+    .input(z.object({
+      contextString: z.enum(['review', 'product_info', 'store']),
+      mimeTypes: z.array(z.string()),
+    }))
+    .mutation(async ({ input }): Promise<{ uploadUrls: string[] }> => {
+      const { contextString, mimeTypes } = input;
+
+      const uploadUrls: string[] = [];
+      const keys: string[] = [];
+
+      for (const mimeType of mimeTypes) {
+        // Generate key based on context and mime type
+        let folder: string;
+        if (contextString === 'review') {
+          folder = 'review-images';
+        } else if (contextString === 'product_info') {
+          folder = 'product-images';
+        } else if (contextString === 'store') {
+          folder = 'store-images';
+        } else if (contextString === 'review_response') {
+          folder = 'review-response-images';
+        } else {
+          folder = '';
+        }
+
+        const extension = mimeType === 'image/jpeg' ? '.jpg' :
+                          mimeType === 'image/png' ? '.png' :
+                          mimeType === 'image/gif' ? '.gif' : '.jpg';
+        const key = `${folder}/${Date.now()}${extension}`;
+
+        try {
+          const uploadUrl = await generateUploadUrl(key, mimeType);
+          uploadUrls.push(uploadUrl);
+          keys.push(key);
+
+        } catch (error) {
+          console.error('Error generating upload URL:', error);
+          throw new ApiError('Failed to generate upload URL', 500);
+        }
+      }
+      return { uploadUrls };
     }),
 });
 

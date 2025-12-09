@@ -309,6 +309,13 @@
       "when": 1765085944941,
       "tag": "0043_natural_joystick",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1765214759961,
+      "tag": "0044_rapid_meltdown",
+      "breakpoints": true
     }
   ]
 }

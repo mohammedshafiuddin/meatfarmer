@@ -1,0 +1,1 @@
+ALTER TABLE "mf"."store_info" ADD COLUMN "image_url" varchar(500);
