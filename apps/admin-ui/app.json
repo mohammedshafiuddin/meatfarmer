@@ -1,16 +1,16 @@
 {
   "expo": {
     "name": "Symbuyote Admin",
-    "slug": "health-petal",
+    "slug": "freshyoadmin",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/symbuyoteadmin.png",
-    "scheme": "medikore",
+    "scheme": "freshyoadmin",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mohammedshafiudin54.locality-admin-ui",
+      "bundleIdentifier": "in.freshyo.adminui",
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
           "ppemerchantsdkv1",
@@ -32,7 +32,7 @@
         "backgroundColor": "#fff0f6"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.mohammedshafiuddin54.meatfarmeradmin"
+      "package": "in.freshyo.adminui"
     },
     "web": {
       "bundler": "metro",
@@ -58,14 +58,12 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c61a345f-ddd5-4b10-94f3-304a83edd9d7"
+        "projectId": "55e2f200-eb9d-4880-a193-70f59320e054"
       }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
-    "updates": {
-      "url": "https://u.expo.dev/c61a345f-ddd5-4b10-94f3-304a83edd9d7"
-    }
+    "updates": {}
   }
 }

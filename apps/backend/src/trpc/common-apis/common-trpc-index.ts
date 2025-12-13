@@ -1,7 +1,7 @@
 import { router, publicProcedure, protectedProcedure } from '../trpc-index';
 import { commonRouter } from './common';
 import { db } from '../../db/db_index';
-import { storeInfo } from '../../db/schema';
+import { productInfo, storeInfo } from '../../db/schema';
 import * as turf from '@turf/turf';
 import { z } from 'zod';
 import { mbnrGeoJson } from '../../lib/mbnr-geojson';
@@ -84,6 +84,15 @@ export const commonApiRouter = router({
         }
       }
       return { uploadUrls };
+    }),
+  healthCheck: publicProcedure
+      .query(async () => {
+        // Test DB connection by selecting product names
+        await db.select({ name: productInfo.name }).from(productInfo).limit(1);
+  
+        return {
+          status: "ok",
+        };
     }),
 });
 

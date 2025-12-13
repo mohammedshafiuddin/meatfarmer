@@ -2,7 +2,7 @@ import { Stack } from 'expo-router'
 
 function CheckoutLayout() {
     return (
-        <Stack screenOptions={{ headerShown: true, title: 'Checkout' }} />
+        <Stack screenOptions={{ headerShown: false, title: 'Checkout' }} />
     )
 }
 

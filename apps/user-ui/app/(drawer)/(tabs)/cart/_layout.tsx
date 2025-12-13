@@ -8,6 +8,13 @@ export default function CartLayout() {
       }}
     >
       <Stack.Screen
+        name="index"
+        options={{
+          headerShown: false,
+          title: "Cart",
+        }}
+      />
+      <Stack.Screen
         name="checkout"
         options={{
           headerShown: true,
@@ -17,7 +24,7 @@ export default function CartLayout() {
       <Stack.Screen
         name="order-success"
         options={{
-          headerShown: true,
+          headerShown: false,
           title: "Order Success",
         }}
       />

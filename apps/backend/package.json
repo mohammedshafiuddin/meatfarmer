@@ -5,12 +5,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "drizzle-kit generate:pg",
-    "build": "node ../../node_modules/rimraf/bin.js ./dist && node ../../node_modules/typescript/bin/tsc --project tsconfig.json",
+    "build": "rimraf ./dist && tsc --project tsconfig.json",
     "build2": "rimraf ./dist && tsc",
     "db:push": "drizzle-kit push:pg",
     "db:seed": "tsx src/db/seed.ts",
-    "dev2": "npx tsx watch index.ts",
-    "dev_node": "node ../../node_modules/tsx/dist/cli.mjs watch index.ts",
+    "dev2": "tsx watch index.ts",
+    "dev_node": "tsx watch index.ts",
     "dev": "bun --watch index.ts",
     "docker:build": "cd .. && docker buildx build --platform linux/amd64 -t mohdshafiuddin54/health_petal:latest --progress=plain -f backend/Dockerfile .",
     "docker:push": "docker push mohdshafiuddin54/health_petal:latest"
@@ -51,6 +51,7 @@
     "@types/node": "^24.5.2",
     "@types/pg": "^8.15.5",
     "drizzle-kit": "^0.31.4",
+    "rimraf": "^6.1.2",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"

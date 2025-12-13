@@ -1,6 +1,5 @@
 import type { Config } from "tailwindcss";
 import { colors } from "./lib/theme-colors";
-colors
 
 const tailwindConfig: Config = {
   content: [],

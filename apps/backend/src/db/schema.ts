@@ -48,6 +48,20 @@ export const addresses = mf.table('addresses', {
   isDefault: boolean('is_default').notNull().default(false),
   latitude: real('latitude'),
   longitude: real('longitude'),
+  zoneId: integer('zone_id').references(() => addressZones.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const addressZones = mf.table('address_zones', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  zoneName: varchar('zone_name', { length: 255 }).notNull(),
+  addedAt: timestamp('added_at').notNull().defaultNow(),
+});
+
+export const addressAreas = mf.table('address_areas', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  placeName: varchar('place_name', { length: 255 }).notNull(),
+  zoneId: integer('zone_id').references(() => addressZones.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -360,6 +374,7 @@ export const staffUsersRelations = relations(staffUsers, ({ many }) => ({
 export const addressesRelations = relations(addresses, ({ one, many }) => ({
   user: one(users, { fields: [addresses.userId], references: [users.id] }),
   orders: many(orders),
+  zone: one(addressZones, { fields: [addresses.zoneId], references: [addressZones.id] }),
 }));
 
 export const unitsRelations = relations(units, ({ many }) => ({
@@ -493,4 +508,13 @@ export const couponApplicableProductsRelations = relations(couponApplicableProdu
 export const productReviewsRelations = relations(productReviews, ({ one }) => ({
   user: one(users, { fields: [productReviews.userId], references: [users.id] }),
   product: one(productInfo, { fields: [productReviews.productId], references: [productInfo.id] }),
+}));
+
+export const addressZonesRelations = relations(addressZones, ({ many }) => ({
+  addresses: many(addresses),
+  areas: many(addressAreas),
+}));
+
+export const addressAreasRelations = relations(addressAreas, ({ one }) => ({
+  zone: one(addressZones, { fields: [addressAreas.zoneId], references: [addressZones.id] }),
 }));

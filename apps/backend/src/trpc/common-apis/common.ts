@@ -144,4 +144,14 @@ export const commonRouter = router({
         stores,
       };
     }),
+
+  healthCheck: publicProcedure
+    .query(async () => {
+      // Test DB connection by selecting product names
+      await db.select({ name: productInfo.name }).from(productInfo).limit(1);
+
+      return {
+        status: "ok",
+      };
+    }),
 });

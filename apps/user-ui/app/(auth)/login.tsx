@@ -7,6 +7,7 @@ import { AppContainer, MyButton, MyText, MyTextInput, tw } from "common-ui";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { trpc } from '@/src/trpc-client';
 import { StorageServiceCasual } from 'common-ui';
+import GoogleSignInPKCE from "common-ui/src/components/google-sign-in";
 
 interface LoginFormInputs {
   mobile: string;
@@ -429,6 +430,7 @@ function Login() {
           </MyButton>
         )}
       </View>
+      <GoogleSignInPKCE />
       </View>
     </AppContainer>
   );

@@ -115,34 +115,25 @@ const renderStore = ({
 }) => {
   return (
     <TouchableOpacity
-      style={[
-        tw`bg-white rounded-2xl shadow-sm mb-2 overflow-hidden border border-gray-100`,
-        { width: itemWidth },
-      ]}
-      onPress={() => router.push(`/(drawer)/(tabs)/home/stores?storeId=${item.id}`)}
+      style={tw`items-center mr-4`}
+      onPress={() => router.push(`/(drawer)/(tabs)/stores?storeId=${item.id}`)}
       activeOpacity={0.9}
     >
-      <View style={tw`relative`}>
-        <Image
-          source={{ uri: item.signedImageUrl || undefined }}
-          style={{ width: "100%", height: itemWidth, resizeMode: "cover" }}
-        />
-        {!item.signedImageUrl && (
-          <View style={tw`absolute inset-0 bg-gray-200 items-center justify-center`}>
-            <MaterialIcons name="storefront" size={48} color="#9CA3AF" />
-          </View>
+      <View style={tw`w-12 h-12 rouned-md bg-gray-200 items-center justify-center mb-2`}>
+        {item.signedImageUrl ? (
+          <Image
+            source={{ uri: item.signedImageUrl }}
+            style={tw`w-12 h-12 rounded-md`}
+            resizeMode="cover"
+          />
+        ) : (
+          <MaterialIcons name="storefront" size={24} color="#9CA3AF" />
         )}
       </View>
 
-      <View style={tw`p-3`}>
-        <Text style={tw`text-gray-900 font-bold text-sm mb-1`} numberOfLines={2}>
-          {item.name}
-        </Text>
-
-        <Text style={tw`text-gray-500 text-xs`}>
-          {item.productCount} {item.productCount === 1 ? 'item' : 'items'}
-        </Text>
-      </View>
+      <Text style={tw`text-gray-900 font-medium text-xs text-center`} numberOfLines={2}>
+        {item.name.replace(/^The\s+/i, '')}
+      </Text>
     </TouchableOpacity>
   );
 };
@@ -260,7 +251,9 @@ export default function Dashboard() {
           containerStyle={tw`mb-6 shadow-sm border-0 bg-white rounded-xl`}
         />
 
-        {/* Categories / Tags */}
+        {/* Categories / Tags - COMMENTED OUT FOR UI SIMPLIFICATION */}
+        {/* DO NOT REMOVE: This section is preserved for future use if categories are needed again */}
+        {/*
         {dashboardTags.length > 0 && (
           <View style={tw`mb-6`}>
             <View style={tw`flex-row justify-between items-center mb-3 pr-4`}>
@@ -309,9 +302,28 @@ export default function Dashboard() {
             </View>
           </View>
         )}
+        */}
+
+      {/* Stores Section */}
+      {storesData?.stores && storesData.stores.length > 0 && (
+        <View style={tw`mt-6`}>
+          <View style={tw`flex-row items-center mb-2`}>
+            <Text style={tw`text-lg font-bold text-gray-900`}>Stores</Text>
+          </View>
+          <View style={tw` pb-4`}>
+            <View style={tw`flex-row flex-wrap justify-start`}>
+              {storesData.stores.map((store, index) => (
+                <View key={store.id} style={tw` mb-4`}>
+                  {renderStore({ item: store, router })}
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
 
         {/* Section Title */}
-        <View style={tw`flex-row justify-between items-center mb-2 pr-4`}>
+        <View style={tw`flex-row items-center mb-2 pr-4`}>
           {searchQuery ? (
             <Text style={tw`text-lg font-bold text-gray-900`}>Results for "{searchQuery}"</Text>
           ) : selectedTagId ? (
@@ -321,64 +333,29 @@ export default function Dashboard() {
           ) : (
             <Text style={tw`text-lg font-bold text-gray-900`}>Popular Items</Text>
           )}
-          <TouchableOpacity onPress={() => router.push('/(drawer)/(tabs)/home/search-results')}>
-            <Text style={tw`text-pink1 font-bold text-xs`}>See all</Text>
-          </TouchableOpacity>
         </View>
-      </View>
+    </View>
 
-      <View style={tw`relative`}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={tw`px-4 pb-4`}
-        >
-          {products.map((item, index) => (
-            <View key={index} style={tw`mr-4`}>
-              {renderProduct({ item, router, handleAddToCart, handleBuyNow })}
-            </View>
-          ))}
-        </ScrollView>
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.08)']}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={tw`absolute right-0 top-0 bottom-4 w-12 rounded-l-xl`}
-          pointerEvents="none"
-        />
-      </View>
-
-      {/* Stores Section */}
-      {storesData?.stores && storesData.stores.length > 0 && (
-        <View style={tw`mt-6`}>
-          <View style={tw`flex-row justify-between items-center mb-2 px-4`}>
-            <Text style={tw`text-lg font-bold text-gray-900`}>Stores</Text>
-            <TouchableOpacity onPress={() => router.push('/(drawer)/(tabs)/home/stores' as any)}>
-              <Text style={tw`text-pink1 font-bold text-xs`}>See all</Text>
-            </TouchableOpacity>
+    <View style={tw`relative`}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={tw`px-4 pb-4`}
+      >
+        {products.map((item, index) => (
+          <View key={index} style={tw`mr-4`}>
+            {renderProduct({ item, router, handleAddToCart, handleBuyNow })}
           </View>
-          <View style={tw`relative`}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={tw`px-4 pb-4`}
-            >
-              {storesData.stores.map((store, index) => (
-                <View key={store.id} style={tw`mr-4`}>
-                  {renderStore({ item: store, router })}
-                </View>
-              ))}
-            </ScrollView>
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.08)']}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={tw`absolute right-0 top-0 bottom-4 w-12 rounded-l-xl`}
-              pointerEvents="none"
-            />
-          </View>
-        </View>
-      )}
+        ))}
+      </ScrollView>
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.08)']}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={tw`absolute right-0 top-0 bottom-4 w-12 rounded-l-xl`}
+        pointerEvents="none"
+      />
+    </View>
 
       <LoadingDialog open={isLoadingDialogOpen} message="Adding to cart..." />
     </AppContainer>

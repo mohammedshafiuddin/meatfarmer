@@ -1,18 +1,28 @@
 {
   "expo": {
-    "name": "Symbuyote",
-    "slug": "locality",
+    "name": "Freshyo",
+    "slug": "freshyo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo_mini.jpg",
-    "scheme": "medikore",
+    "scheme": "freshyo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mohammedshafiudin54.locality-user-ui",
+      "bundleIdentifier": "in.freshyo.app",
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
+          "ppemerchantsdkv1",
+          "ppemerchantsdkv2",
+          "ppemerchantsdkv3",
+          "paytmmp",
+          "gpay",
+          "ppemerchantsdkv1",
+          "ppemerchantsdkv2",
+          "ppemerchantsdkv3",
+          "paytmmp",
+          "gpay",
           "ppemerchantsdkv1",
           "ppemerchantsdkv2",
           "ppemerchantsdkv3",
@@ -33,7 +43,7 @@
         "backgroundColor": "#fff0f6"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.mohammedshafiuddin54.locality"
+      "package": "in.freshyo.app"
     },
     "web": {
       "bundler": "metro",
@@ -59,14 +69,15 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "fd509174-c857-4f98-a53c-9cd4f07d6dea"
+        "projectId": "7f3e7611-f7a8-45f9-8a99-c2b1f6454d48"
       }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/fd509174-c857-4f98-a53c-9cd4f07d6dea"
-    }
+      "url": "https://u.expo.dev/7f3e7611-f7a8-45f9-8a99-c2b1f6454d48"
+    },
+    "owner": "mohammedshafiuddin54"
   }
 }

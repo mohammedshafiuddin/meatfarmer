@@ -6,11 +6,24 @@
       "@/*": [
         "./*"
       ],
-      "shared-types": ["../shared-types"],
-      "common-ui": ["../../packages/ui"],
-      "common-ui/*": ["../../packages/ui/*"]
+      "shared-types": [
+        "../shared-types"
+      ],
+      "common-ui": [
+        "../../packages/ui"
+      ],
+      "common-ui/*": [
+        "../../packages/ui/*"
+      ]
     },
-    "moduleSuffixes": [".ios", ".android", ".native", ".web", ""]
+    "moduleSuffixes": [
+      ".ios",
+      ".android",
+      ".native",
+      ".web",
+      ""
+    ],
+    "jsx": "react-native"
   },
   "include": [
     "**/*.ts",

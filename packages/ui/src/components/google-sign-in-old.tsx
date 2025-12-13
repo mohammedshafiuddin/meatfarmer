@@ -13,6 +13,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { Button, View } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 
 WebBrowser.maybeCompleteAuthSession();
@@ -46,6 +47,8 @@ export default function GoogleSignInPKCE() {
   //   },
   //   discovery
   // );
+  console.log("REAL REDIRECT URI:", AuthSession.makeRedirectUri({ scheme: "freshyo", path: 'oauthredirect' }));
+console.log("DEFAULT REDIRECT URI:", AuthSession.makeRedirectUri());
 
 
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -57,17 +60,48 @@ export default function GoogleSignInPKCE() {
     scopes: ["openid", "profile", "email"],
   });
 
-//   const handleGoogleSignIn = async () => { 
-//     const response = 
-//   }
-
-
   React.useEffect(() => {
-    if (response?.type === "success") {
-      const { authentication } = response;
-      console.log("Access token:", authentication?.accessToken);
+    GoogleSignin.configure({
+        webClientId: webClientId,
+        iosClientId: iosClientId,
+        profileImageSize: 150,
+    })
+  }, []);
+
+  const handleGoogleSignIn = async () => { 
+    try {
+        await GoogleSignin.hasPlayServices();
+        const response = await GoogleSignin.signIn();
+        console.log({response})
     }
-  }, [response]);
+    catch (error) {
+        if(error.code) {
+            switch (error.code) {
+                case statusCodes.SIGN_IN_CANCELLED:
+                    console.log("User cancelled the login flow");
+                    break;
+                case statusCodes.IN_PROGRESS:
+                    console.log("Sign in is in progress already");
+                    break;
+                case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+                    console.log("Play services not available or outdated");
+                    break;
+                default:
+                    console.log("Some other error happened:", JSON.stringify(error));
+            }
+            console.log("Google Sign-In Error:", JSON.stringify(error));
+        }
+    }
+
+  }
+
+
+  // React.useEffect(() => {
+  //   if (response?.type === "success") {
+  //     const { authentication } = response;
+  //     console.log("Access token:", authentication?.accessToken);
+  //   }
+  // }, [response]);
 
 
   // React.useEffect(() => {
@@ -89,7 +123,8 @@ export default function GoogleSignInPKCE() {
 
   return (
     <View style={{ marginTop: 100 }}>
-      <Button title="Sign in with Google" onPress={() => promptAsync()} />
+      {/* <Button title="Sign in with Google" onPress={() => promptAsync()} /> */}
+      <Button title="Sign in with Google" onPress={handleGoogleSignIn} />
     </View>
   );
 }

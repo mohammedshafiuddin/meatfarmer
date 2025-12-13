@@ -36,7 +36,7 @@ export async function deleteS3Image(imageUrl: string) {
     if (!key) {
       throw new Error("Invalid image URL format");
     }
-    const deleteS3 = await deleteImageUtil(key);
+    const deleteS3 = await deleteImageUtil({keys: [key] });
     if (!deleteS3) {
       throw new Error("Failed to delete image from S3");
     }

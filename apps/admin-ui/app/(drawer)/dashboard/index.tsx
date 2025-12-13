@@ -51,12 +51,18 @@
           color: 'bg-cyan-500',
            onPress: () => router.push('/(drawer)/slots' as any),
         },
-        {
-          title: 'Users',
-          icon: 'people',
-          color: 'bg-teal-500',
-          onPress: () => router.push('/(drawer)/users'),
-        },
+         {
+           title: 'Stores',
+           icon: 'store',
+           color: 'bg-teal-500',
+           onPress: () => router.push('/(drawer)/stores'),
+         },
+         {
+           title: 'Address Management',
+           icon: 'location-on',
+           color: 'bg-yellow-500',
+           onPress: () => router.push('/(drawer)/address-management'),
+         },
         // {
         //   title: 'Orders',
         //   icon: 'receipt',

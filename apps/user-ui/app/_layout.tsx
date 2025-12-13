@@ -19,6 +19,8 @@ import { AuthProvider } from "@/src/contexts/AuthContext";
 import { trpc, trpcClient } from "@/src/trpc-client";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LocationTestWrapper from "@/components/LocationTestWrapper";
+import HealthTestWrapper from "@/components/HealthTestWrapper";
+import FirstUserWrapper from "@/components/FirstUserWrapper";
 import { RefreshProvider } from '../../../packages/ui/src/lib/refresh-context';
 
 export default function RootLayout() {
@@ -36,19 +38,23 @@ export default function RootLayout() {
       <SafeAreaView edges={['left', 'right', 'bottom']} style={{ flex: 1 }}>
         <View style={{ flex: 1, backgroundColor: theme.colors.gray1 }}>
           <QueryClientProvider client={queryClient}>
-            <trpc.Provider client={trpcClient} queryClient={queryClient}>
-              <AuthProvider>
-                <NotificationProvider>
-                  <PaperProvider>
-                     <LocationTestWrapper>
-                       <RefreshProvider queryClient={queryClient}>
-                         <Stack screenOptions={{ headerShown: false }} />
-                       </RefreshProvider>
-                     </LocationTestWrapper>
-                  </PaperProvider>
-                </NotificationProvider>
-              </AuthProvider>
-            </trpc.Provider>
+              <trpc.Provider client={trpcClient} queryClient={queryClient}>
+                <HealthTestWrapper>
+                  <FirstUserWrapper>
+                    <AuthProvider>
+                   <NotificationProvider>
+                     <PaperProvider>
+                        <LocationTestWrapper>
+                          <RefreshProvider queryClient={queryClient}>
+                            <Stack screenOptions={{ headerShown: false }} />
+                          </RefreshProvider>
+                        </LocationTestWrapper>
+                     </PaperProvider>
+                    </NotificationProvider>
+                  </AuthProvider>
+                  </FirstUserWrapper>
+                </HealthTestWrapper>
+              </trpc.Provider>
           </QueryClientProvider>
         </View>
       </SafeAreaView>

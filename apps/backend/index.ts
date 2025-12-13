@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
+// import bodyParser from "body-parser";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -24,8 +24,8 @@ const app = express();
 
 signedUrlCache.loadFromDisk();
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Middleware to log all request URLs
 app.use((req, res, next) => {

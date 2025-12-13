@@ -625,7 +625,7 @@ export default function MyCart() {
                   return;
                 }
                 router.push(
-                  `/(drawer)/(tabs)/me/checkout?selected=${selectedItems.join(
+                  `/(drawer)/(tabs)/cart/checkout?selected=${selectedItems.join(
                     ","
                   )}&slot=${selectedSlot}&coupons=${selectedCouponId.join(
                     ","

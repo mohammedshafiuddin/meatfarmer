@@ -193,8 +193,9 @@ export default function Layout() {
           <Drawer.Screen name="add-slot" options={{ title: "Add Slot" }} />
           <Drawer.Screen name="edit-slot/[id]" options={{ title: "Edit Slot" }} />
          <Drawer.Screen name="vendor-snippets" options={{ title: "Vendor Snippets" }} />
-         <Drawer.Screen name="stores" options={{ title: "Stores" }} />
-         <Drawer.Screen name="product-tags" options={{ title: "Product Tags" }} />
+          <Drawer.Screen name="stores" options={{ title: "Stores" }} />
+          <Drawer.Screen name="address-management" options={{ title: "Address Management" }} />
+          <Drawer.Screen name="product-tags" options={{ title: "Product Tags" }} />
          <Drawer.Screen name="add-tag" options={{ title: "Add Tag" }} />
          <Drawer.Screen name="edit-tag" options={{ title: "Edit Tag" }} />
           <Drawer.Screen name="order-details/[id]" options={{ title: "Order Details" }} />
