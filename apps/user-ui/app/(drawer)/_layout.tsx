@@ -32,10 +32,10 @@ export default function Layout() {
 
   return (
     <>
-      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.pink2} />
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.brand25} />
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: theme.colors.pink1,
+          tabBarActiveTintColor: theme.colors.brand500,
           tabBarInactiveTintColor: '#4B5563',
           tabBarStyle: {
             backgroundColor: 'white',

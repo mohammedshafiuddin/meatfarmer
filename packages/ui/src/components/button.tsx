@@ -28,9 +28,9 @@ function MyButton({
   ...props
 }: Props) {
   const { colors } = useTheme().theme;
-  let backgroundColor = colors.blue1;
+  let backgroundColor = colors.brand500;
   if (variant === "red") backgroundColor = colors.red1;
-  if (variant === "green") backgroundColor = theme.colors.pink1
+  if (variant === "green") backgroundColor = theme.colors.brand500
   if (fillColor && colors[fillColor]) backgroundColor = colors[fillColor];
   
   let finalTextColor = "#fff";

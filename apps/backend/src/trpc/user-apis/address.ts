@@ -6,6 +6,19 @@ import { eq, and, gte } from 'drizzle-orm';
 import dayjs from 'dayjs';
 
 export const addressRouter = router({
+  getDefaultAddress: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.user.userId;
+
+      const [defaultAddress] = await db
+        .select()
+        .from(addresses)
+        .where(and(eq(addresses.userId, userId), eq(addresses.isDefault, true)))
+        .limit(1);
+
+      return { success: true, data: defaultAddress || null };
+    }),
+
   getUserAddresses: protectedProcedure
     .query(async ({ ctx }) => {
       const userId = ctx.user.userId;

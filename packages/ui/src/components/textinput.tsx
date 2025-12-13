@@ -54,8 +54,8 @@ const MyTextInput: React.FC<MyTextInputProps> = ({
         underlineColor="transparent"
         placeholderTextColor={theme.colors.gray5}
         activeUnderlineColor={"transparent"}
-        selectionColor={theme.colors.blue1}
-        cursorColor={theme.colors.blue1}
+        selectionColor={theme.colors.brand500}
+        cursorColor={theme.colors.brand500}
         textColor={colors.black1}
         right={
           isPassword

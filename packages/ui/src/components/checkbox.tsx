@@ -27,7 +27,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
   checkColor,
 }) => {
   const { colors } = useTheme().theme;
-  const fill = fillColor || colors.blue1;
+  const fill = fillColor || colors.brand500;
   const check = checkColor || colors.white1;
   const iconName = Platform.OS === 'android'
     ? checked ? 'checkbox-marked' : 'checkbox-blank-outline'

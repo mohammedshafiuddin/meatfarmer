@@ -54,7 +54,7 @@ function NotifChecker(props: Props) {
               Cancel
             </MyButton>
             <MyButton
-              fillColor="blue1"
+              fillColor="brand500"
               onPress={() => {
                 Linking.openSettings();
               }}

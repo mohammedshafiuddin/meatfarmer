@@ -13,7 +13,7 @@ const HealthTestWrapper: React.FC<HealthTestWrapperProps> = ({ children }) => {
   if (isLoading) {
     return (
       <View style={tw`flex-1 justify-center items-center bg-gray-50`}>
-        <ActivityIndicator size="large" color={theme.colors.pink1} />
+        <ActivityIndicator size="large" color={theme.colors.brand500} />
         <Text style={tw`text-gray-500 mt-4 font-medium`}>Checking service status...</Text>
       </View>
     );
@@ -31,7 +31,7 @@ const HealthTestWrapper: React.FC<HealthTestWrapperProps> = ({ children }) => {
         </Text>
         <TouchableOpacity
           onPress={() => refetch()}
-          style={tw`bg-pink1 px-8 py-3 rounded-xl shadow-md`}
+          style={tw`bg-brand500 px-8 py-3 rounded-xl shadow-md`}
           activeOpacity={0.8}
         >
           <Text style={tw`text-white font-bold text-base`}>Retry</Text>

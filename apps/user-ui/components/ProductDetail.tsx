@@ -141,8 +141,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[theme.colors.pink1]}
-            tintColor={theme.colors.pink1}
+            colors={[theme.colors.brand500]}
+            tintColor={theme.colors.brand500}
           />
         }
       >
@@ -217,7 +217,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                     onPress={() => setShowAllSlots(true)}
                     style={tw`items-center py-2`}
                   >
-                    <Text style={tw`text-pink1 font-bold text-sm`}>View All {productDetail.deliverySlots.length} Slots</Text>
+                    <Text style={tw`text-brand500 font-bold text-sm`}>View All {productDetail.deliverySlots.length} Slots</Text>
                   </TouchableOpacity>
                 )}
               </>
@@ -288,7 +288,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
                 <Text style={tw`text-xl font-bold text-gray-900`}>Customer Reviews</Text>
                 <Text style={tw`text-gray-500 text-xs mt-1`}>What others are saying</Text>
               </View>
-              <MaterialIcons name="forum" size={24} color={theme.colors.pink1} style={tw`opacity-80`} />
+              <MaterialIcons name="forum" size={24} color={theme.colors.brand500} style={tw`opacity-80`} />
             </View>
 
             <View style={tw`p-2`}>
@@ -392,20 +392,20 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId }) => {
       <View style={tw`absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-${Platform.OS === 'ios' ? '8' : '4'} shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex-row gap-3`}>
         <TouchableOpacity
           style={[tw`flex-1 py-3.5 rounded-xl items-center border`, {
-            borderColor: productDetail.isOutOfStock ? '#9ca3af' : theme.colors.pink1,
+            borderColor: productDetail.isOutOfStock ? '#9ca3af' : theme.colors.brand500,
             backgroundColor: 'white'
           }]}
           onPress={() => !productDetail.isOutOfStock && handleAddToCart(productDetail.id)}
           disabled={productDetail.isOutOfStock}
         >
-          <Text style={[tw`font-bold text-base`, { color: productDetail.isOutOfStock ? '#9ca3af' : theme.colors.pink1 }]}>
+          <Text style={[tw`font-bold text-base`, { color: productDetail.isOutOfStock ? '#9ca3af' : theme.colors.brand500 }]}>
             {productDetail.isOutOfStock ? 'Unavailable' : 'Add to Cart'}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[tw`flex-1 py-3.5 rounded-xl items-center shadow-md`, {
-            backgroundColor: (productDetail.isOutOfStock || productDetail.deliverySlots.length === 0) ? '#9ca3af' : theme.colors.pink1
+            backgroundColor: (productDetail.isOutOfStock || productDetail.deliverySlots.length === 0) ? '#9ca3af' : theme.colors.brand500
           }]}
           onPress={() => !(productDetail.isOutOfStock || productDetail.deliverySlots.length === 0) && handleBuyNow(productDetail.id)}
           disabled={productDetail.isOutOfStock || productDetail.deliverySlots.length === 0}
@@ -615,7 +615,7 @@ const ReviewForm = ({ productId }: ReviewFormProps) => {
         activeOpacity={0.9}
       >
         <LinearGradient
-          colors={createReview.isPending ? ['#d1d5db', '#d1d5db'] : [theme.colors.pink1 || '#F83758', theme.colors.red1 || '#D84343']}
+          colors={createReview.isPending ? ['#d1d5db', '#d1d5db'] : [theme.colors.brand500 || '#2E90FA', theme.colors.red1 || '#D84343']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={tw`py-4 rounded-xl items-center shadow-md`}

@@ -1,9 +1,20 @@
 
 
 export const colors = {
-    blue1: '#F83758',
+    brand25:  "#F5FAFF",
+    brand50:  "#EFF8FF",
+    brand100: "#D1E9FF",
+    brand200: "#B2DDFF",
+    brand300: "#84CAFF",
+    brand400: "#53B1FD",
+    brand500: "#2E90FA",
+    brand600: "#1570EF",
+    brand700: "#175CD3",
+    brand800: "#1849A9",
+    brand900: "#194185",
+    blue1: '#2E90FA',
     blue2: '#fff0f6',
-    pink1: '#F83758',
+    pink1: '#2E90FA',
     pink2: '#fff0f6',
     blue3: '#ECF4FF',
     red1: '#D84343',

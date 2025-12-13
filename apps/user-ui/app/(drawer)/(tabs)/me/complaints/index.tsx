@@ -115,10 +115,10 @@ export default function Complaints() {
             <Text style={tw`text-gray-500 text-center mt-2 px-10 leading-5`}>
               You haven't raised any complaints yet. That's great!
             </Text>
-            <TouchableOpacity
-              style={tw`mt-8 bg-pink1 px-6 py-3 rounded-xl shadow-sm`}
-              onPress={() => router.push('/(drawer)/(tabs)/home')}
-            >
+        <TouchableOpacity
+          onPress={() => handleMarkResolved(item.id)}
+          style={tw`mt-8 bg-brand500 px-6 py-3 rounded-xl shadow-sm`}
+        >
               <Text style={tw`text-white font-bold`}>Continue Shopping</Text>
             </TouchableOpacity>
           </View>

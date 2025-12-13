@@ -89,10 +89,16 @@ export const commonApiRouter = router({
       .query(async () => {
         // Test DB connection by selecting product names
         await db.select({ name: productInfo.name }).from(productInfo).limit(1);
-  
+
         return {
           status: "ok",
         };
+    }),
+  essentialConsts: publicProcedure
+    .query(async () => {
+      return {
+        freeDeliveryThreshold: 200,
+      };
     }),
 });
 

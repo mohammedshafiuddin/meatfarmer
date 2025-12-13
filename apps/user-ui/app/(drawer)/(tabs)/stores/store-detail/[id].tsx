@@ -45,7 +45,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
             style={tw`absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md`}
             onPress={() => handleAddToCart(item.id)}
           >
-            <MaterialIcons name="add-shopping-cart" size={20} color={theme.colors.pink1} />
+            <MaterialIcons name="add-shopping-cart" size={20} color={theme.colors.brand500} />
           </TouchableOpacity>
         )}
       </View>
@@ -56,7 +56,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
         </Text>
 
         <View style={tw`flex-row items-baseline mb-2`}>
-          <Text style={tw`text-pink1 font-bold text-base`}>₹{item.price}</Text>
+          <Text style={tw`text-brand500 font-bold text-base`}>₹{item.price}</Text>
           <Text style={tw`text-gray-400 text-xs ml-1`}>/ {item.unit || 'unit'}</Text>
         </View>
 
@@ -71,7 +71,7 @@ const renderProduct = ({ item, router, handleAddToCart, handleBuyNow }: { item: 
 
         {!item.isOutOfStock ? (
           <TouchableOpacity
-            style={tw`bg-pink1 py-2 rounded-lg items-center mt-1`}
+            style={tw`bg-brand500 py-2 rounded-lg items-center mt-1`}
             onPress={() => handleBuyNow(item.id)}
           >
             <Text style={tw`text-white text-xs font-bold uppercase tracking-wide`}>Buy Now</Text>
@@ -168,7 +168,7 @@ export default function StoreDetail() {
           <View style={tw`pt-4 pb-6`}>
             <View style={tw`bg-white p-6 rounded-2xl shadow-sm border border-gray-100 items-center`}>
               <View style={tw`w-16 h-16 bg-pink-50 rounded-full items-center justify-center mb-4`}>
-                <FontAwesome5 name="store" size={28} color={theme.colors.pink1} />
+                <FontAwesome5 name="store" size={28} color={theme.colors.brand500} />
               </View>
               <Text style={tw`text-2xl font-bold text-gray-900 text-center mb-2`}>{storeData?.store?.name}</Text>
               {storeData?.store?.description && (

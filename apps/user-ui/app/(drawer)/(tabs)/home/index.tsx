@@ -8,6 +8,7 @@ import {
   Alert,
   ScrollView,
   Platform,
+  TextInput,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -22,8 +23,10 @@ import {
 import dayjs from "dayjs";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import SearchBar from "common-ui/src/components/search-bar";
+import { Ionicons } from "@expo/vector-icons";
+
 import { trpc } from "@/src/trpc-client";
+import FloatingCartBar from "@/components/FloatingCartBar";
 
 const { width: screenWidth } = Dimensions.get("window");
 const itemWidth = screenWidth * 0.45; // 45% of screen width
@@ -63,9 +66,9 @@ const renderProduct = ({
         {!item.isOutOfStock && (
           <TouchableOpacity
             style={tw`absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md`}
-            onPress={() => handleAddToCart(item.id)}
+            onPress={() => handleBuyNow(item.id)}
           >
-            <MaterialIcons name="add-shopping-cart" size={20} color={theme.colors.pink1} />
+            <Ionicons name="flash" size={16} color={theme.colors.brand500} />
           </TouchableOpacity>
         )}
       </View>
@@ -76,7 +79,7 @@ const renderProduct = ({
         </Text>
 
         <View style={tw`flex-row items-baseline mb-2`}>
-          <Text style={tw`text-pink1 font-bold text-base`}>₹{item.price}</Text>
+          <Text style={tw`text-brand500 font-bold text-base`}>₹{item.price}</Text>
           <Text style={tw`text-gray-400 text-xs ml-1`}>/ {item.unit || "unit"}</Text>
         </View>
 
@@ -91,10 +94,13 @@ const renderProduct = ({
 
         {!item.isOutOfStock ? (
           <TouchableOpacity
-            style={tw`bg-pink1 py-2 rounded-lg items-center mt-1`}
-            onPress={() => handleBuyNow(item.id)}
+            style={tw`bg-brand500 py-2 rounded-lg items-center mt-1`}
+            onPress={() => handleAddToCart(item.id)}
           >
-            <Text style={tw`text-white text-xs font-bold uppercase tracking-wide`}>Buy Now</Text>
+            <View style={tw`flex-row items-center`}>
+              <MaterialIcons name="add-shopping-cart" size={16} color="white" style={tw`mr-1`} />
+              <Text style={tw`text-white text-xs font-bold uppercase tracking-wide`}>Add to Cart</Text>
+            </View>
           </TouchableOpacity>
         ) : (
           <View style={tw`bg-gray-100 py-2 rounded-lg items-center mt-1`}>
@@ -115,23 +121,23 @@ const renderStore = ({
 }) => {
   return (
     <TouchableOpacity
-      style={tw`items-center mr-4`}
+      style={tw`items-center mr-5`}
       onPress={() => router.push(`/(drawer)/(tabs)/stores?storeId=${item.id}`)}
-      activeOpacity={0.9}
+      activeOpacity={0.7}
     >
-      <View style={tw`w-12 h-12 rouned-md bg-gray-200 items-center justify-center mb-2`}>
+      <View style={tw`w-14 h-14 rounded-full bg-white/10 border border-white/20 items-center justify-center mb-2 shadow-sm overflow-hidden`}>
         {item.signedImageUrl ? (
           <Image
             source={{ uri: item.signedImageUrl }}
-            style={tw`w-12 h-12 rounded-md`}
+            style={tw`w-14 h-14 rounded-full`}
             resizeMode="cover"
           />
         ) : (
-          <MaterialIcons name="storefront" size={24} color="#9CA3AF" />
+          <MaterialIcons name="storefront" size={24} color="#FFF" />
         )}
       </View>
 
-      <Text style={tw`text-gray-900 font-medium text-xs text-center`} numberOfLines={2}>
+      <Text style={tw`text-white font-medium text-xs text-center tracking-wide`} numberOfLines={2}>
         {item.name.replace(/^The\s+/i, '')}
       </Text>
     </TouchableOpacity>
@@ -158,9 +164,11 @@ export default function Dashboard() {
   const { data: tagsData } = trpc.common.product.getDashboardTags.useQuery();
   const { data: cartData, refetch: refetchCart } = trpc.user.cart.getCart.useQuery();
   const { data: storesData } = trpc.user.stores.getStores.useQuery();
+  const { data: defaultAddressResponse } = trpc.user.address.getDefaultAddress.useQuery();
 
   const products = productsData?.products || [];
   const dashboardTags = tagsData?.tags || [];
+  const defaultAddress = defaultAddressResponse?.data;
   const addToCart = trpc.user.cart.addToCart.useMutation();
 
   const handleTagSelect = (tagId: number) => {
@@ -236,128 +244,170 @@ export default function Dashboard() {
   }
 
   return (
-    <AppContainer>
-      <View style={tw`pt-4 pb-2`}>
-        {/* Search Bar */}
-        <SearchBar
-          value={inputQuery}
-          onChangeText={setInputQuery}
-          onSearch={() => {
-            if (inputQuery.trim()) {
-              router.push(`/(drawer)/(tabs)/home/search-results?q=${encodeURIComponent(inputQuery.trim())}`);
-            }
-          }}
-          placeholder="Search fresh meat..."
-          containerStyle={tw`mb-6 shadow-sm border-0 bg-white rounded-xl`}
-        />
+    <View style={tw`flex-1 bg-white `}>
+      <ScrollView style={tw`flex-1`}>
+        <LinearGradient
+          colors={['#194185', '#1570EF']} // brand900 to brand600
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={tw`pb-8 pt-6 px-5 rounded-b-[32px] shadow-lg mb-4`}
+        >
+          <View style={tw`flex-row justify-between items-start mb-6`}>
+            <View style={tw`flex-1 mr-4`}>
+              <View style={tw`flex-row items-center mb-1`}>
+                <View style={tw`bg-white/20 p-1 rounded-full mr-2`}>
+                  <MaterialIcons name="location-pin" size={14} color="#FFF" />
+                </View>
+                <Text style={tw`text-brand100 text-xs font-bold uppercase tracking-widest`}>
+                  Delivery to {defaultAddress?.name ? defaultAddress.name.split(' ')[0] : 'Home'}
+                </Text>
+              </View>
+              <Text style={tw`text-white text-sm font-medium opacity-90 ml-1`} numberOfLines={1}>
+                {defaultAddress ? `${defaultAddress.addressLine1}, ${defaultAddress.city}` : 'Add your delivery address'}
+              </Text>
 
-        {/* Categories / Tags - COMMENTED OUT FOR UI SIMPLIFICATION */}
-        {/* DO NOT REMOVE: This section is preserved for future use if categories are needed again */}
-        {/*
-        {dashboardTags.length > 0 && (
-          <View style={tw`mb-6`}>
-            <View style={tw`flex-row justify-between items-center mb-3 pr-4`}>
-              <Text style={tw`text-lg font-bold text-gray-900`}>Categories</Text>
             </View>
-            <View style={tw`relative`}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={tw`pr-4`}
-              >
-                {dashboardTags.map((tag) => (
-                  <TouchableOpacity
-                    key={tag.id}
-                    onPress={() => handleTagSelect(tag.id)}
-                    style={tw`flex-row items-center px-4 py-2.5 mr-3 rounded-xl border ${selectedTagId === tag.id
-                      ? "bg-pink1 border-pink1"
-                      : "bg-white border-gray-200"
-                      } shadow-sm`}
-                  >
-                    {tag.imageUrl && (
-                      <Image
-                        source={{ uri: tag.imageUrl }}
-                        style={tw`w-5 h-5 rounded mr-2`}
-                        resizeMode="cover"
-                      />
-                    )}
-                    <Text
-                      style={tw`text-sm font-bold ${selectedTagId === tag.id
-                        ? "text-white"
-                        : "text-gray-700"
-                        }`}
+
+            <TouchableOpacity
+              onPress={() => router.push('/(drawer)/(tabs)/me')}
+              style={tw`bg-white/10 p-2 rounded-xl border border-white/10`}
+            >
+              <MaterialIcons name="person" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Search Bar */}
+          <View style={tw`flex-row items-center bg-white rounded-2xl px-4 h-12 mb-8 shadow-md`}>
+            <MaterialIcons name="search" size={24} color={theme.colors.brand500} />
+            <TextInput
+              style={tw`flex-1 ml-3 text-base text-gray-800`}
+              placeholder="Search fresh meat..."
+              placeholderTextColor="#9CA3AF"
+              value={inputQuery}
+              onChangeText={setInputQuery}
+              onSubmitEditing={() => {
+                if (inputQuery.trim()) {
+                  router.push(`/(drawer)/(tabs)/home/search-results?q=${encodeURIComponent(inputQuery.trim())}`);
+                }
+              }}
+              returnKeyType="search"
+            />
+          </View>
+
+          {/* Categories / Tags - COMMENTED OUT FOR UI SIMPLIFICATION */}
+          {/* DO NOT REMOVE: This section is preserved for future use if categories are needed again */}
+          {/*
+          {dashboardTags.length > 0 && (
+            <View style={tw`mb-6`}>
+              <View style={tw`flex-row justify-between items-center mb-3 pr-4`}>
+                <Text style={tw`text-lg font-bold text-gray-900`}>Categories</Text>
+              </View>
+              <View style={tw`relative`}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={tw`pr-4`}
+                >
+                  {dashboardTags.map((tag) => (
+                    <TouchableOpacity
+                      key={tag.id}
+                      onPress={() => handleTagSelect(tag.id)}
+                      style={tw`flex-row items-center px-4 py-2.5 mr-3 rounded-xl border ${selectedTagId === tag.id
+                        ? "bg-brand500 border-brand500"
+                        : "bg-white border-gray-200"
+                        } shadow-sm`}
                     >
-                      {tag.tagName}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.08)']}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={tw`absolute right-0 top-0 bottom-0 w-8 rounded-l-xl`}
-                pointerEvents="none"
-              />
+                      {tag.imageUrl && (
+                        <Image
+                          source={{ uri: tag.imageUrl }}
+                          style={tw`w-5 h-5 rounded mr-2`}
+                          resizeMode="cover"
+                        />
+                      )}
+                      <Text
+                        style={tw`text-sm font-bold ${selectedTagId === tag.id
+                          ? "text-white"
+                          : "text-gray-700"
+                          }`}
+                      >
+                        {tag.tagName}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.08)']}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 1 }}
+                  style={tw`absolute right-0 top-0 bottom-0 w-8 rounded-l-xl`}
+                  pointerEvents="none"
+                />
+              </View>
             </View>
-          </View>
-        )}
-        */}
+          )}
+          */}
 
-      {/* Stores Section */}
-      {storesData?.stores && storesData.stores.length > 0 && (
-        <View style={tw`mt-6`}>
-          <View style={tw`flex-row items-center mb-2`}>
-            <Text style={tw`text-lg font-bold text-gray-900`}>Stores</Text>
+          {/* Stores Section */}
+          {storesData?.stores && storesData.stores.length > 0 && (
+            <View style={tw``}>
+              <View style={tw`flex-row items-center justify-between mb-4`}>
+                <Text style={tw`text-lg font-bold text-white tracking-tight`}>Top Stores</Text>
+              </View>
+              <View style={tw`pb-2`}>
+                <View style={tw`flex-row flex-wrap justify-start`}>
+                  {storesData.stores.map((store, index) => (
+                    <View key={store.id} style={tw``}>
+                      {renderStore({ item: store, router })}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          )}
+        </LinearGradient>
+
+        {/* White Section */}
+        <View style={tw`bg-white`}>
+          {/* Section Title */}
+          <View style={tw`flex-row items-center mb-2 px-4 pt-4`}>
+            {searchQuery ? (
+              <Text style={tw`text-lg font-bold text-gray-900`}>Results for "{searchQuery}"</Text>
+            ) : selectedTagId ? (
+              <Text style={tw`text-lg font-bold text-gray-900`}>
+                {dashboardTags.find(t => t.id === selectedTagId)?.tagName}
+              </Text>
+            ) : (
+              <Text style={tw`text-lg font-bold text-gray-900`}>Popular Items</Text>
+            )}
           </View>
-          <View style={tw` pb-4`}>
-            <View style={tw`flex-row flex-wrap justify-start`}>
-              {storesData.stores.map((store, index) => (
-                <View key={store.id} style={tw` mb-4`}>
-                  {renderStore({ item: store, router })}
+
+          <View style={tw`relative`}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={tw`px-4 pb-4`}
+            >
+              {products.map((item, index) => (
+                <View key={index} style={tw`mr-4`}>
+                  {renderProduct({ item, router, handleAddToCart, handleBuyNow })}
                 </View>
               ))}
-            </View>
+            </ScrollView>
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.08)']}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={tw`absolute right-0 top-0 bottom-4 w-12 rounded-l-xl`}
+              pointerEvents="none"
+            />
           </View>
         </View>
-      )}
 
-        {/* Section Title */}
-        <View style={tw`flex-row items-center mb-2 pr-4`}>
-          {searchQuery ? (
-            <Text style={tw`text-lg font-bold text-gray-900`}>Results for "{searchQuery}"</Text>
-          ) : selectedTagId ? (
-            <Text style={tw`text-lg font-bold text-gray-900`}>
-              {dashboardTags.find(t => t.id === selectedTagId)?.tagName}
-            </Text>
-          ) : (
-            <Text style={tw`text-lg font-bold text-gray-900`}>Popular Items</Text>
-          )}
-        </View>
-    </View>
-
-    <View style={tw`relative`}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={tw`px-4 pb-4`}
-      >
-        {products.map((item, index) => (
-          <View key={index} style={tw`mr-4`}>
-            {renderProduct({ item, router, handleAddToCart, handleBuyNow })}
-          </View>
-        ))}
+        <LoadingDialog open={isLoadingDialogOpen} message="Adding to cart..." />
+        <View style={tw`h-16`}></View>
       </ScrollView>
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.08)']}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={tw`absolute right-0 top-0 bottom-4 w-12 rounded-l-xl`}
-        pointerEvents="none"
-      />
-    </View>
 
-      <LoadingDialog open={isLoadingDialogOpen} message="Adding to cart..." />
-    </AppContainer>
+      <FloatingCartBar />
+    </View>
   );
 }

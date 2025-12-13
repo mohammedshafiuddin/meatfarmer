@@ -37,7 +37,7 @@ const ProfileChecker: React.FC = () => {
           <MyButton
             textContent="Update Now"
             onPress={() => { setDialogOpen(false); router.push('/(drawer)/(tabs)/me/edit-profile'); }}
-            fillColor="blue1"
+            fillColor="brand500"
             textColor="white1"
           />
         </View>

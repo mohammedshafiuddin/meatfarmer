@@ -81,19 +81,18 @@ export const orderRouter = router({
           z.object({
             productId: z.number().int().positive(),
             quantity: z.number().int().positive(),
+            slotId: z.number().int().positive(),
           })
         ),
         addressId: z.number().int().positive(),
         paymentMethod: z.enum(["online", "cod"]),
-        couponIds: z.array(z.number().int().positive()).optional(),
-        slotId: z.number().int().positive(),
+        couponId: z.number().int().positive().optional(),
         userNotes: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.user.userId;
-      const { selectedItems, addressId, slotId, paymentMethod, couponIds, userNotes } =
-        input;
+      const { selectedItems, addressId, paymentMethod, couponId, userNotes } = input;
 
       // Validate address belongs to user
       const address = await db.query.addresses.findFirst({
@@ -103,14 +102,14 @@ export const orderRouter = router({
         throw new ApiError("Invalid address", 400);
       }
 
-      // Calculate total and validate items
-      let totalAmount = 0;
-      const orderItemsData: Array<{
+      // Group items by slotId and validate products
+      const ordersBySlot = new Map<number, Array<{
         productId: number;
-        quantity: string;
-        price: any;
-        discountedPrice: string;
-      }> = [];
+        quantity: number;
+        slotId: number;
+        product: any;
+      }>>();
+
       for (const item of selectedItems) {
         const product = await db.query.productInfo.findFirst({
           where: eq(productInfo.id, item.productId),
@@ -118,204 +117,179 @@ export const orderRouter = router({
         if (!product) {
           throw new ApiError(`Product ${item.productId} not found`, 400);
         }
-        totalAmount += parseFloat(product.price.toString()) * item.quantity;
-        orderItemsData.push({
-          productId: item.productId,
-          quantity: item.quantity.toString(),
-          price: product.price,
-          discountedPrice: product.price.toString(),
-        });
+
+        if (!ordersBySlot.has(item.slotId)) {
+          ordersBySlot.set(item.slotId, []);
+        }
+        ordersBySlot.get(item.slotId)!.push({ ...item, product });
       }
 
-      // Early coupon validation (irrespective of products)
-      let appliedCoupons: AppliedCoupon[] = [];
-      if (couponIds && couponIds.length > 0) {
-        const fetchedCoupons = await db.query.coupons.findMany({
-          where: inArray(coupons.id, couponIds),
+      // Validate single coupon if provided
+      let appliedCoupon = null;
+      if (couponId) {
+        const coupon = await db.query.coupons.findFirst({
+          where: eq(coupons.id, couponId),
           with: {
             usages: { where: eq(couponUsage.userId, userId) },
-            applicableUsers: true,
-            applicableProducts: true,
           },
         });
 
-        for (const coupon of fetchedCoupons) {
-          if (!coupon) throw new ApiError("Invalid coupon", 400);
-          if (coupon.isInvalidated) throw new ApiError("Coupon is no longer valid", 400);
-          if (coupon.validTill && new Date(coupon.validTill) < new Date()) throw new ApiError("Coupon has expired", 400);
-          const applicableUsers = coupon.applicableUsers || [];
-          if (applicableUsers.length > 0 && !applicableUsers.some(au => au.userId === userId)) throw new ApiError("Coupon not applicable to this user", 400);
-          if (coupon.maxLimitForUser && coupon.usages.length >= coupon.maxLimitForUser) throw new ApiError("Coupon usage limit exceeded", 400);
-        }
+        if (!coupon) throw new ApiError("Invalid coupon", 400);
+        if (coupon.isInvalidated) throw new ApiError("Coupon is no longer valid", 400);
+        if (coupon.validTill && new Date(coupon.validTill) < new Date()) throw new ApiError("Coupon has expired", 400);
+        if (coupon.maxLimitForUser && coupon.usages.length >= coupon.maxLimitForUser) throw new ApiError("Coupon usage limit exceeded", 400);
 
-        const exclusiveCoupons = fetchedCoupons.filter(c => c.exclusiveApply);
-        if (exclusiveCoupons.length > 1) throw new ApiError("Only one exclusive coupon can be applied", 400);
-        if (exclusiveCoupons.length === 1 && couponIds.length > 1) throw new ApiError("Exclusive coupon cannot be combined with other coupons", 400);
-
-        appliedCoupons = fetchedCoupons;
+        appliedCoupon = coupon;
       }
 
-      // Validate min order
-      if (appliedCoupons.length > 0) {
-        for (const coupon of appliedCoupons) {
-          if (coupon.minOrder && parseFloat(coupon.minOrder.toString()) > totalAmount) {
-            throw new ApiError("Order amount does not meet coupon minimum requirement", 400);
-          }
-        }
+      // Calculate total amount across all orders
+      let totalAmount = 0;
+      for (const [slotId, items] of ordersBySlot) {
+        const orderTotal = items.reduce((sum, item) =>
+          sum + (parseFloat(item.product.price.toString()) * item.quantity), 0);
+        totalAmount += orderTotal;
       }
 
-      // Calculate final amount with order-level discounts
-      let finalAmount = totalAmount;
+      // Validate minimum order for coupon
+      if (appliedCoupon && appliedCoupon.minOrder && parseFloat(appliedCoupon.minOrder.toString()) > totalAmount) {
+        throw new ApiError("Order amount does not meet coupon minimum requirement", 400);
+      }
 
-      // Apply all coupon discounts to the order total
-      appliedCoupons.forEach(coupon => {
-        if (coupon.discountPercent) {
-          const discount = Math.min(
-            (totalAmount * parseFloat(coupon.discountPercent.toString())) / 100,
-            coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : Infinity
-          );
-          finalAmount -= discount;
-        } else if (coupon.flatDiscount) {
-          const discount = Math.min(
-            parseFloat(coupon.flatDiscount.toString()),
-            coupon.maxValue ? parseFloat(coupon.maxValue.toString()) : finalAmount
-          );
-          finalAmount -= discount;
+      // Create orders in transaction
+      const createdOrders = await db.transaction(async (tx) => {
+        // Get and increment readable order ID counter
+        let currentReadableId = 1;
+        const existing = await tx.query.keyValStore.findFirst({
+          where: eq(keyValStore.key, READABLE_ORDER_ID_KEY),
+        });
+        if (existing) {
+          currentReadableId = (existing.value as { value: number }).value + 1;
         }
-      });
-       // Create order in transaction
-       const newOrder = await db.transaction(async (tx) => {
-         // Get and increment readable order ID
-         let currentReadableId = 1;
-         const existing = await tx.query.keyValStore.findFirst({
-           where: eq(keyValStore.key, READABLE_ORDER_ID_KEY),
-         });
-         if (existing) {
-           currentReadableId = (existing.value as { value: number }).value + 1;
-         }
-         await tx
-           .insert(keyValStore)
-           .values({
-             key: READABLE_ORDER_ID_KEY,
-             value: { value: currentReadableId },
-           })
-           .onConflictDoUpdate({
-             target: keyValStore.key,
-             set: { value: { value: currentReadableId } },
-           });
 
-         let paymentInfoId: number | null = null;
+        // Create shared payment info for all orders
+        let sharedPaymentInfoId: number | null = null;
+        if (paymentMethod === "online") {
+          const [paymentInfo] = await tx
+            .insert(paymentInfoTable)
+            .values({
+              status: "pending",
+              gateway: "razorpay",
+              merchantOrderId: `multi_order_${Date.now()}`,
+            })
+            .returning();
+          sharedPaymentInfoId = paymentInfo.id;
+        }
 
-         if (paymentMethod === "online") {
-           // Create payment info for online payment
-           const [paymentInfo] = await tx
-             .insert(paymentInfoTable)
-             .values({
-               status: "pending",
-               gateway: "razorpay", // or whatever
-               merchantOrderId: `order_${Date.now()}`, // generate unique
-               // other fields as needed
-             })
-             .returning();
-           paymentInfoId = paymentInfo.id;
-         }
+        const createdOrders: any[] = [];
 
-         const [order] = await tx
-           .insert(orders)
-           .values({
-             userId,
-             addressId,
-             slotId,
-             isCod: paymentMethod === "cod",
-             isOnlinePayment: paymentMethod === "online",
-             paymentInfoId,
-             totalAmount: finalAmount.toString(),
-             readableId: currentReadableId,
-             userNotes: userNotes || null,
-           })
-           .returning();
+        // Create separate order for each slot group
+        for (const [slotId, items] of ordersBySlot) {
+          // Calculate order-specific total
+          const orderTotal = items.reduce((sum, item) =>
+            sum + (parseFloat(item.product.price.toString()) * item.quantity), 0);
 
-         for (const item of orderItemsData) {
-           await tx.insert(orderItems).values({
-             orderId: order.id,
-             ...item,
-           });
-         }
-
-         try {
-
-           await tx.insert(orderStatus).values({
-             userId,
-             orderId: order.id,
-             paymentStatus: paymentMethod === 'cod' ? 'cod' : 'pending',
-             // no payment fields here
-           });
-         }
-         catch(e) {
-           console.log(e)
-
-         }
-
-          // Insert payment record for online payment
-          if (paymentMethod === "online") {
-            const razorpayOrder = await RazorpayPaymentService.createOrder(order.id, finalAmount.toString());
-            await RazorpayPaymentService.insertPaymentRecord(order.id, razorpayOrder, tx);
+          // Apply coupon discount proportionally (split across orders)
+          let finalOrderTotal = orderTotal;
+          if (appliedCoupon) {
+            const proportion = orderTotal / totalAmount;
+            if (appliedCoupon.discountPercent) {
+              const discount = Math.min(
+                (orderTotal * parseFloat(appliedCoupon.discountPercent.toString())) / 100,
+                appliedCoupon.maxValue ? (parseFloat(appliedCoupon.maxValue.toString()) * proportion) : Infinity
+              );
+              finalOrderTotal -= discount;
+            } else if (appliedCoupon.flatDiscount) {
+              const discount = Math.min(
+                parseFloat(appliedCoupon.flatDiscount.toString()) * proportion,
+                appliedCoupon.maxValue ? (parseFloat(appliedCoupon.maxValue.toString()) * proportion) : finalOrderTotal
+              );
+              finalOrderTotal -= discount;
+            }
           }
 
-         // Remove ordered items from cart
-         await tx.delete(cartItems).where(
-           and(
-             eq(cartItems.userId, userId),
-             inArray(cartItems.productId, selectedItems.map(item => item.productId))
-           )
-         );
+          // Create order record
+          const [order] = await tx
+            .insert(orders)
+            .values({
+              userId,
+              addressId,
+              slotId,
+              isCod: paymentMethod === "cod",
+              isOnlinePayment: paymentMethod === "online",
+              paymentInfoId: sharedPaymentInfoId,
+              totalAmount: finalOrderTotal.toString(),
+              readableId: currentReadableId++,
+              userNotes: userNotes || null,
+            })
+            .returning();
 
-         return order;
-       });
-
-        // Add coupon usage records if coupons were applied
-        if (appliedCoupons.length > 0) {
-          // OLD CODE (commented out):
-          /*
-          // Get inserted order items
-          const insertedOrderItems = await db.query.orderItems.findMany({
-            where: eq(orderItems.orderId, newOrder.id),
-          });
-
-          const couponUsageInserts: CouponUsageInsert[] = [];
-          appliedCoupons.forEach(coupon => {
-            insertedOrderItems.forEach(orderItem => {
-              const applicableProducts = Array.isArray(coupon.applicableProducts) ? coupon.applicableProducts : [];
-              if (applicableProducts.length === 0 || applicableProducts.some((ap: any) => ap.productId === orderItem.productId)) {
-                couponUsageInserts.push({
-                  userId,
-                  couponId: coupon.id,
-                  orderId: newOrder.id,
-                  orderItemId: orderItem.id,
-                  usedAt: new Date(),
-                });
-              }
-            });
-          });
-          */
-
-          // NEW CODE: Single record per coupon per order
-          const couponUsageInserts: CouponUsageInsert[] = appliedCoupons.map(coupon => ({
-            userId,
-            couponId: coupon.id,
-            orderId: newOrder.id,
-            orderItemId: null, // Set to null for order-level tracking
-            usedAt: new Date(),
+          // Create order items
+          const orderItemsData = items.map(item => ({
+            orderId: order.id as number,
+            productId: item.productId,
+            quantity: item.quantity.toString(),
+            price: item.product.price,
+            discountedPrice: item.product.price.toString(),
           }));
 
-          if (couponUsageInserts.length > 0) {
-            await db.insert(couponUsage).values(couponUsageInserts);
-          }
+          await tx.insert(orderItems).values(orderItemsData);
+
+          // Create order status
+          await tx.insert(orderStatus).values({
+            userId,
+            orderId: order.id as number,
+            paymentStatus: paymentMethod === 'cod' ? 'cod' : 'pending',
+          });
+
+          createdOrders.push(order);
         }
 
-      sendOrderPlacedNotification(userId, newOrder.id.toString());
+        // Update readable ID counter
+        await tx
+          .insert(keyValStore)
+          .values({
+            key: READABLE_ORDER_ID_KEY,
+            value: { value: currentReadableId },
+          })
+          .onConflictDoUpdate({
+            target: keyValStore.key,
+            set: { value: { value: currentReadableId } },
+          });
 
-      return { success: true, data: newOrder };
+        // Create Razorpay order for online payments
+        if (paymentMethod === "online" && sharedPaymentInfoId) {
+          const razorpayOrder = await RazorpayPaymentService.createOrder(sharedPaymentInfoId, totalAmount.toString());
+          await RazorpayPaymentService.insertPaymentRecord(sharedPaymentInfoId, razorpayOrder, tx);
+        }
+
+        // Remove ordered items from cart
+        await tx.delete(cartItems).where(
+          and(
+            eq(cartItems.userId, userId),
+            inArray(cartItems.productId, selectedItems.map(item => item.productId))
+          )
+        );
+
+        return createdOrders;
+      });
+
+      // Record single coupon usage if applied (regardless of number of orders)
+      if (appliedCoupon && createdOrders.length > 0) {
+        await db.insert(couponUsage).values({
+          userId,
+          couponId: appliedCoupon.id,
+          orderId: createdOrders[0].id as number, // Use first order ID
+          orderItemId: null,
+          usedAt: new Date(),
+        });
+      }
+
+      // Send notifications for each order
+      for (const order of createdOrders) {
+        sendOrderPlacedNotification(userId, order.id.toString());
+      }
+
+      return { success: true, data: createdOrders };
     }),
 
   getOrders: protectedProcedure

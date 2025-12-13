@@ -236,7 +236,7 @@ const BottomDropdown: React.FC<BottomDropdownProps> = ({
           {multiple && (
             <View style={tw`flex-row justify-between mt-4 px-4`}>
               <TouchableOpacity
-                style={[tw`px-4 py-2 rounded-md flex-1 mr-2`, { backgroundColor: theme.colors.pink1 }]}
+                style={[tw`px-4 py-2 rounded-md flex-1 mr-2`, { backgroundColor: theme.colors.brand500 }]}
                 onPress={handleDone}
               >
                 <Text style={tw`text-white text-center font-medium`}>Done</Text>

@@ -158,7 +158,7 @@ export default function DeliverySlots() {
                   <Text style={tw`text-sm font-medium text-pink-700`}>
                     +{slot.products.length - 2} more products
                   </Text>
-                  <MaterialIcons name="chevron-right" size={16} color={theme.colors.pink1} style={tw`ml-1`} />
+                  <MaterialIcons name="chevron-right" size={16} color={theme.colors.brand500} style={tw`ml-1`} />
                 </TouchableOpacity>
               )}
             </View>

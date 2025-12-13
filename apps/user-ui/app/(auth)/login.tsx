@@ -282,7 +282,7 @@ function Login() {
               <MyButton
                 textContent="Use OTP"
                 onPress={() => sendOtpMutation.mutate({ mobile: selectedMobile })}
-                fillColor="blue1"
+                fillColor="brand500"
                 textColor="white1"
                 style={tw`flex-1 ml-2`}
                 disabled={sendOtpMutation.isPending}
@@ -413,7 +413,7 @@ function Login() {
         {(step === 'mobile' || step === 'otp' || step === 'password') && (
           <MyButton
             onPress={handleSubmit(onSubmit)}
-            fillColor="blue1"
+            fillColor="brand500"
             textColor="white1"
             fullWidth
             disabled={

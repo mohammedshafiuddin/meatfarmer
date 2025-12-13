@@ -65,7 +65,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
               style={[
                 styles.dot,
                 {
-                  backgroundColor: index === activeIndex ? theme.colors.pink1 : '#ccc',
+                  backgroundColor: index === activeIndex ? theme.colors.brand500 : '#ccc',
                 },
               ]}
             />

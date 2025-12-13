@@ -404,7 +404,7 @@ function RegistrationForm({ onSubmit, isLoading = false, initialValues, isEdit =
 
         <MyButton
           onPress={handleSubmit(handleFormSubmit)}
-          fillColor="blue1"
+          fillColor="brand500"
           textColor="white1"
           fullWidth
           disabled={isLoading}
@@ -418,7 +418,7 @@ function RegistrationForm({ onSubmit, isLoading = false, initialValues, isEdit =
             <MyButton
               textContent="Update Password"
               onPress={() => setIsPasswordDialogOpen(true)}
-              fillColor="blue1"
+              fillColor="brand500"
               textColor="white1"
               fullWidth
             />
@@ -470,7 +470,7 @@ function RegistrationForm({ onSubmit, isLoading = false, initialValues, isEdit =
               <MyButton
                 textContent="Update"
                 onPress={handleUpdatePassword}
-                fillColor="blue1"
+                fillColor="brand500"
                 textColor="white1"
                 disabled={updatePasswordMutation.isPending}
               />

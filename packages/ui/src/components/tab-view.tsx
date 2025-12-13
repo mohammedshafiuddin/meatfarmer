@@ -12,10 +12,10 @@ const TabViewWrapper: React.FC<TabViewWrapperProps> = (props) => {
   const renderTabBar = (tabBarProps: any) => (
     <TabBar
       {...tabBarProps}
-      indicatorStyle={{ backgroundColor: theme.colors.blue1 }}
+      indicatorStyle={{ backgroundColor: theme.colors.brand500 }}
       style={{ backgroundColor: theme.colors.white1 }}
       labelStyle={{ color: theme.colors.black1 }}
-      activeColor={theme.colors.blue1}
+      activeColor={theme.colors.brand500}
       inactiveColor={theme.colors.black1}
     />
   );
